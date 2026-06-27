@@ -1,0 +1,11 @@
+{
+	"id": "obsidian-eisenhower-plugin",
+	"name": "Obsidian Eisenhower Plugin",
+	"version": "1.0.0",
+	"minAppVersion": "1.0.0",
+	"description": "Maintain your tasks using the Eisenhower Matrix.",
+	"author": "Christian Luger",
+	"authorUrl": "https://www.christian-luger.at",
+	"fundingUrl": "https://www.christian-luger.at/pricing",
+	"isDesktopOnly": true
+}

@@ -49,7 +49,7 @@ export class FocusFirstView extends ItemView {
 		header.createEl('h4', { text: t().view.title });
 
 		const refreshBtn = header.createEl('button', { text: t().view.refresh });
-		refreshBtn.addEventListener('click', () => this.refresh());
+		refreshBtn.addEventListener('click', () => { void this.refresh(); });
 
 		const open = this.tasks.filter((t) => !t.completed);
 		const done = this.tasks.filter((t) => t.completed);
@@ -77,7 +77,7 @@ export class FocusFirstView extends ItemView {
 			const text = task.line.replace(/^[\s\-*]*\[.\]\s*/, '');
 
 			const link = li.createEl('span', { text, cls: 'focus-first-task-text' });
-			link.addEventListener('click', () => this.openTask(task));
+			link.addEventListener('click', () => { void this.openTask(task); });
 
 			li.createEl('span', {
 				text: task.file.basename,

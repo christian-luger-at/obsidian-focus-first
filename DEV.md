@@ -99,22 +99,14 @@ Note: You can start the dev server before opening the vault; however, it is reco
 
 ```bash
 src/
-  main.ts # plugin entry point and lifecycle management
-  settings.ts # settings interface and defaults
-```
-
-If the project grows, follow this structure:
-
-```bash
-src/
-  main.ts # keep small — only lifecycle
-  settings.ts # settings & defaults
-commands/ # command implementations
-  command1.ts
-ui/ # UI components, modals, views
-  modal.ts
-utils/ # helper functions
-  helpers.ts
+  main.ts          # plugin entry point and lifecycle management
+  settings.ts      # settings interface, defaults, and SettingTab UI
+  TaskView.ts      # custom Leaf View — task list panel
+  taskScanner.ts   # vault/folder task discovery via metadataCache
+  i18n.ts          # EN/DE translations
+  tests/
+    settings.test.ts          # unit & integration tests for settings
+    __mocks__/obsidian.ts     # minimal Obsidian API stubs for testing
 ```
 
 ## Build commands
@@ -122,6 +114,35 @@ utils/ # helper functions
 - **`npm run dev`** – watch mode for development (esbuild recompiles on changes)
 - **`npm run build`** – production build with TypeScript type check and minification
 - **`npm run lint`** – run ESLint with Obsidian-specific rules
+- **`npm test`** – run all unit and integration tests (Vitest)
+- **`npm run test:watch`** – run tests in watch mode, re-runs on every file save
+
+## Testing
+
+Tests live in `src/tests/` and use [Vitest](https://vitest.dev). Because Obsidian is not available in a Node environment, a minimal stub is provided in `src/tests/__mocks__/obsidian.ts` and aliased via `vitest.config.ts`.
+
+```bash
+# Run once
+npm test
+
+# Watch mode during development
+npm run test:watch
+```
+
+### What is tested
+
+| File | Scope | What is covered |
+|---|---|---|
+| `settings.test.ts` | Unit | `DEFAULT_SETTINGS` values and type contract |
+| `settings.test.ts` | Integration | `FokusFirstSettingTab` renders without errors for both scope options |
+| `settings.test.ts` | Integration | `saveSettings` is called and captures each field change correctly |
+| `settings.test.ts` | Integration | `loadSettings` merge logic — defaults, partial, and full overrides |
+
+### Adding new tests
+
+1. Create a `*.test.ts` file inside `src/tests/`
+2. Add any new Obsidian symbols your code uses to `src/tests/__mocks__/obsidian.ts`
+3. Run `npm test` to verify
 
 ## Build production release
 

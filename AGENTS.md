@@ -44,7 +44,8 @@ npm run build
 - **Organize code into multiple files**: Split functionality across separate modules rather than putting everything in `main.ts`.
 - Source lives in `src/`. Keep `main.ts` small and focused on plugin lifecycle (loading, unloading, registering commands).
 - **Example file structure**:
-    ```
+
+    ```bash
     src/
       main.ts           # Plugin entry point, lifecycle management
       settings.ts       # Settings interface and defaults
@@ -59,6 +60,7 @@ npm run build
         constants.ts
       types.ts         # TypeScript interfaces and types
     ```
+
 - **Do not commit build artifacts**: Never commit `node_modules/`, `main.js`, or other generated files to version control.
 - Keep the plugin small. Avoid large dependencies. Prefer browser-compatible packages.
 - Generated output should be placed at the plugin root or `dist/` depending on your build setup. Release artifacts must end up at the top level of the plugin folder in the vault (`main.js`, `manifest.json`, `styles.css`).
@@ -66,23 +68,25 @@ npm run build
 ## Manifest rules (`manifest.json`)
 
 - Must include (non-exhaustive):
-    - `id` (plugin ID; for local dev it should match the folder name)
-    - `name`
-    - `version` (Semantic Versioning `x.y.z`)
-    - `minAppVersion`
-    - `description`
-    - `isDesktopOnly` (boolean)
-    - Optional: `author`, `authorUrl`, `fundingUrl` (string or map)
+  - `id` (plugin ID; for local dev it should match the folder name)
+  - `name`
+  - `version` (Semantic Versioning `x.y.z`)
+  - `minAppVersion`
+  - `description`
+  - `isDesktopOnly` (boolean)
+  - Optional: `author`, `authorUrl`, `fundingUrl` (string or map)
 - Never change `id` after release. Treat it as stable API.
 - Keep `minAppVersion` accurate when using newer APIs.
-- Canonical requirements are coded here: https://github.com/obsidianmd/obsidian-releases/blob/master/.github/workflows/validate-plugin-entry.yml
+- Canonical requirements are coded here: <https://github.com/obsidianmd/obsidian-releases/blob/master/.github/workflows/validate-plugin-entry.yml>
 
 ## Testing
 
 - Manual install for testing: copy `main.js`, `manifest.json`, `styles.css` (if any) to:
-    ```
+
+    ```bash
     <Vault>/.obsidian/plugins/<plugin-id>/
     ```
+
 - Reload Obsidian and enable the plugin in **Settings → Community plugins**.
 
 ## Commands & settings
@@ -145,14 +149,14 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 
 ## Agent do/don't
 
-**Do**
+### Do
 
 - Add commands with stable IDs (don't rename once released).
 - Provide defaults and validation in settings.
 - Write idempotent code paths so reload/unload doesn't leak listeners or intervals.
 - Use `this.register*` helpers for everything that needs cleanup.
 
-**Don't**
+### Don't
 
 - Introduce network calls without an obvious user-facing reason and documentation.
 - Ship features that require cloud services without clear disclosure and explicit opt-in.
@@ -170,16 +174,16 @@ import { MySettings, DEFAULT_SETTINGS } from './settings';
 import { registerCommands } from './commands';
 
 export default class MyPlugin extends Plugin {
-	settings!: MySettings;
+ settings!: MySettings;
 
-	async onload() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			(await this.loadData()) as Partial<MySettings>,
-		);
-		registerCommands(this);
-	}
+ async onload() {
+  this.settings = Object.assign(
+   {},
+   DEFAULT_SETTINGS,
+   (await this.loadData()) as Partial<MySettings>,
+  );
+  registerCommands(this);
+ }
 }
 ```
 
@@ -187,13 +191,13 @@ export default class MyPlugin extends Plugin {
 
 ```ts
 export interface MySettings {
-	enabled: boolean;
-	apiKey: string;
+ enabled: boolean;
+ apiKey: string;
 }
 
 export const DEFAULT_SETTINGS: MySettings = {
-	enabled: true,
-	apiKey: '',
+ enabled: true,
+ apiKey: '',
 };
 ```
 
@@ -204,11 +208,11 @@ import { Plugin } from 'obsidian';
 import { doSomething } from './my-command';
 
 export function registerCommands(plugin: Plugin) {
-	plugin.addCommand({
-		id: 'do-something',
-		name: 'Do something',
-		callback: () => doSomething(plugin),
-	});
+ plugin.addCommand({
+  id: 'do-something',
+  name: 'Do something',
+  callback: () => doSomething(plugin),
+ });
 }
 ```
 
@@ -216,9 +220,9 @@ export function registerCommands(plugin: Plugin) {
 
 ```ts
 this.addCommand({
-	id: 'your-command-id',
-	name: 'Do the thing',
-	callback: () => this.doTheThing(),
+ id: 'your-command-id',
+ name: 'Do the thing',
+ callback: () => this.doTheThing(),
 });
 ```
 
@@ -238,17 +242,17 @@ async onload() {
 
 ```ts
 this.registerEvent(
-	this.app.workspace.on('file-open', (f) => {
-		/* ... */
-	}),
+ this.app.workspace.on('file-open', (f) => {
+  /* ... */
+ }),
 );
 this.registerDomEvent(activeWindow, 'resize', () => {
-	/* ... */
+ /* ... */
 });
 this.registerInterval(
-	window.setInterval(() => {
-		/* ... */
-	}, 1000),
+ window.setInterval(() => {
+  /* ... */
+ }, 1000),
 );
 ```
 
@@ -262,8 +266,8 @@ this.registerInterval(
 
 ## References
 
-- Obsidian sample plugin: https://github.com/obsidianmd/obsidian-sample-plugin
-- API documentation: https://docs.obsidian.md
-- Developer policies: https://docs.obsidian.md/Developer+policies
-- Plugin guidelines: https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines
-- Style guide: https://help.obsidian.md/style-guide
+- Obsidian sample plugin: <https://github.com/obsidianmd/obsidian-sample-plugin>
+- API documentation: <https://docs.obsidian.md>
+- Developer policies: <https://docs.obsidian.md/Developer+policies>
+- Plugin guidelines: <https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines>
+- Style guide: <https://help.obsidian.md/style-guide>

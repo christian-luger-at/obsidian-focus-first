@@ -1,6 +1,6 @@
 {
 	"name": "focus-first-matrix",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "Focus First — prioritize work with the Eisenhower matrix.",
 	"main": "main.js",
 	"type": "module",

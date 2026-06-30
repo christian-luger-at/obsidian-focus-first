@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS, FokusFirstSettings, TaskScope, Priority } from '../se
 import type { FokusFirstSettingTab as FokusFirstSettingTabType } from '../settings';
 import { createdSettings, clearCreatedSettings } from './__mocks__/obsidian';
 import type { DropdownComponent, TextComponent, ToggleComponent } from './__mocks__/obsidian';
+import type { ExtraButtonComponent } from './__mocks__/obsidian';
 
 // ---------------------------------------------------------------------------
 // Unit tests — DEFAULT_SETTINGS
@@ -303,6 +304,8 @@ describe('loadSettings — merges persisted data with defaults', () => {
 			},
 			groupByPrimary: false,
 			focusTag: '#focus',
+			hideTag: '#hide',
+			fontSize: 120,
 		};
 		const merged = Object.assign({}, DEFAULT_SETTINGS, persisted);
 
@@ -335,11 +338,6 @@ function scopeDropdown(): DropdownComponent | undefined {
 // Find a text input by its initial value
 function textByValue(value: string): TextComponent | undefined {
 	return createdSettings.find((s) => s.lastText?.inputEl.value === value)?.lastText;
-}
-
-// Find a dropdown by its setting name
-function dropdownByName(name: string): DropdownComponent | undefined {
-	return createdSettings.find((s) => s.name === name && s.lastDropdown)?.lastDropdown;
 }
 
 // Find a toggle by its setting name
@@ -493,8 +491,8 @@ describe('DEFAULT_SETTINGS — focusTag', () => {
 // ---------------------------------------------------------------------------
 
 describe('DEFAULT_SETTINGS — groupByPrimary', () => {
-	it('defaults to false', () => {
-		expect(DEFAULT_SETTINGS.groupByPrimary).toBe(false);
+	it('defaults to true', () => {
+		expect(DEFAULT_SETTINGS.groupByPrimary).toBe(true);
 	});
 });
 
@@ -550,7 +548,8 @@ describe('DEFAULT_SETTINGS — quadrant structure', () => {
 	});
 
 	it('all quadrant colors are distinct', () => {
-		const colors = Object.values(DEFAULT_SETTINGS.quadrants).map((q) => q.color);
+		const quadrantKeys = ['do', 'schedule', 'delegate', 'eliminate'] as const;
+		const colors = quadrantKeys.map((key) => DEFAULT_SETTINGS.quadrants[key].color);
 		const unique = new Set(colors);
 		expect(unique.size).toBe(colors.length);
 	});
@@ -561,14 +560,14 @@ describe('DEFAULT_SETTINGS — quadrant structure', () => {
 		}
 	});
 
-	it('"do" quadrant sorts by priority first, then dueDate', () => {
-		expect(DEFAULT_SETTINGS.quadrants.do.sort.primary).toBe('priority');
-		expect(DEFAULT_SETTINGS.quadrants.do.sort.secondary).toBe('dueDate');
+	it('"do" quadrant sorts by dueDate first, then priority', () => {
+		expect(DEFAULT_SETTINGS.quadrants.do.sort.primary).toBe('dueDate');
+		expect(DEFAULT_SETTINGS.quadrants.do.sort.secondary).toBe('priority');
 	});
 
-	it('"schedule" quadrant sorts by dueDate first, then priority', () => {
-		expect(DEFAULT_SETTINGS.quadrants.schedule.sort.primary).toBe('dueDate');
-		expect(DEFAULT_SETTINGS.quadrants.schedule.sort.secondary).toBe('priority');
+	it('"schedule" quadrant sorts by priority first, then dueDate', () => {
+		expect(DEFAULT_SETTINGS.quadrants.schedule.sort.primary).toBe('priority');
+		expect(DEFAULT_SETTINGS.quadrants.schedule.sort.secondary).toBe('dueDate');
 	});
 
 	it('"delegate" quadrant sorts by dueDate first, then priority', () => {
@@ -576,9 +575,9 @@ describe('DEFAULT_SETTINGS — quadrant structure', () => {
 		expect(DEFAULT_SETTINGS.quadrants.delegate.sort.secondary).toBe('priority');
 	});
 
-	it('"eliminate" quadrant sorts by priority first, then alphabetically', () => {
-		expect(DEFAULT_SETTINGS.quadrants.eliminate.sort.primary).toBe('priority');
-		expect(DEFAULT_SETTINGS.quadrants.eliminate.sort.secondary).toBe('alpha');
+	it('"eliminate" quadrant sorts by alphabetical first, then priority', () => {
+		expect(DEFAULT_SETTINGS.quadrants.eliminate.sort.primary).toBe('alpha');
+		expect(DEFAULT_SETTINGS.quadrants.eliminate.sort.secondary).toBe('priority');
 	});
 
 	it('primary and secondary sort defaults are different for every quadrant', () => {
@@ -669,7 +668,7 @@ describe('FokusFirstSettingTab — sort dropdowns onChange', () => {
 		const allPrimary = createdSettings.filter((s) => s.name === 'Primary sort' && s.lastDropdown);
 		await allPrimary[1]?.lastDropdown?.simulate('alpha');
 		expect(plugin.settings.quadrants.schedule.sort.primary).toBe('alpha');
-		expect(plugin.settings.quadrants.do.sort.primary).toBe('priority'); // unchanged
+		expect(plugin.settings.quadrants.do.sort.primary).toBe('dueDate'); // unchanged
 	});
 
 	it('primary and secondary dropdowns are independent', async () => {
@@ -695,8 +694,8 @@ describe('FokusFirstSettingTab — sort dropdowns onChange', () => {
 		const allPrimary = createdSettings.filter((s) => s.name === 'Primary sort' && s.lastDropdown);
 		await allPrimary[2]?.lastDropdown?.simulate('priority');
 		expect(plugin.settings.quadrants.delegate.sort.primary).toBe('priority');
-		expect(plugin.settings.quadrants.do.sort.primary).toBe('priority'); // unchanged
-		expect(plugin.settings.quadrants.schedule.sort.primary).toBe('dueDate'); // unchanged
+		expect(plugin.settings.quadrants.do.sort.primary).toBe('dueDate'); // unchanged
+		expect(plugin.settings.quadrants.schedule.sort.primary).toBe('priority'); // unchanged
 	});
 
 	it('saves sort for "eliminate" quadrant independently', async () => {
@@ -704,7 +703,7 @@ describe('FokusFirstSettingTab — sort dropdowns onChange', () => {
 		const allSecondary = createdSettings.filter((s) => s.name === 'Secondary sort' && s.lastDropdown);
 		await allSecondary[3]?.lastDropdown?.simulate('dueDate');
 		expect(plugin.settings.quadrants.eliminate.sort.secondary).toBe('dueDate');
-		expect(plugin.settings.quadrants.do.sort.secondary).toBe('dueDate'); // unchanged
+		expect(plugin.settings.quadrants.do.sort.secondary).toBe('priority'); // unchanged
 	});
 });
 
@@ -720,7 +719,7 @@ describe('DEFAULT_SETTINGS — importantPriorities', () => {
 	it('contains only valid priority emoji', () => {
 		const valid = new Set(['🔺', '⏫', '🔼', '🔽', '⏬']);
 		for (const p of DEFAULT_SETTINGS.importantPriorities) {
-			expect(valid.has(p as Priority)).toBe(true);
+			expect(valid.has(p)).toBe(true);
 		}
 	});
 
@@ -781,5 +780,73 @@ describe('DEFAULT_SETTINGS — quadrant color semantics', () => {
 		const min = Math.min(r, g, b);
 		const saturation = max === 0 ? 0 : (max - min) / max;
 		expect(saturation).toBeLessThan(0.3);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Integration — Reset-all button
+// ---------------------------------------------------------------------------
+
+describe('FokusFirstSettingTab — reset-all button', () => {
+	it('calls plugin.resetSettings() and re-renders when clicked', async () => {
+		const plugin = makePlugin({ taskFolder: 'Custom' });
+		// resetSettings is not part of the plugin stub created by makePlugin —
+		// add it here so we can assert it was invoked.
+		const resetSpy = vi.fn(async () => {
+			plugin.settings.taskFolder = '';
+		});
+		(plugin as unknown as { resetSettings: () => Promise<void> }).resetSettings = resetSpy;
+
+		const tab = makeTab(plugin);
+		const displaySpy = vi.spyOn(tab, 'display');
+		clearCreatedSettings();
+		tab.display();
+
+		const resetButton = createdSettings.find((s) => s.lastButton)?.lastButton;
+		expect(resetButton).toBeDefined();
+		await resetButton?.simulate();
+
+		expect(resetSpy).toHaveBeenCalledOnce();
+		// display() is called once by us, then again by the click handler
+		expect(displaySpy).toHaveBeenCalledTimes(2);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Integration — collapsible quadrant sections
+// ---------------------------------------------------------------------------
+
+describe('FokusFirstSettingTab — collapsible quadrant sections', () => {
+	it('renders a chevron extra-button for each of the four quadrant sub-sections', () => {
+		makeTabWithDisplay();
+		const chevronCount = createdSettings.filter((s) => s.lastExtraButton).length;
+		expect(chevronCount).toBe(4);
+	});
+
+	it('clicking a quadrant chevron toggles its icon between collapsed and expanded', async () => {
+		makeTabWithDisplay();
+		const chevrons = createdSettings
+			.filter((s) => s.lastExtraButton)
+			.map((s) => s.lastExtraButton as ExtraButtonComponent);
+
+		// Quadrant sub-sections start collapsed by default
+		const first = chevrons[0];
+		expect(first).toBeDefined();
+		const setIconSpy = vi.spyOn(first!, 'setIcon');
+
+		await first?.simulate();
+
+		expect(setIconSpy).toHaveBeenCalledWith('chevron-down');
+	});
+
+	it('clicking the same chevron twice returns it to the collapsed icon', async () => {
+		makeTabWithDisplay();
+		const first = createdSettings.find((s) => s.lastExtraButton)?.lastExtraButton as ExtraButtonComponent;
+		const setIconSpy = vi.spyOn(first, 'setIcon');
+
+		await first.simulate();
+		await first.simulate();
+
+		expect(setIconSpy).toHaveBeenLastCalledWith('chevron-right');
 	});
 });

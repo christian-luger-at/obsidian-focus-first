@@ -28,15 +28,19 @@ interface Translations {
 		focusAdd: string;
 		focusRemove: string;
 		focusDone: string;
+		hideTask: string;
+		unhideTask: string;
 		quadrants: {
-			do: { title: string; subtitle: string };
-			schedule: { title: string; subtitle: string };
-			delegate: { title: string; subtitle: string };
-			eliminate: { title: string; subtitle: string };
+			do: { title: string; subtitle: string; emptyState: string };
+			schedule: { title: string; subtitle: string; emptyState: string };
+			delegate: { title: string; subtitle: string; emptyState: string };
+			eliminate: { title: string; subtitle: string; emptyState: string };
 		};
 	};
 	settings: {
 		setting1: { name: string; desc: string; placeholder: string };
+		appearanceHeading: string;
+		fontSize: { name: string; desc: string };
 		taskSourcesHeading: string;
 		taskScope: {
 			name: string;
@@ -55,6 +59,8 @@ interface Translations {
 		importantPriorities: { name: string; desc: string; error: string };
 		focusHeading: string;
 		focusTag: { name: string; desc: string };
+		hideHeading: string;
+		hideTag: { name: string; desc: string };
 		matrixDesc: string;
 		quadrantsHeading: string;
 		quadrantColor: { name: string; desc: string; reset: string };
@@ -63,6 +69,9 @@ interface Translations {
 		sortPrimary: { name: string; desc: string };
 		sortSecondary: { name: string; desc: string };
 		sortField: { priority: string; dueDate: string; alpha: string };
+		resetHeading: string;
+		resetAll: { name: string; desc: string; button: string };
+		toggleSection: string;
 	};
 	groups: {
 		noPriority: string;
@@ -105,11 +114,13 @@ const translations: Record<Lang, Translations> = {
 			focusAdd: 'Add to focus',
 			focusRemove: 'Remove from focus',
 			focusDone: 'Mark as done',
+			hideTask: 'Hide task',
+			unhideTask: 'Unhide task',
 			quadrants: {
-				do:       { title: 'Do',       subtitle: 'Urgent · Important' },
-				schedule: { title: 'Schedule', subtitle: 'Not urgent · Important' },
-				delegate: { title: 'Delegate', subtitle: 'Urgent · Not important' },
-				eliminate:{ title: 'Eliminate',subtitle: 'Not urgent · Not important' },
+				do:       { title: 'Do',       subtitle: 'Urgent · Important',        emptyState: 'Nothing urgent right now' },
+				schedule: { title: 'Schedule', subtitle: 'Not urgent · Important',     emptyState: 'No important tasks pending' },
+				delegate: { title: 'Delegate', subtitle: 'Urgent · Not important',     emptyState: 'Nothing to delegate' },
+				eliminate:{ title: 'Eliminate',subtitle: 'Not urgent · Not important', emptyState: 'Nothing to eliminate' },
 			},
 		},
 		settings: {
@@ -117,6 +128,11 @@ const translations: Record<Lang, Translations> = {
 				name: 'Settings #1',
 				desc: "It's a secret",
 				placeholder: 'Enter your secret',
+			},
+			appearanceHeading: 'Appearance',
+			fontSize: {
+				name: 'Font size',
+				desc: 'Adjust the text size used throughout the Focus First view.',
 			},
 			taskSourcesHeading: 'Task Sources',
 			taskScope: {
@@ -147,6 +163,11 @@ const translations: Record<Lang, Translations> = {
 				name: 'Focus tag',
 				desc: 'Add this tag to any task to highlight it as a Focus Task. Focus Tasks are displayed prominently above the matrix.',
 			},
+			hideHeading: 'Hide Task',
+			hideTag: {
+				name: 'Hide tag',
+				desc: 'Tasks carrying this tag are hidden from the matrix. Use the hide button on any task to toggle this tag.',
+			},
 			matrixDesc: 'These rules determine how tasks are automatically placed into quadrants based on their due date and priority.',
 			quadrantsHeading: 'Quadrants',
 			quadrantColor: {
@@ -171,6 +192,13 @@ const translations: Record<Lang, Translations> = {
 				desc: 'Tiebreaker applied when the primary criterion is equal.',
 			},
 			sortField: { priority: 'Priority', dueDate: 'Due date', alpha: 'Alphabetical' },
+			resetHeading: 'Reset',
+			resetAll: {
+				name: 'Reset all settings',
+				desc: 'Resets every Focus First setting to its default value. This cannot be undone.',
+				button: 'Reset to defaults',
+			},
+			toggleSection: 'Expand or collapse this section',
 		},
 		groups: {
 			noPriority: 'No priority',
@@ -210,12 +238,14 @@ const translations: Record<Lang, Translations> = {
 			focusSectionTitle: 'Fokus-Aufgaben',
 			focusAdd: 'Zu Fokus hinzufügen',
 			focusRemove: 'Aus Fokus entfernen',
+			hideTask: 'Aufgabe ausblenden',
+			unhideTask: 'Aufgabe einblenden',
 			focusDone: 'Als erledigt markieren',
 			quadrants: {
-				do:       { title: 'Erledigen',  subtitle: 'Dringend · Wichtig' },
-				schedule: { title: 'Einplanen',  subtitle: 'Nicht dringend · Wichtig' },
-				delegate: { title: 'Delegieren', subtitle: 'Dringend · Nicht wichtig' },
-				eliminate:{ title: 'Eliminieren',subtitle: 'Nicht dringend · Nicht wichtig' },
+				do:       { title: 'Erledigen',  subtitle: 'Dringend · Wichtig',             emptyState: 'Aktuell nichts Dringendes' },
+				schedule: { title: 'Einplanen',  subtitle: 'Nicht dringend · Wichtig',        emptyState: 'Keine wichtigen Aufgaben ausstehend' },
+				delegate: { title: 'Delegieren', subtitle: 'Dringend · Nicht wichtig',        emptyState: 'Nichts zu delegieren' },
+				eliminate:{ title: 'Eliminieren',subtitle: 'Nicht dringend · Nicht wichtig',  emptyState: 'Nichts zu eliminieren' },
 			},
 		},
 		settings: {
@@ -223,6 +253,11 @@ const translations: Record<Lang, Translations> = {
 				name: 'Einstellung #1',
 				desc: 'Das ist ein Geheimnis',
 				placeholder: 'Geheimnis eingeben',
+			},
+			appearanceHeading: 'Erscheinungsbild',
+			fontSize: {
+				name: 'Schriftgröße',
+				desc: 'Passt die Textgröße in der gesamten Focus-First-Ansicht an.',
 			},
 			taskSourcesHeading: 'Aufgabenquellen',
 			taskScope: {
@@ -253,6 +288,11 @@ const translations: Record<Lang, Translations> = {
 				name: 'Fokus-Tag',
 				desc: 'Füge diesen Tag einer Aufgabe hinzu, um sie als Fokus-Aufgabe hervorzuheben. Fokus-Aufgaben werden prominent über der Matrix angezeigt.',
 			},
+			hideHeading: 'Aufgabe ausblenden',
+			hideTag: {
+				name: 'Ausblenden-Tag',
+				desc: 'Aufgaben mit diesem Tag werden in der Matrix nicht angezeigt. Über den Ausblenden-Button an jeder Aufgabe kann der Tag gesetzt oder entfernt werden.',
+			},
 			matrixDesc: 'Diese Regeln bestimmen, wie Aufgaben anhand von Fälligkeitsdatum und Priorität automatisch in Quadranten eingeordnet werden.',
 			quadrantsHeading: 'Quadranten',
 			quadrantColor: {
@@ -277,6 +317,13 @@ const translations: Record<Lang, Translations> = {
 				desc: 'Tiebreaker, der angewendet wird, wenn das primäre Kriterium gleich ist.',
 			},
 			sortField: { priority: 'Priorität', dueDate: 'Fälligkeitsdatum', alpha: 'Alphabetisch' },
+			resetHeading: 'Zurücksetzen',
+			resetAll: {
+				name: 'Alle Einstellungen zurücksetzen',
+				desc: 'Setzt alle Focus-First-Einstellungen auf ihre Standardwerte zurück. Dies kann nicht rückgängig gemacht werden.',
+				button: 'Auf Standardwerte zurücksetzen',
+			},
+			toggleSection: 'Diesen Abschnitt ein- oder ausklappen',
 		},
 		groups: {
 			noPriority: 'Keine Priorität',

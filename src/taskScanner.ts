@@ -63,7 +63,7 @@ export async function scanTasks(app: App, settings: FokusFirstSettings): Promise
 				file,
 				line,
 				lineNumber,
-				completed: item.task === 'x' || item.task === 'X',
+				completed: item.task === 'x' || item.task === 'X' || item.task === '-',
 				dueDate,
 				priority,
 				tags,

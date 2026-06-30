@@ -207,8 +207,14 @@ describe('completion detection', () => {
 		expect(task?.completed).toBe(false);
 	});
 
-	it('marks any other character as not completed', async () => {
-		// Tasks plugin uses '/' for "in progress", '-' for cancelled, etc.
+	it('marks cancelled task [-] as completed', async () => {
+		const app = makeApp([{ path: 'a.md', lines: ['- [-] Cancelled task'] }]);
+		const [task] = await scanTasks(app, makeSettings());
+		expect(task?.completed).toBe(true);
+	});
+
+	it('marks in-progress task [/] as not completed', async () => {
+		// Only x, X, and - are treated as done/hidden; other custom states remain visible
 		const app = makeApp([{ path: 'a.md', lines: ['- [/] In progress'] }]);
 		const [task] = await scanTasks(app, makeSettings());
 		expect(task?.completed).toBe(false);

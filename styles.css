@@ -10,7 +10,7 @@
 
 .focus-first-header h4 {
 	margin: 0;
-	font-size: var(--font-ui-large);
+	font-size: calc(var(--font-ui-large) * var(--focus-first-font-scale));
 }
 
 .focus-first-refresh-btn {
@@ -20,7 +20,7 @@
 	border-radius: var(--radius-m);
 	padding: var(--size-2-2) var(--size-4-2);
 	color: var(--text-muted);
-	font-size: var(--font-ui-small);
+	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
 }
 
 .focus-first-refresh-btn:hover {
@@ -46,7 +46,7 @@
 	border-radius: var(--radius-m);
 	padding: var(--size-2-2) var(--size-4-2);
 	color: var(--text-normal);
-	font-size: var(--font-ui-small);
+	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
 }
 
 .focus-first-search-input:focus {
@@ -107,7 +107,7 @@
 	display: flex;
 	align-items: center;
 	gap: var(--size-2-2);
-	font-size: var(--font-ui-small);
+	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
 	color: var(--text-muted);
 	cursor: pointer;
 	user-select: none;
@@ -127,6 +127,7 @@
 /* ── View layout ─────────────────────────────────────────── */
 
 .focus-first-view {
+	--focus-first-font-scale: 1;
 	display: flex;
 	flex-direction: column;
 	height: 100%;
@@ -160,7 +161,7 @@
 }
 
 .focus-first-focus-title {
-	font-size: var(--font-ui-small);
+	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
 	font-weight: var(--font-semibold);
 	color: var(--text-muted);
 	text-transform: uppercase;
@@ -186,14 +187,32 @@
 	background: var(--background-primary);
 }
 
+.focus-first-focus-item:hover {
+	background: var(--background-modifier-hover);
+}
+
 .focus-first-focus-item-text {
-	font-size: var(--font-ui-small);
+	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
 	color: var(--text-normal);
-	flex: 1;
+	flex: 0 1 auto;
 	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+/* Meta sits directly after the title; actions are pushed to the far right via
+   margin-left: auto. Both stay reserved-but-invisible until hover, so the row
+   stays a single fixed-height line — no layout shift on reveal. */
+
+.focus-first-focus-meta {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	flex-shrink: 0;
+	white-space: nowrap;
+	opacity: 0;
+	transition: opacity 0.1s ease;
 }
 
 .focus-first-focus-actions {
@@ -201,6 +220,14 @@
 	align-items: center;
 	gap: var(--size-4-1);
 	flex-shrink: 0;
+	margin-left: auto;
+	opacity: 0;
+	transition: opacity 0.1s ease;
+}
+
+.focus-first-focus-item:hover .focus-first-focus-meta,
+.focus-first-focus-item:hover .focus-first-focus-actions {
+	opacity: 1;
 }
 
 .focus-first-focus-done,
@@ -209,7 +236,7 @@
 	border: none;
 	cursor: pointer;
 	padding: 2px var(--size-4-1);
-	font-size: var(--font-ui-small);
+	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
 	line-height: 1;
 	border-radius: var(--radius-s);
 }
@@ -295,17 +322,17 @@
 
 .focus-first-quadrant-title {
 	font-weight: var(--font-semibold);
-	font-size: var(--font-ui-small);
+	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
 	color: var(--quadrant-color, var(--text-normal));
 }
 
 .focus-first-quadrant-subtitle {
-	font-size: var(--font-smallest);
+	font-size: calc(var(--font-smallest) * var(--focus-first-font-scale));
 	color: color-mix(in srgb, var(--quadrant-color, var(--text-muted)) 70%, var(--text-muted));
 }
 
 .focus-first-quadrant-count {
-	font-size: var(--font-smallest);
+	font-size: calc(var(--font-smallest) * var(--focus-first-font-scale));
 	font-weight: var(--font-semibold);
 	color: var(--quadrant-color, var(--text-muted));
 	background: color-mix(in srgb, var(--quadrant-color, transparent) 12%, transparent);
@@ -316,10 +343,27 @@
 }
 
 .focus-first-quadrant-empty {
-	color: var(--text-faint);
-	font-size: var(--font-smaller);
-	text-align: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: var(--size-2-2);
+	flex: 1;
 	padding: var(--size-4-4);
+}
+
+.focus-first-quadrant-empty-icon::before {
+	content: '✓';
+	display: block;
+	font-size: 1.5em;
+	color: var(--text-faint);
+	opacity: 0.5;
+}
+
+.focus-first-quadrant-empty-text {
+	color: var(--text-faint);
+	font-size: calc(var(--font-smaller) * var(--focus-first-font-scale));
+	text-align: center;
 	margin: 0;
 }
 
@@ -344,7 +388,7 @@
 }
 
 .focus-first-task-text {
-	font-size: var(--font-ui-small);
+	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
 	cursor: pointer;
 	color: var(--text-normal);
 	display: block;
@@ -464,7 +508,7 @@
 }
 
 .focus-first-group-header-label {
-	font-size: 10px;
+	font-size: calc(10px * var(--focus-first-font-scale));
 	font-weight: var(--font-semibold);
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
@@ -507,7 +551,7 @@
 .focus-first-task-priority,
 .focus-first-task-due,
 .focus-first-task-source {
-	font-size: var(--font-smallest);
+	font-size: calc(var(--font-smallest) * var(--focus-first-font-scale));
 	color: var(--text-faint);
 }
 
@@ -522,7 +566,7 @@
 }
 
 .focus-first-task-tag {
-	font-size: var(--font-smallest);
+	font-size: calc(var(--font-smallest) * var(--focus-first-font-scale));
 	color: var(--text-accent);
 	opacity: 0.8;
 }
@@ -580,4 +624,20 @@ input.is-invalid {
 	background: var(--interactive-accent);
 	border-color: var(--interactive-accent);
 	color: var(--text-on-accent);
+}
+
+/* ── Collapsible settings sections ──────────────────────────── */
+
+.focus-first-section-header {
+	cursor: pointer;
+	user-select: none;
+	border-radius: var(--radius-s);
+}
+
+.focus-first-section-header:hover {
+	background: var(--background-modifier-hover);
+}
+
+.focus-first-section-body {
+	margin-bottom: var(--size-4-4);
 }

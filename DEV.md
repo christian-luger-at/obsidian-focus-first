@@ -187,16 +187,16 @@ Output: `releases/v1.1.0/` containing `main.js`, `manifest.json`, `styles.css`.
 
 ```bash
 # Create a git tag matching the version
-git tag v1.1.0
-git push origin v1.1.0
+git tag v1.0.0
+git push origin v1.0.0
 
 # Create the GitHub release and attach the three plugin files
-gh release create v1.1.0 \
-  releases/v1.1.0/main.js \
-  releases/v1.1.0/manifest.json \
-  releases/v1.1.0/styles.css \
-  --title "v1.1.0" \
-  --notes "Release notes here"
+gh release create v1.0.0 \
+  releases/v1.0.0/main.js \
+  releases/v1.0.0/manifest.json \
+  releases/v1.0.0/styles.css \
+  --title "v1.0.0" \
+  --notes "Initial release with a basic implementation"
 ```
 
 The release is now visible on GitHub with the three files as downloadable artifacts.

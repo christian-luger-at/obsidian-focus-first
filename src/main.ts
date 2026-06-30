@@ -18,6 +18,8 @@ export default class FocusFirstPlugin extends Plugin {
 			(leaf) => new FocusFirstView(leaf, this),
 		);
 
+		this.applyFontSize();
+
 		this.addRibbonIcon('checkmark', t().ribbon.tooltip, async () => {
 			await this.activateView();
 		});
@@ -60,5 +62,21 @@ export default class FocusFirstPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	async resetSettings() {
+		this.settings = structuredClone(DEFAULT_SETTINGS);
+		await this.saveSettings();
+		this.applyFontSize();
+	}
+
+	applyFontSize() {
+		const scale = this.settings.fontSize / 100;
+		for (const leaf of this.app.workspace.getLeavesOfType(FOCUS_FIRST_VIEW_TYPE)) {
+			const view = leaf.view;
+			if (view instanceof FocusFirstView) {
+				view.contentEl.style.setProperty('--focus-first-font-scale', String(scale));
+			}
+		}
 	}
 }

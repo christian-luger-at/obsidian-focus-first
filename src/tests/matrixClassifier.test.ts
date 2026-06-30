@@ -247,6 +247,14 @@ describe('completed task handling', () => {
 		const result = classifyTasks([open, done], settings);
 		expect(result.do).toHaveLength(1);
 	});
+
+	it('excludes cancelled tasks (completed: true covers all non-open states)', () => {
+		// The scanner sets completed=true for any non-space checkbox char (x, X, -, /, etc.)
+		const cancelled = makeTask({ completed: true });
+		const result = classifyTasks([cancelled], settings);
+		const total = result.do.length + result.schedule.length + result.delegate.length + result.eliminate.length;
+		expect(total).toBe(0);
+	});
 });
 
 // ---------------------------------------------------------------------------

@@ -275,7 +275,7 @@ describe('renderFocusTasks()', () => {
 		priv(view).renderFocusTasks(container);
 
 		expect(container.classList.contains('focus-first-hidden')).toBe(false);
-		const itemText = container.findByClass('focus-first-focus-item-text');
+		const itemText = container.findByClass('focus-first-task-text');
 		expect(itemText?.text).toBe('Focused task');
 	});
 
@@ -295,16 +295,18 @@ describe('renderFocusTasks()', () => {
 		const container = contentEl.createDiv();
 		priv(view).renderFocusTasks(container);
 
-		const actions = container.findByClass('focus-first-focus-actions');
+		// Focus tasks render through renderTask() — the same path/markup as the
+		// quadrant task items — so actions live under `focus-first-task-actions`.
+		const actions = container.findByClass('focus-first-task-actions');
 		const doneBtn = actions?.children[0];
-		doneBtn?.dispatch('click');
+		doneBtn?.dispatch('click', { stopPropagation: () => {} });
 		await Promise.resolve();
 		await Promise.resolve();
 
 		expect(app.vault.modify).toHaveBeenCalled();
 	});
 
-	it('the remove button clears the focus tag', async () => {
+	it('the focus (star) button clears the focus tag', async () => {
 		const tasks = [makeTask({ tags: ['#focus'], lineNumber: 0 })];
 		const { view, contentEl, app } = makeView({ focusTag: '#focus' }, tasks);
 		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
@@ -312,9 +314,11 @@ describe('renderFocusTasks()', () => {
 		const container = contentEl.createDiv();
 		priv(view).renderFocusTasks(container);
 
-		const actions = container.findByClass('focus-first-focus-actions');
-		const removeBtn = actions?.children[1];
-		removeBtn?.dispatch('click');
+		// Order matches renderTask(): [done, focus-star, hide]. The task is
+		// already focused, so clicking the star removes the focus tag.
+		const actions = container.findByClass('focus-first-task-actions');
+		const focusBtn = actions?.children[1];
+		focusBtn?.dispatch('click', { stopPropagation: () => {} });
 		await Promise.resolve();
 		await Promise.resolve();
 

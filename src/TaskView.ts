@@ -60,11 +60,15 @@ export class FocusFirstView extends ItemView {
 
 		const header = contentEl.createDiv({ cls: 'focus-first-header' });
 		header.createEl('h4', { text: t().view.title });
-		const refreshBtn = header.createEl('button', { text: t().view.refresh, cls: 'focus-first-refresh-btn' });
+		const refreshBtn = header.createEl('button', { text: t().view.refresh, cls: 'mod-cta focus-first-refresh-btn' });
 		refreshBtn.addEventListener('click', () => { void this.refresh(); });
 
+		// Cards wrapper stacks the search + focus cards above the matrix, all
+		// sharing the same native card look (--background-secondary + border).
+		const cardsWrapper = contentEl.createDiv({ cls: 'focus-first-cards-wrapper' });
+
 		// Search area groups search input + filter panel visually
-		const searchArea = contentEl.createDiv({ cls: 'focus-first-search-area' });
+		const searchArea = cardsWrapper.createDiv({ cls: 'focus-first-search-area' });
 		const searchBar = searchArea.createDiv({ cls: 'focus-first-search-bar' });
 		const searchInput = searchBar.createEl('input', {
 			cls: 'focus-first-search-input',
@@ -97,7 +101,7 @@ export class FocusFirstView extends ItemView {
 		});
 
 		// Declare containers before closures reference them
-		const focusContainer = contentEl.createDiv({ cls: 'focus-first-focus-container' });
+		const focusContainer = cardsWrapper.createDiv({ cls: 'focus-first-focus-container' });
 		const matrixContainer = contentEl.createDiv({ cls: 'focus-first-matrix-container' });
 
 		this.renderFilterPanel(filterPanel, () => {
@@ -165,6 +169,28 @@ export class FocusFirstView extends ItemView {
 		return this.activeDateFilters.has(this.dueBucket(task) as DateBucket);
 	}
 
+	/**
+	 * Renders a section heading using Obsidian's native `.setting-item-heading`
+	 * markup so it inherits the standard settings look (bold name, muted
+	 * description, control on the right) without any bespoke styling.
+	 */
+	private renderHeading(
+		parent: HTMLElement,
+		title: string,
+		opts: { subtitle?: string; count?: number } = {},
+	): void {
+		const head = parent.createDiv({ cls: 'setting-item setting-item-heading focus-first-heading' });
+		const info = head.createDiv({ cls: 'setting-item-info' });
+		info.createDiv({ text: title, cls: 'setting-item-name' });
+		if (opts.subtitle) {
+			info.createDiv({ text: opts.subtitle, cls: 'setting-item-description' });
+		}
+		const control = head.createDiv({ cls: 'setting-item-control' });
+		if (opts.count !== undefined) {
+			control.createSpan({ text: String(opts.count), cls: 'focus-first-quadrant-count' });
+		}
+	}
+
 	private renderFocusTasks(container: HTMLElement): void {
 		container.empty();
 		const focusTag = this.plugin.settings.focusTag.trim().toLowerCase();
@@ -180,45 +206,24 @@ export class FocusFirstView extends ItemView {
 		if (focusTasks.length === 0) { container.classList.add('focus-first-hidden'); return; }
 		container.classList.remove('focus-first-hidden');
 
-		const header = container.createDiv({ cls: 'focus-first-focus-header' });
-		header.createEl('span', { text: String(t().view.focusSectionTitle), cls: 'focus-first-focus-title' });
+		this.renderHeading(container, String(t().view.focusSectionTitle));
 
-		const list = container.createEl('ul', { cls: 'focus-first-focus-list' });
-		for (const task of focusTasks) {
-			const text = task.line
-				.replace(/^[\s\-*]*\[.\]\s*/, '')
-				.replace(/(🔺|⏫|🔼|🔽|⏬)\s*/g, '')
-				.replace(/📅\s*\d{4}-\d{2}-\d{2}/g, '')
-				.replace(/#\S+/g, '')
-				.trim();
-			const li = list.createEl('li', { cls: 'focus-first-focus-item' });
-			li.createEl('span', { text, cls: 'focus-first-focus-item-text' });
-
-			// Meta + actions are hidden by default and revealed on hover via CSS —
-			// the row height never changes, everything stays on a single line.
-			const meta = li.createDiv({ cls: 'focus-first-focus-meta' });
-			if (task.priority) meta.createEl('span', { text: task.priority, cls: 'focus-first-task-priority' });
-			if (task.dueDate) {
-				meta.createEl('span', {
-					text: `📅 ${moment(task.dueDate).format('L')}`,
-					cls: 'focus-first-task-due',
-				});
+		// Render focus tasks through the exact same path as quadrant tasks so
+		// both look and behave identically. Classify them to attach the
+		// `quadrant` field that renderTask/drag-and-drop rely on, while keeping
+		// the original focus order.
+		const byQuadrant = classifyTasks(focusTasks, this.plugin.settings);
+		const matrixByKey = new Map<string, MatrixTask>();
+		for (const q of QUADRANT_ORDER) {
+			for (const mt of byQuadrant[q]) {
+				matrixByKey.set(`${mt.file.path}:${mt.lineNumber}`, mt);
 			}
-			meta.createEl('span', { text: task.file.basename, cls: 'focus-first-task-source' });
+		}
 
-			const actions = li.createDiv({ cls: 'focus-first-focus-actions' });
-			const doneBtn = actions.createEl('button', { cls: 'focus-first-task-btn' });
-			setIcon(doneBtn, 'check');
-			doneBtn.setAttribute('aria-label', String(t().view.focusDone));
-			doneBtn.addEventListener('click', () => {
-				void this.completeTask(task.file.path, task.lineNumber);
-			});
-			const removeBtn = actions.createEl('button', { cls: 'focus-first-task-btn' });
-			setIcon(removeBtn, 'star-off');
-			removeBtn.setAttribute('aria-label', String(t().view.focusRemove));
-			removeBtn.addEventListener('click', () => {
-				void this.toggleFocusTag(task.file.path, task.lineNumber, focusTag, false);
-			});
+		const list = container.createEl('ul', { cls: 'focus-first-task-list' });
+		for (const task of focusTasks) {
+			const mt = matrixByKey.get(`${task.file.path}:${task.lineNumber}`);
+			if (mt) this.renderTask(list, mt);
 		}
 	}
 
@@ -300,11 +305,7 @@ export class FocusFirstView extends ItemView {
 			const cell = matrix.createDiv({ cls: `focus-first-quadrant focus-first-quadrant--${key}` });
 			cell.setCssProps({ '--quadrant-color': this.plugin.settings.quadrants[key].color });
 			this.makeDropTarget(cell, key);
-			const cellHeader = cell.createDiv({ cls: 'focus-first-quadrant-header' });
-			const badge = cellHeader.createEl('span', { cls: 'focus-first-quadrant-badge' });
-			badge.createEl('span', { text: quadrant.title, cls: 'focus-first-quadrant-title' });
-			badge.createEl('span', { text: quadrant.subtitle, cls: 'focus-first-quadrant-subtitle' });
-			cellHeader.createEl('span', { text: String(tasks.length), cls: 'focus-first-quadrant-count' });
+			this.renderHeading(cell, quadrant.title, { subtitle: quadrant.subtitle, count: tasks.length });
 
 			if (tasks.length === 0) {
 				const emptyEl = cell.createDiv({ cls: 'focus-first-quadrant-empty' });

@@ -13,20 +13,8 @@
 	font-size: calc(var(--font-ui-large) * var(--focus-first-font-scale));
 }
 
-.focus-first-refresh-btn {
-	cursor: pointer;
-	background: none;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
-	padding: var(--size-2-2) var(--size-4-2);
-	color: var(--text-muted);
-	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
-}
-
-.focus-first-refresh-btn:hover {
-	border-color: var(--interactive-accent);
-	color: var(--text-normal);
-}
+/* Refresh uses Obsidian's native primary/CTA button (.mod-cta) — the
+   focus-first-refresh-btn class is kept only as an identification hook. */
 
 /* ── Search bar ──────────────────────────────────────────── */
 
@@ -132,130 +120,35 @@
 	flex-direction: column;
 	height: 100%;
 	overflow: hidden;
+	/* Primary surface so the --background-secondary cards stand out, matching
+	   Obsidian's native settings look regardless of where the view is docked. */
+	background: var(--background-primary);
 }
 
-/* ── Search area ─────────────────────────────────────────── */
+/* ── Cards wrapper (search + focus stacked above the matrix) ── */
 
-.focus-first-search-area {
-	background: var(--background-secondary);
+.focus-first-cards-wrapper {
 	flex-shrink: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-3);
+	padding: var(--size-4-3) var(--size-4-3) 0;
+}
+
+/* Shared card look — the same tokens Obsidian uses for its settings cards. */
+.focus-first-search-area,
+.focus-first-focus-container,
+.focus-first-quadrant {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	overflow: hidden;
 }
 
 /* ── Focus tasks section ─────────────────────────────────── */
 
-.focus-first-focus-container {
-	padding: var(--size-4-6) var(--size-4-4);
-	background: var(--background-secondary);
-	flex-shrink: 0;
-}
-
 .focus-first-focus-container.focus-first-hidden {
 	display: none;
-}
-
-.focus-first-focus-header {
-	display: flex;
-	align-items: center;
-	gap: var(--size-4-2);
-	margin-bottom: var(--size-4-2);
-}
-
-.focus-first-focus-title {
-	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
-	font-weight: var(--font-semibold);
-	color: var(--text-muted);
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-}
-
-.focus-first-focus-list {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-	display: flex;
-	flex-direction: column;
-	gap: var(--size-4-1);
-}
-
-.focus-first-focus-item {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--size-4-2);
-	padding: var(--size-4-1) var(--size-4-2);
-	border-radius: var(--radius-s);
-	background: var(--background-primary);
-}
-
-.focus-first-focus-item:hover {
-	background: var(--background-modifier-hover);
-}
-
-.focus-first-focus-item-text {
-	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
-	color: var(--text-normal);
-	flex: 0 1 auto;
-	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-/* Meta sits directly after the title; actions are pushed to the far right via
-   margin-left: auto. Both stay reserved-but-invisible until hover, so the row
-   stays a single fixed-height line — no layout shift on reveal. */
-
-.focus-first-focus-meta {
-	display: flex;
-	align-items: center;
-	gap: var(--size-2-2);
-	flex-shrink: 0;
-	white-space: nowrap;
-	opacity: 0;
-	transition: opacity 0.1s ease;
-}
-
-.focus-first-focus-actions {
-	display: flex;
-	align-items: center;
-	gap: var(--size-4-1);
-	flex-shrink: 0;
-	margin-left: auto;
-	opacity: 0;
-	transition: opacity 0.1s ease;
-}
-
-.focus-first-focus-item:hover .focus-first-focus-meta,
-.focus-first-focus-item:hover .focus-first-focus-actions {
-	opacity: 1;
-}
-
-.focus-first-focus-done,
-.focus-first-focus-remove {
-	background: none;
-	border: none;
-	cursor: pointer;
-	padding: 2px var(--size-4-1);
-	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
-	line-height: 1;
-	border-radius: var(--radius-s);
-}
-
-.focus-first-focus-done {
-	color: var(--color-green);
-}
-
-.focus-first-focus-done:hover {
-	background: var(--background-modifier-success);
-}
-
-.focus-first-focus-remove {
-	color: var(--text-muted);
-}
-
-.focus-first-focus-remove:hover {
-	color: var(--text-error);
-	background: var(--background-modifier-error);
 }
 
 /* ── Focus indicator on matrix task items ────────────────── */
@@ -288,46 +181,31 @@
 /* ── Quadrant cell ───────────────────────────────────────── */
 
 .focus-first-quadrant {
-	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
 	display: flex;
 	flex-direction: column;
-	overflow: hidden;
 }
 
-.focus-first-quadrant--do,
-.focus-first-quadrant--schedule,
-.focus-first-quadrant--delegate,
-.focus-first-quadrant--eliminate { border-top: none; }
+/* ── Section headings (native .setting-item-heading markup) ─── */
 
-.focus-first-quadrant-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--size-2-2);
+.focus-first-heading.setting-item {
 	padding: var(--size-4-2) var(--size-4-4);
-	flex-shrink: 0;
+	border-top: none;
 }
 
-.focus-first-quadrant-badge {
-	display: inline-flex;
-	align-items: baseline;
-	gap: var(--size-2-2);
-	padding: 3px var(--size-2-3);
-	border-radius: var(--radius-s);
-	background: color-mix(in srgb, var(--quadrant-color, transparent) 15%, transparent);
-	border: 1px solid color-mix(in srgb, var(--quadrant-color, transparent) 30%, transparent);
+.focus-first-heading .setting-item-name {
+	font-size: calc(var(--font-ui-medium) * var(--focus-first-font-scale));
+	color: var(--text-normal);
 }
 
-.focus-first-quadrant-title {
-	font-weight: var(--font-semibold);
-	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
+.focus-first-heading .setting-item-description {
+	font-size: calc(var(--font-ui-smaller) * var(--focus-first-font-scale));
+}
+
+.focus-first-quadrant .focus-first-heading .setting-item-name {
 	color: var(--quadrant-color, var(--text-normal));
 }
 
-.focus-first-quadrant-subtitle {
-	font-size: calc(var(--font-smallest) * var(--focus-first-font-scale));
+.focus-first-quadrant .focus-first-heading .setting-item-description {
 	color: color-mix(in srgb, var(--quadrant-color, var(--text-muted)) 70%, var(--text-muted));
 }
 
@@ -372,7 +250,9 @@
 .focus-first-task-list {
 	list-style: none;
 	margin: 0;
-	padding: var(--size-4-2) 0;
+	/* No top padding — the heading already supplies the gap above the first
+	   row, so we don't stack two paddings between title and list. */
+	padding: 0 0 var(--size-4-2);
 	overflow-y: auto;
 	flex: 1;
 }
@@ -452,11 +332,6 @@
 
 .focus-first-task-btn.is-active svg {
 	fill: var(--interactive-accent);
-}
-
-.focus-first-focus-item .focus-first-task-btn:hover {
-	background: var(--background-modifier-hover);
-	color: var(--text-normal);
 }
 
 /* ── Settings ────────────────────────────────────────────── */

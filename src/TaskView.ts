@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, MarkdownView, TFile, setIcon, debounce, moment } from 'obsidian';
+import { ItemView, WorkspaceLeaf, MarkdownView, TFile, setIcon, debounce } from 'obsidian';
 import FocusFirstPlugin from './main';
 import { scanTasks, TaskItem } from './taskScanner';
 import { classifyTasks, MatrixTask, Quadrant } from './matrixClassifier';
@@ -366,7 +366,7 @@ export class FocusFirstView extends ItemView {
 		if (task.priority) meta.createEl('span', { text: task.priority, cls: 'focus-first-task-priority' });
 		if (task.dueDate) {
 			meta.createEl('span', {
-				text: `📅 ${moment(task.dueDate).format('L')}`,
+				text: `📅 ${task.dueDate.toLocaleDateString()}`,
 				cls: 'focus-first-task-due',
 			});
 		}

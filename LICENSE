@@ -1,7 +1,41 @@
-# License
+# Focus First — License
 
-Copyright (C) 2020-2025 by Dynalist Inc.
+Copyright (c) 2026 Christian Luger. All rights reserved.
 
-Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted.
+The source code of this software (the "Software") is made publicly available for
+transparency, review, and use. The author retains all copyright and ownership of
+the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+## Grant of rights
+
+You are granted a non-exclusive, non-transferable, revocable permission to:
+
+1. install and use the Software, in its original or a modified form, for any
+   purpose, including commercial use; and
+2. modify the source code of the Software for your own personal or internal use.
+
+## Restrictions
+
+Except as expressly permitted above, you may **not**:
+
+1. distribute, publish, sublicense, sell, rent, or otherwise make available the
+   Software — or any modified or derivative version of it — in source or
+   compiled form, to any third party; or
+2. remove or alter any copyright, license, or attribution notices contained in
+   the Software.
+
+## Official distribution
+
+Distribution of the official, unmodified Software by the author — including
+through the author's own GitHub releases and the Obsidian community plugin
+directory — is performed by the author and is expressly permitted so that end
+users can download, install, and use the Software.
+
+## No warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE
+LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

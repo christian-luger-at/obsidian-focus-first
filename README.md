@@ -2,7 +2,7 @@
 
 [![Version](https://img.shields.io/github/manifest-json/v/christian-luger-at/obsidian-focus-first?color=blue&label=version)](https://github.com/christian-luger-at/obsidian-focus-first/releases)
 [![Obsidian minimum version](https://img.shields.io/badge/Obsidian-%E2%89%A5%201.12.0-7c3aed)](https://obsidian.md)
-[![License: 0BSD](https://img.shields.io/badge/license-0BSD-lightgrey)](LICENSE)
+[![License: source-available](https://img.shields.io/badge/license-source--available-lightgrey)](LICENSE)
 [![GitHub issues](https://img.shields.io/github/issues/christian-luger-at/obsidian-focus-first)](../../issues)
 
 Stop guessing what to work on next. **Focus First** sorts your Obsidian tasks into the **Eisenhower matrix** — automatically, based on due date and priority — so the next right action is always obvious.
@@ -144,4 +144,4 @@ If you find Focus First useful, you can support its development at <https://www.
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+© 2026 Christian Luger. Focus First is **source-available**: you may install, use, and privately modify it, but you may not redistribute it or publish modified versions. See [LICENSE](LICENSE) for the full terms.

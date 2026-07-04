@@ -19,7 +19,7 @@
 		"release:major": "bash release.sh --bump major --publish"
 	},
 	"keywords": [],
-	"license": "0-BSD",
+	"license": "SEE LICENSE IN LICENSE",
 	"devDependencies": {
 		"@eslint/js": "^9.39.4",
 		"@types/node": "^22.15.17",

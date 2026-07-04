@@ -1,9 +1,16 @@
-import { ItemView, WorkspaceLeaf, MarkdownView, TFile, setIcon, debounce } from 'obsidian';
+import { ItemView, WorkspaceLeaf, TFile, setIcon, debounce } from 'obsidian';
 import FocusFirstPlugin from './main';
 import { scanTasks, TaskItem } from './taskScanner';
 import { classifyTasks, MatrixTask, Quadrant } from './matrixClassifier';
 import { SortField } from './settings';
 import { t } from './i18n';
+import {
+	renderTaskItem,
+	openTaskFile,
+	completeTaskLine,
+	toggleFocusTagLine,
+	toggleHideTagLine,
+} from './taskRenderer';
 
 export const FOCUS_FIRST_VIEW_TYPE = 'focus-first-view';
 
@@ -227,52 +234,16 @@ export class FocusFirstView extends ItemView {
 		}
 	}
 
-	private async toggleFocusTag(filePath: string, lineNumber: number, focusTag: string, add: boolean): Promise<void> {
-		const file = this.app.vault.getAbstractFileByPath(filePath);
-		if (!(file instanceof TFile)) return;
-		const content = await this.app.vault.read(file);
-		const lines = content.split('\n');
-		const line = lines[lineNumber];
-		if (line === undefined) return;
-		if (add) {
-			lines[lineNumber] = line.trimEnd() + ' ' + this.plugin.settings.focusTag;
-		} else {
-			lines[lineNumber] = line
-				.split(/\s+/)
-				.filter((token) => token.toLowerCase() !== focusTag)
-				.join(' ');
-		}
-		await this.app.vault.modify(file, lines.join('\n'));
+	private toggleFocusTag(filePath: string, lineNumber: number, focusTag: string, add: boolean): Promise<void> {
+		return toggleFocusTagLine(this.app, this.plugin.settings, filePath, lineNumber, focusTag, add);
 	}
 
-	private async toggleHideTag(filePath: string, lineNumber: number, hideTag: string): Promise<void> {
-		const file = this.app.vault.getAbstractFileByPath(filePath);
-		if (!(file instanceof TFile)) return;
-		const content = await this.app.vault.read(file);
-		const lines = content.split('\n');
-		const line = lines[lineNumber];
-		if (line === undefined) return;
-		const already = line.split(/\s+/).some((token) => token.toLowerCase() === hideTag);
-		if (already) {
-			lines[lineNumber] = line
-				.split(/\s+/)
-				.filter((token) => token.toLowerCase() !== hideTag)
-				.join(' ');
-		} else {
-			lines[lineNumber] = line.trimEnd() + ' ' + this.plugin.settings.hideTag;
-		}
-		await this.app.vault.modify(file, lines.join('\n'));
+	private toggleHideTag(filePath: string, lineNumber: number, hideTag: string): Promise<void> {
+		return toggleHideTagLine(this.app, this.plugin.settings, filePath, lineNumber, hideTag);
 	}
 
-	private async completeTask(filePath: string, lineNumber: number): Promise<void> {
-		const file = this.app.vault.getAbstractFileByPath(filePath);
-		if (!(file instanceof TFile)) return;
-		const content = await this.app.vault.read(file);
-		const lines = content.split('\n');
-		const line = lines[lineNumber];
-		if (line === undefined) return;
-		lines[lineNumber] = line.replace(/\[\s\]/, '[x]');
-		await this.app.vault.modify(file, lines.join('\n'));
+	private completeTask(filePath: string, lineNumber: number): Promise<void> {
+		return completeTaskLine(this.app, filePath, lineNumber);
 	}
 
 	private renderMatrix(contentEl: HTMLElement, container: HTMLElement): void {
@@ -338,75 +309,7 @@ export class FocusFirstView extends ItemView {
 	}
 
 	private renderTask(parent: HTMLElement, task: MatrixTask): void {
-		const focusTag = this.plugin.settings.focusTag.trim().toLowerCase();
-		const isFocused = focusTag
-			? task.tags.some((tag) => tag.toLowerCase() === focusTag)
-			: false;
-		const hideTag = this.plugin.settings.hideTag.trim().toLowerCase();
-		const li = parent.createEl('li', { cls: `focus-first-task-item${isFocused ? ' is-focused' : ''}` });
-		this.makeDraggable(li, task);
-
-		const text = task.line
-			.replace(/^[\s\-*]*\[.\]\s*/, '')
-			.replace(/(🔺|⏫|🔼|🔽|⏬)\s*/g, '')
-			.replace(/📅\s*\d{4}-\d{2}-\d{2}/g, '')
-			.replace(/#\S+/g, '')
-			.trim();
-
-		// Title row — always visible
-		const titleEl = li.createEl('span', { text, cls: 'focus-first-task-text' });
-		titleEl.addEventListener('click', () => { void this.openTask(task); });
-
-		// Hover panel — visible only on hover via CSS
-		const hover = li.createDiv({ cls: 'focus-first-task-hover' });
-		const hoverInner = hover.createDiv({ cls: 'focus-first-task-hover-inner' });
-
-		// Meta row inside hover panel
-		const meta = hoverInner.createDiv({ cls: 'focus-first-task-meta' });
-		if (task.priority) meta.createEl('span', { text: task.priority, cls: 'focus-first-task-priority' });
-		if (task.dueDate) {
-			meta.createEl('span', {
-				text: `📅 ${task.dueDate.toLocaleDateString()}`,
-				cls: 'focus-first-task-due',
-			});
-		}
-		for (const tag of task.tags) {
-			meta.createEl('span', { text: tag, cls: 'focus-first-task-tag' });
-		}
-		meta.createEl('span', { text: task.file.basename, cls: 'focus-first-task-source' });
-
-		// Action buttons inside hover panel
-		const actions = hoverInner.createDiv({ cls: 'focus-first-task-actions' });
-
-		const doneBtn = actions.createEl('button', { cls: 'focus-first-task-btn' });
-		setIcon(doneBtn, 'check');
-		doneBtn.setAttribute('aria-label', String(t().view.focusDone));
-		doneBtn.addEventListener('click', (e) => {
-			e.stopPropagation();
-			void this.completeTask(task.file.path, task.lineNumber);
-		});
-
-		if (focusTag) {
-			const focusBtn = actions.createEl('button', {
-				cls: `focus-first-task-btn${isFocused ? ' is-active' : ''}`,
-			});
-			setIcon(focusBtn, 'star');
-			focusBtn.setAttribute('aria-label', String(isFocused ? t().view.focusRemove : t().view.focusAdd));
-			focusBtn.addEventListener('click', (e) => {
-				e.stopPropagation();
-				void this.toggleFocusTag(task.file.path, task.lineNumber, focusTag, !isFocused);
-			});
-		}
-
-		if (hideTag) {
-			const hideBtn = actions.createEl('button', { cls: 'focus-first-task-btn' });
-			setIcon(hideBtn, 'eye-off');
-			hideBtn.setAttribute('aria-label', String(t().view.hideTask));
-			hideBtn.addEventListener('click', (e) => {
-				e.stopPropagation();
-				void this.toggleHideTag(task.file.path, task.lineNumber, hideTag);
-			});
-		}
+		renderTaskItem(parent, task, this.app, this.plugin.settings);
 	}
 
 	private static readonly PRIORITY_ORDER = ['🔺', '⏫', '🔼', '🔽', '⏬'];
@@ -514,21 +417,6 @@ export class FocusFirstView extends ItemView {
 		}
 	}
 
-	private makeDraggable(li: HTMLElement, task: MatrixTask): void {
-		li.draggable = true;
-		li.addEventListener('dragstart', (e) => {
-			e.dataTransfer?.setData('application/json', JSON.stringify({
-				filePath: task.file.path,
-				lineNumber: task.lineNumber,
-				quadrant: task.quadrant,
-			}));
-			li.classList.add('is-dragging');
-		});
-		li.addEventListener('dragend', () => {
-			li.classList.remove('is-dragging');
-		});
-	}
-
 	private makeDropTarget(cell: HTMLElement, targetQuadrant: Quadrant): void {
 		cell.addEventListener('dragover', (e) => {
 			e.preventDefault();
@@ -583,16 +471,7 @@ export class FocusFirstView extends ItemView {
 		await this.app.vault.modify(file, lines.join('\n'));
 	}
 
-	private async openTask(task: TaskItem): Promise<void> {
-		const leaf = this.app.workspace.getLeaf(false);
-		await leaf.openFile(task.file);
-		const view = leaf.view;
-		if (view instanceof MarkdownView) {
-			view.editor.setCursor({ line: task.lineNumber, ch: 0 });
-			view.editor.scrollIntoView(
-				{ from: { line: task.lineNumber, ch: 0 }, to: { line: task.lineNumber, ch: 0 } },
-				true,
-			);
-		}
+	private openTask(task: TaskItem): Promise<void> {
+		return openTaskFile(this.app, task);
 	}
 }

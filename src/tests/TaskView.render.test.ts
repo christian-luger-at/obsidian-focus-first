@@ -394,13 +394,17 @@ describe('task item actions in the matrix', () => {
 	}
 
 	it('clicking the title opens the task', () => {
-		const { view, container } = renderSingleTaskMatrix();
-		const openSpy = vi.spyOn(priv(view), 'openTask').mockResolvedValue();
+		const { container, app } = renderSingleTaskMatrix();
+		// renderTask() delegates to the shared renderTaskItem(), whose title
+		// handler calls openTaskFile() → app.workspace.getLeaf(). Assert on that
+		// observable effect rather than on a view method.
+		const getLeaf = vi.fn(() => ({ openFile: vi.fn(async () => {}), view: undefined }));
+		app.workspace.getLeaf = getLeaf;
 
 		const titleEl = container.findByClass('focus-first-task-text');
 		titleEl?.dispatch('click');
 
-		expect(openSpy).toHaveBeenCalledOnce();
+		expect(getLeaf).toHaveBeenCalled();
 	});
 
 	it('the done button marks the task complete', async () => {

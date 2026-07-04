@@ -543,8 +543,8 @@ describe('DEFAULT_SETTINGS — quadrant structure', () => {
 		expect(DEFAULT_SETTINGS.quadrants.delegate.color).toBe('#e67700');
 	});
 
-	it('"eliminate" quadrant defaults to dark gray (#495057)', () => {
-		expect(DEFAULT_SETTINGS.quadrants.eliminate.color).toBe('#495057');
+	it('"eliminate" quadrant defaults to neutral gray (#868e96, readable in dark mode)', () => {
+		expect(DEFAULT_SETTINGS.quadrants.eliminate.color).toBe('#868e96');
 	});
 
 	it('all quadrant colors are distinct', () => {

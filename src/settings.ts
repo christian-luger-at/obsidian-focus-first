@@ -58,7 +58,7 @@ export const DEFAULT_SETTINGS: FokusFirstSettings = {
 		do:       { tag: '#do',       color: '#c92a2a', sort: { primary: 'dueDate',  secondary: 'priority' } },
 		schedule: { tag: '#schedule', color: '#1864ab', sort: { primary: 'priority', secondary: 'dueDate'  } },
 		delegate: { tag: '#delegate', color: '#e67700', sort: { primary: 'dueDate',  secondary: 'priority' } },
-		eliminate:{ tag: '#eliminate',color: '#495057', sort: { primary: 'alpha',    secondary: 'priority' } },
+		eliminate:{ tag: '#eliminate',color: '#868e96', sort: { primary: 'alpha',    secondary: 'priority' } },
 	},
 	groupByPrimary: true,
 	focusTag: '#focus',

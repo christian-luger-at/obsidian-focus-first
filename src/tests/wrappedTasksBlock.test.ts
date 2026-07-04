@@ -58,27 +58,49 @@ class FakeEl {
 // ---------------------------------------------------------------------------
 
 describe('parseTasksBlock', () => {
-	it('separates the query from the fallback line', () => {
-		const { query, fallback } = parseTasksBlock('not done\ntags include #focus\nfallback: Nothing here');
+	it('separates the query from the empty-text line (no colon)', () => {
+		const { query, emptyText } = parseTasksBlock('not done\ntags include #focus\nempty-text Nothing here');
 		expect(query).toBe('not done\ntags include #focus');
-		expect(fallback).toBe('Nothing here');
+		expect(emptyText).toBe('Nothing here');
 	});
 
-	it('returns an empty fallback when none is given', () => {
-		const { query, fallback } = parseTasksBlock('not done');
+	it('returns an empty message when none is given', () => {
+		const { query, emptyText } = parseTasksBlock('not done');
 		expect(query).toBe('not done');
-		expect(fallback).toBe('');
+		expect(emptyText).toBe('');
 	});
 
-	it('is case-insensitive and trims the fallback text', () => {
-		const { fallback } = parseTasksBlock('Fallback:   All clear!  ');
-		expect(fallback).toBe('All clear!');
+	it('is case-insensitive and trims the empty-text value', () => {
+		const { emptyText } = parseTasksBlock('Empty-Text    All clear!  ');
+		expect(emptyText).toBe('All clear!');
 	});
 
-	it('keeps the query when the fallback line comes first', () => {
-		const { query, fallback } = parseTasksBlock('fallback: none\nnot done\ndone');
+	it('keeps the query when the empty-text line comes first', () => {
+		const { query, emptyText } = parseTasksBlock('empty-text none\nnot done\ndone');
 		expect(query).toBe('not done\ndone');
-		expect(fallback).toBe('none');
+		expect(emptyText).toBe('none');
+	});
+
+	it('extracts a lower-cased "show-focus" parameter (no colon) and strips it', () => {
+		const { query, showFocus, emptyText } = parseTasksBlock('show-focus Do\nempty-text none');
+		expect(showFocus).toBe('do');
+		expect(emptyText).toBe('none');
+		expect(query).toBe('');
+	});
+
+	it('returns an empty "show-focus" when the parameter is absent', () => {
+		expect(parseTasksBlock('not done').showFocus).toBe('');
+	});
+
+	it('leaves a plain "show" line in the query (Tasks instructions pass through)', () => {
+		// `show tree` / `show urgency` are Tasks-plugin instructions, not ours.
+		const { query, showFocus } = parseTasksBlock('not done\nshow tree');
+		expect(showFocus).toBe('');
+		expect(query).toBe('not done\nshow tree');
+	});
+
+	it('captures any "show-focus" value so an invalid section can be reported', () => {
+		expect(parseTasksBlock('show-focus nope').showFocus).toBe('nope');
 	});
 });
 

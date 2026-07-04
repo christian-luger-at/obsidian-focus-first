@@ -84,6 +84,7 @@ interface Translations {
 	};
 	tasksBlock: {
 		missing: string;
+		invalidShow: string;
 	};
 }
 
@@ -214,6 +215,7 @@ const translations: Record<Lang, Translations> = {
 		},
 		tasksBlock: {
 			missing: 'The Tasks plugin must be installed and enabled to use this block.',
+			invalidShow: 'Unknown "show-focus" section. Use: focus, do, schedule, delegate, or eliminate.',
 		},
 	},
 	de: {
@@ -342,6 +344,7 @@ const translations: Record<Lang, Translations> = {
 		},
 		tasksBlock: {
 			missing: 'Für diesen Block muss das Tasks-Plugin installiert und aktiviert sein.',
+			invalidShow: 'Unbekannte "show-focus"-Sektion. Erlaubt: focus, do, schedule, delegate oder eliminate.',
 		},
 	},
 };

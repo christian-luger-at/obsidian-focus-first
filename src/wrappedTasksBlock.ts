@@ -5,47 +5,56 @@ import { t } from './i18n';
 const TASKS_PLUGIN_ID = 'obsidian-tasks-plugin';
 
 /**
- * Splits the code-block body into a Tasks-plugin query and an optional
- * fallback message. Any line of the form `fallback: <text>` defines the
- * fallback; every other line is passed through as the query.
+ * Splits the code-block body into its parameters and the Tasks-plugin query.
+ * Parameters use a `key value` form (no colon):
+ *   empty-text <text>       — message shown when nothing matches
+ *   show-focus <section>    — render a Focus First data section instead of a
+ *                             raw query (focus | do | schedule | delegate |
+ *                             eliminate)
+ * `show-focus` is a distinct key that never collides with Tasks-plugin
+ * instructions (e.g. `show tree`), so those pass through as part of the query.
+ * Every other line is part of the query.
  */
-export function parseTasksBlock(source: string): { query: string; fallback: string } {
+export function parseTasksBlock(source: string): { query: string; emptyText: string; showFocus: string } {
 	const queryLines: string[] = [];
-	let fallback = '';
+	let emptyText = '';
+	let showFocus = '';
 	for (const raw of source.split('\n')) {
-		const m = /^\s*fallback\s*:\s*(.*)$/i.exec(raw);
-		if (m) { fallback = (m[1] ?? '').trim(); continue; }
+		const showMatch = /^\s*show-focus\s+(\S+)\s*$/i.exec(raw);
+		if (showMatch) { showFocus = (showMatch[1] ?? '').toLowerCase(); continue; }
+		const emptyMatch = /^\s*empty-text\s+(.*)$/i.exec(raw);
+		if (emptyMatch) { emptyText = (emptyMatch[1] ?? '').trim(); continue; }
 		queryLines.push(raw);
 	}
-	return { query: queryLines.join('\n').trim(), fallback };
+	return { query: queryLines.join('\n').trim(), emptyText, showFocus };
 }
 
 /**
  * A code block that wraps the Tasks plugin's ```tasks``` block: it renders the
- * given query through the Tasks plugin and shows a custom fallback message when
- * the query returns no tasks.
+ * given query through the Tasks plugin and shows a custom empty-text message
+ * when the query returns no tasks.
  *
  * The Tasks plugin resolves queries asynchronously, so we render the query as a
  * native ```tasks``` block (Obsidian routes it to the Tasks processor) and watch
- * the result subtree with a MutationObserver to decide about the fallback once
+ * the result subtree with a MutationObserver to decide about the message once
  * the output has settled.
  */
 export class WrappedTasksBlock extends MarkdownRenderChild {
 	private plugin: FocusFirstPlugin;
 	private query: string;
-	private fallback: string;
+	private emptyText: string;
 	private sourcePath: string;
 	private resultEl?: HTMLElement;
 	private observer?: MutationObserver;
 	private safetyTimer?: number;
-	private evaluate = debounce(() => this.updateFallback(), 100);
+	private evaluate = debounce(() => this.updateEmptyText(), 100);
 
 	constructor(containerEl: HTMLElement, plugin: FocusFirstPlugin, source: string, sourcePath: string) {
 		super(containerEl);
 		this.plugin = plugin;
-		const { query, fallback } = parseTasksBlock(source);
+		const { query, emptyText } = parseTasksBlock(source);
 		this.query = query;
-		this.fallback = fallback;
+		this.emptyText = emptyText;
 		this.sourcePath = sourcePath;
 	}
 
@@ -80,18 +89,18 @@ export class WrappedTasksBlock extends MarkdownRenderChild {
 		this.observer = new MutationObserver(() => this.evaluate());
 		this.observer.observe(this.resultEl, { childList: true, subtree: true });
 		this.evaluate();
-		this.safetyTimer = window.setTimeout(() => this.updateFallback(), 600);
+		this.safetyTimer = window.setTimeout(() => this.updateEmptyText(), 600);
 	}
 
-	/** Shows the fallback when the rendered query produced no task items. */
-	private updateFallback(): void {
+	/** Shows the empty-text message when the rendered query produced no task items. */
+	private updateEmptyText(): void {
 		if (!this.resultEl) return;
 		const hasResults = this.resultEl.querySelector('.task-list-item, .plugin-tasks-list-item') !== null;
-		const existing = this.containerEl.querySelector('.focus-first-tasks-fallback');
+		const existing = this.containerEl.querySelector('.focus-first-tasks-empty');
 		if (hasResults) {
 			existing?.remove();
-		} else if (!existing && this.fallback) {
-			this.containerEl.createEl('p', { text: this.fallback, cls: 'focus-first-tasks-fallback' });
+		} else if (!existing && this.emptyText) {
+			this.containerEl.createEl('p', { text: this.emptyText, cls: 'focus-first-tasks-empty' });
 		}
 	}
 

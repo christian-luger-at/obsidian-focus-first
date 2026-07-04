@@ -129,10 +129,15 @@
 /* The task list itself is rendered by the Tasks plugin (native styling); we
    only style the fallback / "plugin missing" messages. */
 
-.focus-first-tasks-fallback,
+.focus-first-tasks-empty,
 .focus-first-tasks-missing {
 	margin: 0;
 	color: var(--text-muted);
+}
+
+/* Native checklist for `show:` sections — inherits the note's task-list look. */
+.focus-first-tasks-list {
+	margin: 0;
 }
 
 /* ── Cards wrapper (search + focus stacked above the matrix) ── */

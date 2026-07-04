@@ -6,7 +6,8 @@ import {
 } from './settings';
 import { t } from './i18n';
 import { FocusFirstView, FOCUS_FIRST_VIEW_TYPE } from './TaskView';
-import { WrappedTasksBlock } from './wrappedTasksBlock';
+import { WrappedTasksBlock, parseTasksBlock } from './wrappedTasksBlock';
+import { FocusDataBlock, isFocusSection } from './focusDataBlock';
 
 export default class FocusFirstPlugin extends Plugin {
 	settings!: FokusFirstSettings;
@@ -33,14 +34,19 @@ export default class FocusFirstPlugin extends Plugin {
 
 		this.addSettingTab(new FokusFirstSettingTab(this.app, this));
 
-		// Wraps the Tasks plugin's ```tasks``` block and adds a fallback message
-		// shown when the query returns no tasks:
-		//   ```focus-first-tasks
-		//   not done
-		//   tags include #focus
-		//   fallback: Nothing to focus on
-		//   ```
+		// A ```focus-first-tasks``` block either renders a Focus First data section
+		// (`show-focus focus|do|schedule|delegate|eliminate`) or wraps a raw Tasks
+		// query. Both support an `empty-text <message>` shown when nothing matches.
 		this.registerMarkdownCodeBlockProcessor('focus-first-tasks', (source, el, ctx) => {
+			const { showFocus, emptyText } = parseTasksBlock(source);
+			if (showFocus) {
+				if (isFocusSection(showFocus)) {
+					ctx.addChild(new FocusDataBlock(el, this, showFocus, emptyText));
+				} else {
+					el.createEl('p', { text: t().tasksBlock.invalidShow, cls: 'focus-first-tasks-missing' });
+				}
+				return;
+			}
 			ctx.addChild(new WrappedTasksBlock(el, this, source, ctx.sourcePath));
 		});
 	}

@@ -316,6 +316,7 @@ describe('loadSettings — merges persisted data with defaults', () => {
 			focusTag: '#focus',
 			hideTag: '#hide',
 			fontSize: 120,
+			tasksPluginWarningDismissed: true,
 		};
 		const merged = Object.assign({}, DEFAULT_SETTINGS, persisted);
 

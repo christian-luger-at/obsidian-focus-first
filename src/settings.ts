@@ -45,6 +45,8 @@ export interface FocusFirstSettings {
 	focusTag: string;
 	hideTag: string;
 	fontSize: number;
+	/** Set once the user dismisses the "Tasks plugin not enabled" notice. */
+	tasksPluginWarningDismissed: boolean;
 }
 
 export const DEFAULT_SETTINGS: FocusFirstSettings = {
@@ -62,6 +64,7 @@ export const DEFAULT_SETTINGS: FocusFirstSettings = {
 	focusTag: '#focus',
 	hideTag: '#hide',
 	fontSize: 100,
+	tasksPluginWarningDismissed: false,
 };
 
 export class FolderSuggest extends AbstractInputSuggest<TFolder> {

@@ -57,6 +57,14 @@ class FakeEl {
 
 	empty() { this.children = []; }
 
+	remove() {
+		const siblings = this.parentEl?.children;
+		if (siblings) {
+			const i = siblings.indexOf(this);
+			if (i >= 0) siblings.splice(i, 1);
+		}
+	}
+
 	createDiv(o?: { cls?: string; text?: string }) { return this.createEl('div', o); }
 	createSpan(o?: { cls?: string; text?: string }) { return this.createEl('span', o); }
 
@@ -147,7 +155,7 @@ function makeView(settings: Partial<FocusFirstSettings> = {}, tasks: TaskItem[] 
 	};
 	const app = { vault, workspace };
 	const leaf = { app };
-	const plugin = { settings: { ...DEFAULT_SETTINGS, ...settings } };
+	const plugin = { settings: { ...DEFAULT_SETTINGS, ...settings }, saveSettings: vi.fn(async () => {}) };
 	// @ts-expect-error — stub leaf/plugin, not real Obsidian types
 	const view = new FocusFirstView(leaf, plugin);
 	const contentEl = new FakeEl('div');
@@ -182,6 +190,39 @@ describe('render()', () => {
 		expect(contentEl.findByClass('focus-first-search-bar')).toBeDefined();
 		expect(contentEl.findByClass('focus-first-focus-container')).toBeDefined();
 		expect(contentEl.findByClass('focus-first-matrix-container')).toBeDefined();
+	});
+
+	it('warns when the Tasks plugin is not enabled', () => {
+		const { view, contentEl } = makeView(); // stub app has no plugins → not enabled
+		priv(view).render();
+		expect(contentEl.findByClass('focus-first-warning')).toBeDefined();
+	});
+
+	it('does not warn when the Tasks plugin is enabled', () => {
+		const { view, contentEl, app } = makeView();
+		(app as unknown as { plugins: { enabledPlugins: Set<string> } }).plugins = {
+			enabledPlugins: new Set(['obsidian-tasks-plugin']),
+		};
+		priv(view).render();
+		expect(contentEl.findByClass('focus-first-warning')).toBeUndefined();
+	});
+
+	it('dismissing the warning removes it and persists the choice', () => {
+		const { view, contentEl, plugin } = makeView();
+		priv(view).render();
+		expect(contentEl.findByClass('focus-first-warning')).toBeDefined();
+
+		contentEl.findByClass('focus-first-warning-dismiss')?.dispatch('click');
+
+		expect(plugin.settings.tasksPluginWarningDismissed).toBe(true);
+		expect(plugin.saveSettings).toHaveBeenCalled();
+		expect(contentEl.findByClass('focus-first-warning')).toBeUndefined();
+	});
+
+	it('does not warn again once the notice was dismissed', () => {
+		const { view, contentEl } = makeView({ tasksPluginWarningDismissed: true });
+		priv(view).render();
+		expect(contentEl.findByClass('focus-first-warning')).toBeUndefined();
 	});
 
 	it('clicking refresh triggers a refresh', () => {

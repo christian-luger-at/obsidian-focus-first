@@ -1,8 +1,7 @@
 import { MarkdownRenderChild, MarkdownRenderer, debounce } from 'obsidian';
 import FocusFirstPlugin from './main';
+import { isTasksPluginEnabled } from './tasksPlugin';
 import { t } from './i18n';
-
-const TASKS_PLUGIN_ID = 'obsidian-tasks-plugin';
 
 /**
  * Splits the code-block body into its parameters and the Tasks-plugin query.
@@ -74,7 +73,7 @@ export class WrappedTasksBlock extends MarkdownRenderChild {
 
 		// A ```tasks``` block only works when the Tasks plugin is active —
 		// otherwise Obsidian would just print it as raw text.
-		if (!this.isTasksPluginEnabled()) {
+		if (!isTasksPluginEnabled(this.plugin.app)) {
 			el.createEl('p', { text: String(t().tasksBlock.missing), cls: 'focus-first-tasks-missing' });
 			return;
 		}
@@ -104,14 +103,4 @@ export class WrappedTasksBlock extends MarkdownRenderChild {
 		}
 	}
 
-	private isTasksPluginEnabled(): boolean {
-		// `app.plugins` is not part of Obsidian's public API typings, but there is
-		// no official way to detect whether another plugin is enabled. We read it
-		// defensively (optional chaining + fallback) so a future API change can
-		// only make this return false, never throw.
-		const plugins = (this.plugin.app as unknown as {
-			plugins?: { enabledPlugins?: Set<string> };
-		}).plugins;
-		return plugins?.enabledPlugins?.has(TASKS_PLUGIN_ID) ?? false;
-	}
 }

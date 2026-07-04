@@ -3,6 +3,7 @@ import FocusFirstPlugin from './main';
 import { scanTasks, TaskItem } from './taskScanner';
 import { classifyTasks, MatrixTask, Quadrant } from './matrixClassifier';
 import { SortField } from './settings';
+import { isTasksPluginEnabled } from './tasksPlugin';
 import { t } from './i18n';
 import {
 	renderTaskItem,
@@ -68,6 +69,25 @@ export class FocusFirstView extends ItemView {
 		const header = contentEl.createDiv({ cls: 'focus-first-header' });
 		header.createEl('h4', { text: t().view.title });
 		const refreshBtn = header.createEl('button', { text: t().view.refresh, cls: 'mod-cta focus-first-refresh-btn' });
+
+		// Focus First works standalone, but the Tasks plugin makes creating dated
+		// and prioritised tasks much easier — nudge the user if it's missing,
+		// unless they've dismissed the notice.
+		if (!isTasksPluginEnabled(this.app) && !this.plugin.settings.tasksPluginWarningDismissed) {
+			const warning = contentEl.createDiv({ cls: 'focus-first-warning' });
+			const icon = warning.createSpan({ cls: 'focus-first-warning-icon' });
+			setIcon(icon, 'alert-triangle');
+			warning.createSpan({ text: String(t().view.tasksPluginWarning), cls: 'focus-first-warning-text' });
+
+			const dismiss = warning.createEl('button', { cls: 'focus-first-warning-dismiss' });
+			setIcon(dismiss, 'x');
+			dismiss.setAttribute('aria-label', String(t().view.tasksPluginWarningDismiss));
+			dismiss.addEventListener('click', () => {
+				this.plugin.settings.tasksPluginWarningDismissed = true;
+				void this.plugin.saveSettings();
+				warning.remove();
+			});
+		}
 		refreshBtn.addEventListener('click', () => { void this.refresh(); });
 
 		// Cards wrapper stacks the search + focus cards above the matrix, all

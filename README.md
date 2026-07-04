@@ -3,6 +3,7 @@
 [![Version](https://img.shields.io/github/manifest-json/v/christian-luger-at/obsidian-focus-first?color=blue&label=version)](https://github.com/christian-luger-at/obsidian-focus-first/releases)
 [![Obsidian minimum version](https://img.shields.io/badge/Obsidian-%E2%89%A5%201.12.0-7c3aed)](https://obsidian.md)
 [![License: source-available](https://img.shields.io/badge/license-source--available-lightgrey)](LICENSE)
+[![Coverage](https://raw.githubusercontent.com/christian-luger-at/obsidian-focus-first/badges/coverage.svg)](https://github.com/christian-luger-at/obsidian-focus-first/actions/workflows/coverage.yml)
 [![GitHub issues](https://img.shields.io/github/issues/christian-luger-at/obsidian-focus-first)](../../issues)
 
 Stop guessing what to work on next. **Focus First** sorts your Obsidian tasks into the **Eisenhower matrix** — automatically, based on due date and priority — so the next right action is always obvious.

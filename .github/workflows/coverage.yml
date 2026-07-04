@@ -1,0 +1,47 @@
+name: Coverage
+
+on:
+    push:
+        branches: [main]
+
+# Needed to push the generated badge to the 'badges' branch.
+permissions:
+    contents: write
+
+jobs:
+    coverage:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 25.x
+                  cache: 'npm'
+            - run: npm ci
+            - run: npm run test:coverage
+            - name: Generate coverage badge
+              run: node scripts/coverage-badge.mjs /tmp/coverage.svg
+            - name: Publish badge to 'badges' branch
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+                  # Check out (or create) an orphan 'badges' branch that only holds the badge,
+                  # so the main history stays clean. This is the last step, so replacing the
+                  # working tree here is fine.
+                  if git ls-remote --exit-code --heads origin badges >/dev/null 2>&1; then
+                      git fetch origin badges
+                      git checkout -B badges origin/badges
+                  else
+                      git checkout --orphan badges
+                      git rm -rf . >/dev/null 2>&1 || true
+                  fi
+
+                  cp /tmp/coverage.svg coverage.svg
+                  git add coverage.svg
+                  if git diff --cached --quiet; then
+                      echo "Coverage badge unchanged — nothing to push."
+                  else
+                      git commit -m "chore: update coverage badge [skip ci]"
+                      git push origin badges
+                  fi

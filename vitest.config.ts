@@ -12,6 +12,8 @@ export default defineConfig({
 			include: ['src/**/*.ts'],
 			exclude: ['src/tests/**'],
 			all: true,
+			// text: console report; json-summary: consumed by the coverage badge CI.
+			reporter: ['text', 'json-summary'],
 		},
 	},
 });

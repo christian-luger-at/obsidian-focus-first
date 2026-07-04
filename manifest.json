@@ -6,6 +6,8 @@
 	"description": "Prioritize your tasks with the Eisenhower matrix.",
 	"author": "Christian Luger",
 	"authorUrl": "https://www.christian-luger.at",
-	"fundingUrl": "https://www.christian-luger.at/pricing",
+	"fundingUrl": {
+		"Buy Me a Coffee": "https://buymeacoffee.com/christianlugerat"
+	},
 	"isDesktopOnly": false
 }

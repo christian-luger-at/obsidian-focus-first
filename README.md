@@ -116,8 +116,6 @@ See **[docs/code-block.md](docs/code-block.md)** for both modes, all parameters,
 
 Found a bug or have a feature request? Please [open an issue](../../issues).
 
-If you find Focus First useful, you can support its development at <https://www.christian-luger.at/pricing>.
-
 ## License
 
 © 2026 Christian Luger. Focus First is **source-available**: you may install, use, and privately modify it, but you may not redistribute it or publish modified versions. See [LICENSE](LICENSE) for the full terms.

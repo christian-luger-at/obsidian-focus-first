@@ -1,11 +1,13 @@
 import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
 	test: {
 		environment: 'node',
 		include: ['src/tests/**/*.test.ts'],
 		alias: {
-			obsidian: '/Users/christian/dev/obsidian-focus-first/src/tests/__mocks__/obsidian.ts',
+			// Resolve relative to this config so it works on any machine / in CI.
+			obsidian: fileURLToPath(new URL('./src/tests/__mocks__/obsidian.ts', import.meta.url)),
 		},
 		coverage: {
 			provider: 'v8',

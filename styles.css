@@ -125,36 +125,6 @@
 	background: var(--background-primary);
 }
 
-/* ── Embedded focus list (```focus-first``` code block in a note) ── */
-
-.focus-first-embed {
-	--focus-first-font-scale: 1;
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
-	overflow: hidden;
-}
-
-.focus-first-embed-header {
-	display: flex;
-	align-items: center;
-	gap: var(--size-4-2);
-	padding: var(--size-4-2) var(--size-4-4);
-}
-
-.focus-first-embed-title {
-	font-size: calc(var(--font-ui-medium) * var(--focus-first-font-scale));
-	font-weight: var(--font-semibold);
-	color: var(--text-normal);
-}
-
-.focus-first-embed-empty {
-	margin: 0;
-	padding: 0 var(--size-4-4) var(--size-4-3);
-	color: var(--text-muted);
-	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
-}
-
 /* ── Cards wrapper (search + focus stacked above the matrix) ── */
 
 .focus-first-cards-wrapper {

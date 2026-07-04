@@ -28,7 +28,6 @@ interface Translations {
 		focusAdd: string;
 		focusRemove: string;
 		focusDone: string;
-		focusEmpty: string;
 		hideTask: string;
 		unhideTask: string;
 		quadrants: {
@@ -115,7 +114,6 @@ const translations: Record<Lang, Translations> = {
 			focusAdd: 'Add to focus',
 			focusRemove: 'Remove from focus',
 			focusDone: 'Mark as done',
-			focusEmpty: 'No focus tasks.',
 			hideTask: 'Hide task',
 			unhideTask: 'Unhide task',
 			quadrants: {
@@ -243,7 +241,6 @@ const translations: Record<Lang, Translations> = {
 			hideTask: 'Aufgabe ausblenden',
 			unhideTask: 'Aufgabe einblenden',
 			focusDone: 'Als erledigt markieren',
-			focusEmpty: 'Keine Fokus-Aufgaben.',
 			quadrants: {
 				do:       { title: 'Erledigen',  subtitle: 'Dringend · Wichtig',             emptyState: 'Aktuell nichts Dringendes' },
 				schedule: { title: 'Einplanen',  subtitle: 'Nicht dringend · Wichtig',        emptyState: 'Keine wichtigen Aufgaben ausstehend' },

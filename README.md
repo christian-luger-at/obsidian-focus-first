@@ -23,7 +23,6 @@ No manual sorting required — classification happens automatically based on eac
 - **Automatic classification** — tasks are sorted into quadrants based on their due date (urgency) and priority (importance), no setup needed beyond your existing Tasks-plugin workflow.
 - **Manual quadrant tags** — add a tag like `#do` or `#eliminate` to any task to pin it to a quadrant, overriding the automatic logic.
 - **Focus Tasks** — tag a task with `#focus` to pin it in a dedicated section above the matrix, so your top priorities never get buried.
-- **Embed in any note** — drop a `focus-first` code block into a daily or project note to render your focus tasks inline — fully interactive (done / focus / hide, click to open) and auto-updating.
 - **Hide tasks** — tag a task with `#hide` (or use the hide button) to remove it from the matrix without completing it — useful for tasks you're not ready to act on yet.
 - **Drag & drop** — drag a task between quadrants to instantly re-tag it.
 - **Search & filters** — search across all visible tasks, or filter by due-date bucket (overdue, today, this week, upcoming, no date).
@@ -66,17 +65,6 @@ A task without a due date is never automatically urgent. A task without a priori
 ### Overriding the automatic classification
 
 Each quadrant has a configurable tag (defaults: `#do`, `#schedule`, `#delegate`, `#eliminate`). Adding that tag to a task always places it in the matching quadrant, regardless of its due date or priority. This is useful for tasks that don't fit the urgent/important model — for example, a low-priority task you've manually decided needs immediate attention.
-
-## Embedding the focus list in a note
-
-You can render your **Focus Tasks** directly inside any note — handy for a daily note or a project dashboard. Add a `focus-first` code block:
-
-````markdown
-```focus-first
-```
-````
-
-The block renders the same interactive focus-task list as the view: click a task to open it, use the hover buttons to mark it done, toggle focus, or hide it — and the list refreshes automatically whenever a task changes. It respects your configured focus tag, hide tag, and font size. (The block body is currently ignored, so it can stay empty.)
 
 ## Settings overview
 

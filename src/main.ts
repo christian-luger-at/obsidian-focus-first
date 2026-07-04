@@ -6,7 +6,6 @@ import {
 } from './settings';
 import { t } from './i18n';
 import { FocusFirstView, FOCUS_FIRST_VIEW_TYPE } from './TaskView';
-import { EmbeddedFocusList } from './embeddedFocusList';
 
 export default class FocusFirstPlugin extends Plugin {
 	settings!: FokusFirstSettings;
@@ -32,13 +31,6 @@ export default class FocusFirstPlugin extends Plugin {
 		});
 
 		this.addSettingTab(new FokusFirstSettingTab(this.app, this));
-
-		// Lets users embed the focus-task list into any note via a code block:
-		//   ```focus-first
-		//   ```
-		this.registerMarkdownCodeBlockProcessor('focus-first', (_source, el, ctx) => {
-			ctx.addChild(new EmbeddedFocusList(el, this));
-		});
 	}
 
 	onunload() {

@@ -1,7 +1,7 @@
 {
 	"id": "focus-first",
 	"name": "Focus First",
-	"version": "0.9.1",
+	"version": "1.0.0",
 	"minAppVersion": "1.12.0",
 	"description": "Prioritize your tasks with the Eisenhower matrix.",
 	"author": "Christian Luger",

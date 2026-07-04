@@ -27,7 +27,7 @@ export default class FocusFirstPlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: 'open-focus-first',
+			id: 'open-view',
 			name: t().commands.openView.name,
 			callback: async () => await this.activateView(),
 		});

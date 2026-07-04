@@ -221,7 +221,7 @@ describe('FocusFirstPlugin — onload', () => {
 		expect(revealLeaf).toHaveBeenCalled();
 	});
 
-	it('registers the "open-focus-first" command whose callback activates the view', async () => {
+	it('registers the "open-view" command whose callback activates the view', async () => {
 		const revealLeaf = vi.fn();
 		const app = {
 			workspace: {
@@ -234,7 +234,7 @@ describe('FocusFirstPlugin — onload', () => {
 		await plugin.onload();
 
 		const cmd = withMockExtras(plugin).lastCommand;
-		expect(cmd?.id).toBe('open-focus-first');
+		expect(cmd?.id).toBe('open-view');
 		await cmd?.callback?.();
 
 		expect(revealLeaf).toHaveBeenCalled();

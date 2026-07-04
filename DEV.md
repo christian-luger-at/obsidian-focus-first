@@ -255,38 +255,58 @@ Either way, the release is now visible on GitHub with the three files as downloa
 > [!tip]
 > To install the release in Obsidian manually: download all three files and place them in `.obsidian/plugins/focus-first/` inside your vault.
 
-## Publish to the Community Plugins store
+## Submit the plugin to the Obsidian Community store
 
-The store serves the very same GitHub release artifacts, so a single correctly-tagged release (see step 3 — tag **without** the `v` prefix) covers both manual installs and the store.
+Getting the plugin into the in-app **Community Plugins** browser is a **one-time** pull request against Obsidian's registry. The store serves the very same GitHub release artifacts, so a single correctly-tagged release (see step 3 above — tag **without** the `v` prefix) covers both manual installs and the store.
+
+### Before you submit — checklist
+
+Submissions are checked by an automated bot **and** a human reviewer. Make sure:
+
+- **`manifest.json`** sits in the repo root with a unique `id` (lowercase, hyphenated, no spaces, and must not contain `obsidian` or `plugin`), a `name` that doesn't start with "Obsidian", a concise `description` that doesn't start with the plugin name, plus `author`, `minAppVersion`, and `isDesktopOnly`.
+- **`versions.json`** maps each released plugin version to its minimum Obsidian version.
+- A **`LICENSE`** file and a **`README.md`** (what it does + how to use it) exist.
+- No leftover sample-plugin code, no `console.log`, no obfuscated code — the source is public and reviewable.
+- A **GitHub release** exists whose **tag equals the `manifest.json` version exactly, with no `v` prefix** (e.g. `1.0.0`), with `main.js`, `manifest.json`, and `styles.css` attached as assets.
+
+Run `npm run lint` and `npm test`, then cut the release with `npm run release:publish` (or `release:patch` / `release:minor` / `release:major`).
 
 ### First-time submission (one-off)
 
-1. Publish a release whose tag equals the manifest version without a `v` prefix (`npm run release:publish` does this), with `main.js`, `manifest.json`, and `styles.css` attached.
-2. Fork [`obsidianmd/obsidian-releases`](https://github.com/obsidianmd/obsidian-releases) and append an entry to `community-plugins.json`:
+1. Cut the release (above) so the tag and the three assets exist.
+2. Fork [`obsidianmd/obsidian-releases`](https://github.com/obsidianmd/obsidian-releases) and append your plugin to the **end** of `community-plugins.json`:
 
    ```json
    {
      "id": "focus-first",
      "name": "Focus First",
      "author": "Christian Luger",
-     "description": "Focus First helps you prioritize your tasks with the Eisenhower matrix.",
+     "description": "Prioritize your tasks with the Eisenhower matrix.",
      "repo": "christian-luger-at/obsidian-focus-first"
    }
    ```
 
-3. Open a pull request. An automated bot validates the repo (root `manifest.json`, a release tagged with the exact version and the three files, valid `minAppVersion`, `versions.json`, etc.), followed by a manual review.
+   - `repo` is the `user/repo` slug — **not** a full URL.
+   - Keep the JSON valid and don't reorder existing entries.
+3. Open a **pull request** to `obsidianmd/obsidian-releases` and fill in the PR template (it asks you to confirm the checklist).
+4. The **automated bot** validates the repo and release — fix anything it flags. Then a **maintainer reviews the code manually**; depending on the queue this can take days to a few weeks.
+5. Once the PR is merged, the plugin shows up in **Settings → Community plugins → Browse** for everyone.
 
 ### Ongoing updates (after acceptance)
 
-1. Bump `manifest.json` **and** `versions.json` (the `--bump` flag does both).
-2. Publish a new release tagged with the exact new version, no `v` prefix, with the three files — e.g. `npm run release:patch` / `release:minor` / `release:major`.
-3. No further PR is needed; Obsidian clients detect the new release automatically.
+No further PR is ever needed. For each update:
 
-> [!note]
-> The existing `v1.x` tags can stay — the store only cares that current and future releases are tagged without the `v` prefix.
+1. Bump `manifest.json` **and** `versions.json` (the `--bump` flag does both).
+2. Cut a new release tagged with the exact new version, no `v` prefix, with the three assets — e.g. `npm run release:patch` / `release:minor` / `release:major`.
+3. Obsidian clients detect the new release automatically and offer the update.
+
+> [!important]
+> The plugin `id` is **permanent** once accepted — changing it later breaks users' saved settings and the update path. Double-check `id` (and that it's unique in `community-plugins.json`) before submitting.
 
 ## Additional resources
 
 - [Obsidian Sample Plugin](https://github.com/obsidianmd/obsidian-sample-plugin)
 - [Obsidian API Docs](https://docs.obsidian.md)
 - [Obsidian Plugin Guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines)
+- [Submit your plugin (official guide)](https://docs.obsidian.md/Plugins/Releasing/Submit+your+plugin)
+- [Community plugins registry (`obsidian-releases`)](https://github.com/obsidianmd/obsidian-releases)

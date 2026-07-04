@@ -6,9 +6,8 @@ import { t } from './i18n';
 
 /**
  * Shared task-item rendering and the vault-mutating helpers behind its action
- * buttons. Extracted from FocusFirstView so the same interactive task rows can
- * be reused elsewhere (e.g. the embedded `focus-first` code block) without
- * depending on the view/leaf. Everything here needs only `app` + `settings`.
+ * buttons. Kept separate from FocusFirstView so the rendering only needs
+ * `app` + `settings` rather than the view/leaf.
  */
 
 export function makeTaskDraggable(li: HTMLElement, task: MatrixTask): void {

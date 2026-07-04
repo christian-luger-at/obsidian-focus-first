@@ -82,6 +82,9 @@ interface Translations {
 		later: string;
 		noDate: string;
 	};
+	tasksBlock: {
+		missing: string;
+	};
 }
 
 const translations: Record<Lang, Translations> = {
@@ -209,6 +212,9 @@ const translations: Record<Lang, Translations> = {
 			later: 'Later',
 			noDate: 'No due date',
 		},
+		tasksBlock: {
+			missing: 'The Tasks plugin must be installed and enabled to use this block.',
+		},
 	},
 	de: {
 		ribbon: { tooltip: 'Focus First' },
@@ -333,6 +339,9 @@ const translations: Record<Lang, Translations> = {
 			upcoming: 'Nächste 14 Tage',
 			later: 'Später',
 			noDate: 'Kein Datum',
+		},
+		tasksBlock: {
+			missing: 'Für diesen Block muss das Tasks-Plugin installiert und aktiviert sein.',
 		},
 	},
 };

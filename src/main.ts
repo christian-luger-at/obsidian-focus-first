@@ -6,6 +6,7 @@ import {
 } from './settings';
 import { t } from './i18n';
 import { FocusFirstView, FOCUS_FIRST_VIEW_TYPE } from './TaskView';
+import { WrappedTasksBlock } from './wrappedTasksBlock';
 
 export default class FocusFirstPlugin extends Plugin {
 	settings!: FokusFirstSettings;
@@ -31,6 +32,17 @@ export default class FocusFirstPlugin extends Plugin {
 		});
 
 		this.addSettingTab(new FokusFirstSettingTab(this.app, this));
+
+		// Wraps the Tasks plugin's ```tasks``` block and adds a fallback message
+		// shown when the query returns no tasks:
+		//   ```focus-first-tasks
+		//   not done
+		//   tags include #focus
+		//   fallback: Nothing to focus on
+		//   ```
+		this.registerMarkdownCodeBlockProcessor('focus-first-tasks', (source, el, ctx) => {
+			ctx.addChild(new WrappedTasksBlock(el, this, source, ctx.sourcePath));
+		});
 	}
 
 	onunload() {

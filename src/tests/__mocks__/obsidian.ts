@@ -32,9 +32,30 @@ export class Plugin {
 	addSettingTab(tab: unknown) { this.lastSettingTab = tab; }
 	registerView(_type: string, viewCreator: (leaf: unknown) => unknown) { this.lastViewCreator = viewCreator; }
 	registerEvent(_eventRef: unknown) {}
+	lastCodeBlockLang?: string;
+	lastCodeBlockProcessor?: (source: string, el: unknown, ctx: unknown) => unknown;
+	registerMarkdownCodeBlockProcessor(lang: string, processor: (source: string, el: unknown, ctx: unknown) => unknown) {
+		this.lastCodeBlockLang = lang;
+		this.lastCodeBlockProcessor = processor;
+	}
 	async loadData(): Promise<unknown> { return undefined; }
 	async saveData(_data: unknown): Promise<void> {}
 }
+
+export class MarkdownRenderChild {
+	containerEl: HTMLElement;
+	constructor(containerEl: HTMLElement) {
+		this.containerEl = containerEl;
+	}
+	registerEvent(_eventRef: unknown) {}
+	register(_cb: () => unknown) {}
+	onload() {}
+	onunload() {}
+}
+
+export const MarkdownRenderer = {
+	async render(_app: unknown, _markdown: string, _el: unknown, _sourcePath: string, _component: unknown): Promise<void> {},
+};
 
 // ---------------------------------------------------------------------------
 // Setting instance registry — lets tests look up created settings by index or

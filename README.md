@@ -66,6 +66,25 @@ A task without a due date is never automatically urgent. A task without a priori
 
 Each quadrant has a configurable tag (defaults: `#do`, `#schedule`, `#delegate`, `#eliminate`). Adding that tag to a task always places it in the matching quadrant, regardless of its due date or priority. This is useful for tasks that don't fit the urgent/important model — for example, a low-priority task you've manually decided needs immediate attention.
 
+## Tasks query with a fallback message
+
+If you use the [Tasks plugin](https://obsidian.tasks.org/), you can embed one of its queries in any note through a `focus-first-tasks` code block and add a **fallback message** shown when the query returns nothing:
+
+````markdown
+```focus-first-tasks
+not done
+tags include #focus
+sort by priority
+
+fallback: 🎉 Nothing to focus on right now
+```
+````
+
+Everything except the `fallback:` line is passed straight to the Tasks plugin, so the full [Tasks query syntax](https://publish.obsidian.md/tasks/Queries/About+Queries) is available and the result is rendered by Tasks itself. When the query matches no tasks, the `fallback:` text is shown instead.
+
+> [!note]
+> This block requires the **Tasks plugin** to be installed and enabled — it renders the Tasks plugin's own output. Without it, the block shows a short notice instead.
+
 ## Settings overview
 
 | Section | What it controls |

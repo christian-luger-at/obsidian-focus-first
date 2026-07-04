@@ -125,6 +125,16 @@
 	background: var(--background-primary);
 }
 
+/* ── Wrapped Tasks block (```focus-first``` wraps ```tasks```) ── */
+/* The task list itself is rendered by the Tasks plugin (native styling); we
+   only style the fallback / "plugin missing" messages. */
+
+.focus-first-tasks-fallback,
+.focus-first-tasks-missing {
+	margin: 0;
+	color: var(--text-muted);
+}
+
 /* ── Cards wrapper (search + focus stacked above the matrix) ── */
 
 .focus-first-cards-wrapper {

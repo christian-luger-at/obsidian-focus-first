@@ -1,5 +1,5 @@
 import { App, TFile } from 'obsidian';
-import { FokusFirstSettings, Priority } from './settings';
+import { FocusFirstSettings, Priority } from './settings';
 
 export interface TaskItem {
 	file: TFile;
@@ -18,7 +18,7 @@ const PRIORITY_RE = /(🔺|⏫|🔼|🔽|⏬)/;
 // Matches Obsidian tags: #tag (no spaces, no #-only)
 const TAG_RE = /#([^\s#][^\s]*)/g;
 
-export async function scanTasks(app: App, settings: FokusFirstSettings): Promise<TaskItem[]> {
+export async function scanTasks(app: App, settings: FocusFirstSettings): Promise<TaskItem[]> {
 	const files = app.vault.getMarkdownFiles().filter((f) => {
 		if (settings.taskScope === 'folder' && settings.taskFolder) {
 			const folder = settings.taskFolder.endsWith('/')

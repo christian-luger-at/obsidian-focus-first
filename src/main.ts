@@ -1,8 +1,8 @@
 import { Plugin, WorkspaceLeaf } from 'obsidian';
 import {
 	DEFAULT_SETTINGS,
-	FokusFirstSettingTab,
-	FokusFirstSettings,
+	FocusFirstSettingTab,
+	FocusFirstSettings,
 } from './settings';
 import { t } from './i18n';
 import { FocusFirstView, FOCUS_FIRST_VIEW_TYPE } from './TaskView';
@@ -10,7 +10,7 @@ import { WrappedTasksBlock, parseTasksBlock } from './wrappedTasksBlock';
 import { FocusDataBlock, isFocusSection } from './focusDataBlock';
 
 export default class FocusFirstPlugin extends Plugin {
-	settings!: FokusFirstSettings;
+	settings!: FocusFirstSettings;
 
 	async onload() {
 		await this.loadSettings();
@@ -32,7 +32,7 @@ export default class FocusFirstPlugin extends Plugin {
 			callback: async () => await this.activateView(),
 		});
 
-		this.addSettingTab(new FokusFirstSettingTab(this.app, this));
+		this.addSettingTab(new FocusFirstSettingTab(this.app, this));
 
 		// A ```focus-first-tasks``` block either renders a Focus First data section
 		// (`show-focus focus|do|schedule|delegate|eliminate`) or wraps a raw Tasks
@@ -70,7 +70,7 @@ export default class FocusFirstPlugin extends Plugin {
 		this.settings = Object.assign(
 			{},
 			DEFAULT_SETTINGS,
-			(await this.loadData()) as Partial<FokusFirstSettings>,
+			(await this.loadData()) as Partial<FocusFirstSettings>,
 		);
 	}
 

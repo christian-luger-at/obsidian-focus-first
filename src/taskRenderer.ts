@@ -1,7 +1,7 @@
 import { App, TFile, MarkdownView, setIcon } from 'obsidian';
 import { MatrixTask } from './matrixClassifier';
 import { TaskItem } from './taskScanner';
-import { FokusFirstSettings } from './settings';
+import { FocusFirstSettings } from './settings';
 import { t } from './i18n';
 
 /**
@@ -51,7 +51,7 @@ export async function completeTaskLine(app: App, filePath: string, lineNumber: n
 
 export async function toggleFocusTagLine(
 	app: App,
-	settings: FokusFirstSettings,
+	settings: FocusFirstSettings,
 	filePath: string,
 	lineNumber: number,
 	focusTag: string,
@@ -76,7 +76,7 @@ export async function toggleFocusTagLine(
 
 export async function toggleHideTagLine(
 	app: App,
-	settings: FokusFirstSettings,
+	settings: FocusFirstSettings,
 	filePath: string,
 	lineNumber: number,
 	hideTag: string,
@@ -108,7 +108,7 @@ export function renderTaskItem(
 	parent: HTMLElement,
 	task: MatrixTask,
 	app: App,
-	settings: FokusFirstSettings,
+	settings: FocusFirstSettings,
 ): void {
 	const focusTag = settings.focusTag.trim().toLowerCase();
 	const isFocused = focusTag

@@ -15,7 +15,7 @@ const { TFile } = await import('./__mocks__/obsidian');
 
 import { scanTasks } from '../taskScanner';
 import type { TaskItem } from '../taskScanner';
-import type { FokusFirstSettings } from '../settings';
+import type { FocusFirstSettings } from '../settings';
 import type { FocusSection } from '../focusDataBlock';
 
 const scanTasksMock = vi.mocked(scanTasks);
@@ -84,7 +84,7 @@ interface OnChangeCapture { handler?: () => void; }
 function makeBlock(
 	section: FocusSection,
 	emptyText: string,
-	settings: Partial<FokusFirstSettings>,
+	settings: Partial<FocusFirstSettings>,
 	tasks: TaskItem[],
 ) {
 	const onChange: OnChangeCapture = {};

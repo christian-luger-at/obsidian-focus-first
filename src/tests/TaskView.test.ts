@@ -16,7 +16,7 @@ const { DEFAULT_SETTINGS } = await import('../settings');
 const { TFile } = await import('./__mocks__/obsidian');
 
 import type { MatrixTask, Quadrant } from '../matrixClassifier';
-import type { FokusFirstSettings, SortField } from '../settings';
+import type { FocusFirstSettings, SortField } from '../settings';
 import type { TaskItem } from '../taskScanner';
 
 // ---------------------------------------------------------------------------
@@ -55,7 +55,7 @@ function makeFakeVault(files: Record<string, string>) {
 	};
 }
 
-function makeView(settings: Partial<FokusFirstSettings> = {}, vault?: ReturnType<typeof makeFakeVault>) {
+function makeView(settings: Partial<FocusFirstSettings> = {}, vault?: ReturnType<typeof makeFakeVault>) {
 	const app = { vault: vault ?? makeFakeVault({}) };
 	const leaf = { app };
 	const plugin = { settings: { ...DEFAULT_SETTINGS, ...settings } };

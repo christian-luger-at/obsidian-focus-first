@@ -17,7 +17,7 @@ const { DEFAULT_SETTINGS } = await import('../settings');
 const { TFile, MarkdownView } = await import('./__mocks__/obsidian');
 
 import type { TaskItem } from '../taskScanner';
-import type { FokusFirstSettings } from '../settings';
+import type { FocusFirstSettings } from '../settings';
 
 // ---------------------------------------------------------------------------
 // FakeEl — minimal stand-in for Obsidian's extended HTMLElement
@@ -133,7 +133,7 @@ function makeTask(overrides: Partial<TaskItem> = {}): TaskItem {
 	};
 }
 
-function makeView(settings: Partial<FokusFirstSettings> = {}, tasks: TaskItem[] = []) {
+function makeView(settings: Partial<FocusFirstSettings> = {}, tasks: TaskItem[] = []) {
 	const vault = {
 		getAbstractFileByPath: (_path: string): InstanceType<typeof TFile> | null => null,
 		read: vi.fn(async (_file: unknown) => ''),
@@ -385,7 +385,7 @@ describe('renderMatrix()', () => {
 // ---------------------------------------------------------------------------
 
 describe('task item actions in the matrix', () => {
-	function renderSingleTaskMatrix(taskOverrides: Partial<TaskItem> = {}, settings: Partial<FokusFirstSettings> = {}) {
+	function renderSingleTaskMatrix(taskOverrides: Partial<TaskItem> = {}, settings: Partial<FocusFirstSettings> = {}) {
 		const tasks = [makeTask({ dueDate: daysFromToday(0), priority: '🔺', ...taskOverrides })];
 		const result = makeView({ importantPriorities: ['🔺'], ...settings }, tasks);
 		const container = result.contentEl.createDiv();

@@ -8,14 +8,14 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { scanTasks } from '../taskScanner';
-import { DEFAULT_SETTINGS, FokusFirstSettings } from '../settings';
+import { DEFAULT_SETTINGS, FocusFirstSettings } from '../settings';
 import { TFile } from './__mocks__/obsidian';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeSettings(overrides: Partial<FokusFirstSettings> = {}): FokusFirstSettings {
+function makeSettings(overrides: Partial<FocusFirstSettings> = {}): FocusFirstSettings {
 	return { ...DEFAULT_SETTINGS, ...overrides };
 }
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DEFAULT_SETTINGS, FokusFirstSettings, TaskScope, Priority, FolderSuggest } from '../settings';
-import type { FokusFirstSettingTab as FokusFirstSettingTabType } from '../settings';
+import { DEFAULT_SETTINGS, FocusFirstSettings, TaskScope, Priority, FolderSuggest } from '../settings';
+import type { FocusFirstSettingTab as FocusFirstSettingTabType } from '../settings';
 import { createdSettings, clearCreatedSettings, TFolder, TFile } from './__mocks__/obsidian';
 import type { DropdownComponent, TextComponent, ToggleComponent } from './__mocks__/obsidian';
 import type { ExtraButtonComponent } from './__mocks__/obsidian';
@@ -33,32 +33,32 @@ describe('DEFAULT_SETTINGS', () => {
 // Unit tests — settings shape
 // ---------------------------------------------------------------------------
 
-describe('FokusFirstSettings type contract', () => {
+describe('FocusFirstSettings type contract', () => {
 	it('accepts scope "all" with no folder', () => {
-		const s: FokusFirstSettings = { ...DEFAULT_SETTINGS, taskScope: 'all', taskFolder: '' };
+		const s: FocusFirstSettings = { ...DEFAULT_SETTINGS, taskScope: 'all', taskFolder: '' };
 		expect(s.taskScope).toBe('all');
 	});
 
 	it('accepts scope "folder" with a folder path', () => {
-		const s: FokusFirstSettings = { ...DEFAULT_SETTINGS, taskScope: 'folder', taskFolder: 'Work/Tasks' };
+		const s: FocusFirstSettings = { ...DEFAULT_SETTINGS, taskScope: 'folder', taskFolder: 'Work/Tasks' };
 		expect(s.taskScope).toBe('folder');
 		expect(s.taskFolder).toBe('Work/Tasks');
 	});
 });
 
 // ---------------------------------------------------------------------------
-// Integration tests — FokusFirstSettingTab rendering & persistence
+// Integration tests — FocusFirstSettingTab rendering & persistence
 // ---------------------------------------------------------------------------
 
 // We need to mock `obsidian` before importing SettingTab
 vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 
 // Re-import AFTER mock is registered so the module uses the stub
-const { FokusFirstSettingTab } = await import('../settings');
+const { FocusFirstSettingTab } = await import('../settings');
 
-function makePlugin(overrides: Partial<FokusFirstSettings> = {}) {
+function makePlugin(overrides: Partial<FocusFirstSettings> = {}) {
 	// Deep-copy nested objects so tests can't mutate DEFAULT_SETTINGS via shared references
-	const settings: FokusFirstSettings = {
+	const settings: FocusFirstSettings = {
 		...DEFAULT_SETTINGS,
 		quadrants: {
 			do:       { ...DEFAULT_SETTINGS.quadrants.do,       sort: { ...DEFAULT_SETTINGS.quadrants.do.sort } },
@@ -68,7 +68,7 @@ function makePlugin(overrides: Partial<FokusFirstSettings> = {}) {
 		},
 		...overrides,
 	};
-	const saved: FokusFirstSettings[] = [];
+	const saved: FocusFirstSettings[] = [];
 
 	const plugin = {
 		settings,
@@ -86,9 +86,9 @@ function makePlugin(overrides: Partial<FokusFirstSettings> = {}) {
 	return plugin;
 }
 
-function makeTab(plugin: ReturnType<typeof makePlugin>): FokusFirstSettingTabType {
+function makeTab(plugin: ReturnType<typeof makePlugin>): FocusFirstSettingTabType {
 	// @ts-expect-error — stub app, not a real Obsidian App
-	const tab = new FokusFirstSettingTab(plugin.app, plugin);
+	const tab = new FocusFirstSettingTab(plugin.app, plugin);
 	// Provide a minimal containerEl so Setting constructors don't throw
 	const mockClassList = () => ({ add: vi.fn(), toggle: vi.fn(), remove: vi.fn() });
 	const mockEl = (): Record<string, unknown> => ({
@@ -107,7 +107,7 @@ function makeTab(plugin: ReturnType<typeof makePlugin>): FokusFirstSettingTabTyp
 	return tab;
 }
 
-describe('FokusFirstSettingTab — scope dropdown', () => {
+describe('FocusFirstSettingTab — scope dropdown', () => {
 	it('calls display() without throwing when scope is "all"', () => {
 		const plugin = makePlugin({ taskScope: 'all' });
 		const tab = makeTab(plugin);
@@ -125,7 +125,7 @@ describe('FokusFirstSettingTab — scope dropdown', () => {
 // Integration tests — saveSettings is called when values change
 // ---------------------------------------------------------------------------
 
-describe('FokusFirstSettingTab — persistence', () => {
+describe('FocusFirstSettingTab — persistence', () => {
 	let plugin: ReturnType<typeof makePlugin>;
 
 	beforeEach(() => {
@@ -293,7 +293,7 @@ describe('loadSettings — merges persisted data with defaults', () => {
 	it('fills missing keys from DEFAULT_SETTINGS', () => {
 		// Simulate what loadSettings does: Object.assign({}, DEFAULT_SETTINGS, persisted)
 		const persisted = { taskScope: 'folder' as TaskScope };
-		const merged: FokusFirstSettings = Object.assign({}, DEFAULT_SETTINGS, persisted);
+		const merged: FocusFirstSettings = Object.assign({}, DEFAULT_SETTINGS, persisted);
 
 		expect(merged.taskScope).toBe('folder');
 		expect(merged.taskFolder).toBe('');  // filled from defaults
@@ -301,7 +301,7 @@ describe('loadSettings — merges persisted data with defaults', () => {
 	});
 
 	it('fully persisted data overrides all defaults', () => {
-		const persisted: FokusFirstSettings = {
+		const persisted: FocusFirstSettings = {
 			taskScope: 'folder',
 			taskFolder: 'MyFolder',
 			urgencyDays: 7,
@@ -332,7 +332,7 @@ describe('loadSettings — merges persisted data with defaults', () => {
 // Helpers for onChange callback tests
 // ---------------------------------------------------------------------------
 
-function makeTabWithDisplay(overrides: Partial<FokusFirstSettings> = {}) {
+function makeTabWithDisplay(overrides: Partial<FocusFirstSettings> = {}) {
 	const plugin = makePlugin(overrides);
 	const tab = makeTab(plugin);
 	clearCreatedSettings();
@@ -359,7 +359,7 @@ function toggleByName(name: string): ToggleComponent | undefined {
 // onChange — scope dropdown
 // ---------------------------------------------------------------------------
 
-describe('FokusFirstSettingTab — scope dropdown onChange', () => {
+describe('FocusFirstSettingTab — scope dropdown onChange', () => {
 	it('sets taskScope to "folder" and saves', async () => {
 		const { plugin } = makeTabWithDisplay({ taskScope: 'all' });
 		await scopeDropdown()?.simulate('folder');
@@ -379,7 +379,7 @@ describe('FokusFirstSettingTab — scope dropdown onChange', () => {
 // onChange — folder text input
 // ---------------------------------------------------------------------------
 
-describe('FokusFirstSettingTab — folder text onChange', () => {
+describe('FocusFirstSettingTab — folder text onChange', () => {
 	it('saves a non-empty folder path', async () => {
 		const { plugin } = makeTabWithDisplay({ taskScope: 'folder', taskFolder: '' });
 		const folderText = textByValue('');
@@ -401,7 +401,7 @@ describe('FokusFirstSettingTab — folder text onChange', () => {
 // onChange — urgencyDays text input
 // ---------------------------------------------------------------------------
 
-describe('FokusFirstSettingTab — urgencyDays text onChange', () => {
+describe('FocusFirstSettingTab — urgencyDays text onChange', () => {
 	it('saves a valid number', async () => {
 		const { plugin } = makeTabWithDisplay();
 		await textByValue('3')?.simulate('7');
@@ -449,7 +449,7 @@ describe('FokusFirstSettingTab — urgencyDays text onChange', () => {
 // onChange — quadrant tag text inputs
 // ---------------------------------------------------------------------------
 
-describe('FokusFirstSettingTab — quadrant tag onChange', () => {
+describe('FocusFirstSettingTab — quadrant tag onChange', () => {
 	it('saves the "do" tag', async () => {
 		const { plugin } = makeTabWithDisplay();
 		await textByValue('#do')?.simulate('#jetzt');
@@ -602,7 +602,7 @@ describe('DEFAULT_SETTINGS — quadrant structure', () => {
 // onChange — focusTag text input
 // ---------------------------------------------------------------------------
 
-describe('FokusFirstSettingTab — focusTag onChange', () => {
+describe('FocusFirstSettingTab — focusTag onChange', () => {
 	it('saves a custom focus tag', async () => {
 		const { plugin } = makeTabWithDisplay();
 		await textByValue('#focus')?.simulate('#star');
@@ -629,7 +629,7 @@ describe('FokusFirstSettingTab — focusTag onChange', () => {
 // onChange — hideTag text input
 // ---------------------------------------------------------------------------
 
-describe('FokusFirstSettingTab — hideTag onChange', () => {
+describe('FocusFirstSettingTab — hideTag onChange', () => {
 	it('saves a custom, trimmed hide tag', async () => {
 		const { plugin } = makeTabWithDisplay();
 		await textByValue('#hide')?.simulate('  #versteckt  ');
@@ -642,7 +642,7 @@ describe('FokusFirstSettingTab — hideTag onChange', () => {
 // onChange — groupByPrimary toggle
 // ---------------------------------------------------------------------------
 
-describe('FokusFirstSettingTab — groupByPrimary toggle onChange', () => {
+describe('FocusFirstSettingTab — groupByPrimary toggle onChange', () => {
 	it('saves true when toggled on', async () => {
 		const { plugin } = makeTabWithDisplay({ groupByPrimary: false });
 		await toggleByName('Group by primary criterion')?.simulate(true);
@@ -668,7 +668,7 @@ describe('FokusFirstSettingTab — groupByPrimary toggle onChange', () => {
 // onChange — sort dropdowns
 // ---------------------------------------------------------------------------
 
-describe('FokusFirstSettingTab — sort dropdowns onChange', () => {
+describe('FocusFirstSettingTab — sort dropdowns onChange', () => {
 	it('saves primary sort for the "do" quadrant', async () => {
 		// display() creates the "do" quadrant first; its "Primary sort" dropdown is the first match
 		const { plugin } = makeTabWithDisplay();
@@ -771,7 +771,7 @@ function asFakeInput(input: TextComponent | undefined): FakeColorInput {
 	return input.inputEl as unknown as FakeColorInput;
 }
 
-describe('FokusFirstSettingTab — quadrant color picker', () => {
+describe('FocusFirstSettingTab — quadrant color picker', () => {
 	it('writing a new color updates the setting and saves', async () => {
 		const { plugin } = makeTabWithDisplay();
 		const colorInput = textByValue('#c92a2a'); // "do" quadrant default color
@@ -809,7 +809,7 @@ describe('FokusFirstSettingTab — quadrant color picker', () => {
 // Font size slider onChange
 // ---------------------------------------------------------------------------
 
-describe('FokusFirstSettingTab — font size slider', () => {
+describe('FocusFirstSettingTab — font size slider', () => {
 	it('saves the value and re-applies the font size on change', async () => {
 		const { plugin } = makeTabWithDisplay();
 		const slider = createdSettings.find((s) => s.lastSlider)?.lastSlider;
@@ -827,7 +827,7 @@ describe('FokusFirstSettingTab — font size slider', () => {
 // Important-priorities pills
 // ---------------------------------------------------------------------------
 
-describe('FokusFirstSettingTab — important priority pills', () => {
+describe('FocusFirstSettingTab — important priority pills', () => {
 	function pills(): FakeEl[] {
 		const control = createdSettings
 			.map((s) => asFakeEl(s.controlEl))
@@ -859,7 +859,7 @@ describe('FokusFirstSettingTab — important priority pills', () => {
 // Collapsible section header click
 // ---------------------------------------------------------------------------
 
-describe('FokusFirstSettingTab — collapsible header click', () => {
+describe('FocusFirstSettingTab — collapsible header click', () => {
 	it('toggles on a header click but ignores clicks on the chevron button', () => {
 		makeTabWithDisplay();
 		const header = createdSettings
@@ -967,7 +967,7 @@ describe('DEFAULT_SETTINGS — quadrant color semantics', () => {
 // Integration — Reset-all button
 // ---------------------------------------------------------------------------
 
-describe('FokusFirstSettingTab — reset-all button', () => {
+describe('FocusFirstSettingTab — reset-all button', () => {
 	it('calls plugin.resetSettings() and re-renders when clicked', async () => {
 		const plugin = makePlugin({ taskFolder: 'Custom' });
 		// resetSettings is not part of the plugin stub created by makePlugin —
@@ -996,7 +996,7 @@ describe('FokusFirstSettingTab — reset-all button', () => {
 // Integration — collapsible quadrant sections
 // ---------------------------------------------------------------------------
 
-describe('FokusFirstSettingTab — collapsible quadrant sections', () => {
+describe('FocusFirstSettingTab — collapsible quadrant sections', () => {
 	it('renders a chevron extra-button for each of the four quadrant sub-sections', () => {
 		makeTabWithDisplay();
 		const chevronCount = createdSettings.filter((s) => s.lastExtraButton).length;

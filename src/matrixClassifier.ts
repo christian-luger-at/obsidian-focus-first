@@ -1,4 +1,4 @@
-import { FokusFirstSettings, QuadrantConfig } from './settings';
+import { FocusFirstSettings, QuadrantConfig } from './settings';
 import { TaskItem } from './taskScanner';
 
 export type Quadrant = 'do' | 'schedule' | 'delegate' | 'eliminate';
@@ -25,7 +25,7 @@ function isUrgent(task: TaskItem, urgencyDays: number): boolean {
 	return diffDays <= urgencyDays;
 }
 
-function isImportant(task: TaskItem, settings: FokusFirstSettings): boolean {
+function isImportant(task: TaskItem, settings: FocusFirstSettings): boolean {
 	if (!task.priority) return false;
 	return settings.importantPriorities.includes(task.priority);
 }
@@ -41,7 +41,7 @@ function tagOverride(task: TaskItem, quadrants: QuadrantConfig): Quadrant | unde
 	return undefined;
 }
 
-export function classifyTasks(tasks: TaskItem[], settings: FokusFirstSettings): MatrixQuadrants {
+export function classifyTasks(tasks: TaskItem[], settings: FocusFirstSettings): MatrixQuadrants {
 	const quadrants: MatrixQuadrants = { do: [], schedule: [], delegate: [], eliminate: [] };
 
 	for (const task of tasks) {

@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting, TFolder, AbstractInputSuggest, setIcon } from 'obsidian';
-import FokusFirstPlugin from './main';
+import FocusFirstPlugin from './main';
 import { t } from './i18n';
 
 export type TaskScope = 'all' | 'folder';
@@ -35,7 +35,7 @@ export const PRIORITY_OPTIONS = [
 
 export type Priority = (typeof PRIORITY_OPTIONS)[number]['value'];
 
-export interface FokusFirstSettings {
+export interface FocusFirstSettings {
 	taskScope: TaskScope;
 	taskFolder: string;
 	urgencyDays: number;
@@ -47,7 +47,7 @@ export interface FokusFirstSettings {
 	fontSize: number;
 }
 
-export const DEFAULT_SETTINGS: FokusFirstSettings = {
+export const DEFAULT_SETTINGS: FocusFirstSettings = {
 	taskScope: 'all',
 	taskFolder: '',
 	urgencyDays: 3,
@@ -91,8 +91,8 @@ export class FolderSuggest extends AbstractInputSuggest<TFolder> {
 	}
 }
 
-export class FokusFirstSettingTab extends PluginSettingTab {
-	plugin: FokusFirstPlugin;
+export class FocusFirstSettingTab extends PluginSettingTab {
+	plugin: FocusFirstPlugin;
 
 	// The four per-quadrant detail blocks are collapsed by default — they're the
 	// biggest contributor to clutter. They are the only collapsible sections.
@@ -100,7 +100,7 @@ export class FokusFirstSettingTab extends PluginSettingTab {
 		'quadrant-do', 'quadrant-schedule', 'quadrant-delegate', 'quadrant-eliminate',
 	]);
 
-	constructor(app: App, plugin: FokusFirstPlugin) {
+	constructor(app: App, plugin: FocusFirstPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}

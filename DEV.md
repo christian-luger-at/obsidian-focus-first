@@ -32,19 +32,19 @@ Create the plugin folder and add a symlink to the vault's plugin directory:
 ```bash
 mkdir -p ~/dev/obsidian-focus-first-vault/Plugin-Test/.obsidian/plugins
 
-ln -s ~/dev/obsidian-focus-first ~/dev/obsidian-focus-first-vault/Plugin-Test/.obsidian/plugins/focus-first-matrix
+ln -s ~/dev/obsidian-focus-first ~/dev/obsidian-focus-first-vault/Plugin-Test/.obsidian/plugins/focus-first
 ```
 
 Verify that the symlink was created correctly:
 
 ```bash
-ls -la ~/dev/obsidian-focus-first-vault/Plugin-Test/.obsidian/plugins/focus-first-matrix
+ls -la ~/dev/obsidian-focus-first-vault/Plugin-Test/.obsidian/plugins/focus-first
 ```
 
 You should see something like this (macOS usually shows the full target path):
 
 ```bash
-focus-first-matrix -> /Users/christian/dev/obsidian-focus-first
+focus-first -> /Users/christian/dev/obsidian-focus-first
 ```
 
 > [!tip]
@@ -144,7 +144,7 @@ The coverage report shows statement, branch, function, and line coverage for all
 | File | Scope | What is covered |
 | --- | --- | --- |
 | `settings.test.ts` | Unit | `DEFAULT_SETTINGS` values and type contract |
-| `settings.test.ts` | Integration | `FokusFirstSettingTab` renders without errors for both scope options |
+| `settings.test.ts` | Integration | `FocusFirstSettingTab` renders without errors for both scope options |
 | `settings.test.ts` | Integration | `onChange` callbacks for scope dropdown, folder input, urgency days, and quadrant tags |
 | `settings.test.ts` | Integration | `saveSettings` is called with correct values; invalid urgency inputs are rejected |
 | `settings.test.ts` | Integration | `loadSettings` merge logic — defaults, partial, and full overrides |
@@ -253,7 +253,7 @@ gh release create 1.0.0 \
 Either way, the release is now visible on GitHub with the three files as downloadable artifacts.
 
 > [!tip]
-> To install the release in Obsidian manually: download all three files and place them in `.obsidian/plugins/focus-first-matrix/` inside your vault.
+> To install the release in Obsidian manually: download all three files and place them in `.obsidian/plugins/focus-first/` inside your vault.
 
 ## Publish to the Community Plugins store
 
@@ -266,7 +266,7 @@ The store serves the very same GitHub release artifacts, so a single correctly-t
 
    ```json
    {
-     "id": "focus-first-matrix",
+     "id": "focus-first",
      "name": "Focus First",
      "author": "Christian Luger",
      "description": "Focus First helps you prioritize your tasks with the Eisenhower matrix.",

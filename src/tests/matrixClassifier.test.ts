@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { classifyTasks, Quadrant } from '../matrixClassifier';
-import { FokusFirstSettings, DEFAULT_SETTINGS } from '../settings';
+import { FocusFirstSettings, DEFAULT_SETTINGS } from '../settings';
 import { TaskItem } from '../taskScanner';
 
 // ---------------------------------------------------------------------------
@@ -25,7 +25,7 @@ function makeTask(overrides: Partial<TaskItem> = {}): TaskItem {
 	};
 }
 
-function makeSettings(overrides: Partial<FokusFirstSettings> = {}): FokusFirstSettings {
+function makeSettings(overrides: Partial<FocusFirstSettings> = {}): FocusFirstSettings {
 	return { ...DEFAULT_SETTINGS, ...overrides };
 }
 
@@ -262,7 +262,7 @@ describe('completed task handling', () => {
 // ---------------------------------------------------------------------------
 
 describe('mixed task list', () => {
-	let settings: FokusFirstSettings;
+	let settings: FocusFirstSettings;
 
 	beforeEach(() => {
 		settings = makeSettings({

@@ -103,7 +103,7 @@ See **[docs/code-block.md](docs/code-block.md)** for both modes, all parameters,
 ### Manual installation
 
 1. Download `main.js`, `styles.css`, and `manifest.json` from the [latest release](../../releases).
-2. Copy them into `<YourVault>/.obsidian/plugins/focus-first-matrix/`.
+2. Copy them into `<YourVault>/.obsidian/plugins/focus-first/`.
 3. Reload Obsidian and enable **Focus First** under **Settings → Community plugins**.
 
 ## Compatibility

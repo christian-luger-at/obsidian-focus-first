@@ -53,10 +53,16 @@ fi
 
 # Read version from manifest.json (reflects any --bump applied above)
 VERSION=$(node -e "console.log(require('./manifest.json').version)")
-TAG="v${VERSION}"
-RELEASE_DIR="releases/${TAG}"
 
-echo "Building Focus First ${TAG}..."
+# IMPORTANT: the release tag must match manifest.json "version" EXACTLY, with no
+# "v" prefix. Obsidian's community-plugin store (and the auto-updater) look for a
+# GitHub release tagged e.g. "1.1.0" — a "v1.1.0" tag is not recognised.
+TAG="${VERSION}"
+
+# Local staging folder only (cosmetic) — keeps the "v" for readability.
+RELEASE_DIR="releases/v${VERSION}"
+
+echo "Building Focus First ${VERSION}..."
 
 # Run tests
 npm test

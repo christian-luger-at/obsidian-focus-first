@@ -227,23 +227,26 @@ Before publishing, the script checks that:
 
 - the [GitHub CLI](https://cli.github.com/) (`gh`) is installed and authenticated (`gh auth login`)
 - the working tree is clean (the version-bump commit from step 1 must already be in place)
-- the tag `v<version>` doesn't already exist
+- the tag `<version>` doesn't already exist
 
-It then asks for confirmation (`Publish vX.Y.Z to GitHub? [y/N]`) before pushing the tag and creating the release — nothing is pushed without that confirmation, even with `--publish` set.
+It then asks for confirmation (`Publish X.Y.Z to GitHub? [y/N]`) before pushing the tag and creating the release — nothing is pushed without that confirmation, even with `--publish` set.
+
+> [!important]
+> The release tag must match the `version` in `manifest.json` **exactly, without a `v` prefix** (e.g. `1.1.0`, not `v1.1.0`). Obsidian's community-plugin store and the in-app auto-updater only recognise releases tagged this way. `release.sh` already tags without the prefix.
 
 #### Option B — manual
 
 ```bash
-# Create a git tag matching the version
-git tag v1.0.0
-git push origin v1.0.0
+# Create a git tag that exactly matches the manifest version — no "v" prefix
+git tag 1.0.0
+git push origin 1.0.0
 
 # Create the GitHub release and attach the three plugin files
-gh release create v1.0.0 \
+gh release create 1.0.0 \
   releases/v1.0.0/main.js \
   releases/v1.0.0/manifest.json \
   releases/v1.0.0/styles.css \
-  --title "v1.0.0" \
+  --title "1.0.0" \
   --notes "Initial release with a basic implementation"
 ```
 
@@ -251,6 +254,36 @@ Either way, the release is now visible on GitHub with the three files as downloa
 
 > [!tip]
 > To install the release in Obsidian manually: download all three files and place them in `.obsidian/plugins/focus-first-matrix/` inside your vault.
+
+## Publish to the Community Plugins store
+
+The store serves the very same GitHub release artifacts, so a single correctly-tagged release (see step 3 — tag **without** the `v` prefix) covers both manual installs and the store.
+
+### First-time submission (one-off)
+
+1. Publish a release whose tag equals the manifest version without a `v` prefix (`npm run release:publish` does this), with `main.js`, `manifest.json`, and `styles.css` attached.
+2. Fork [`obsidianmd/obsidian-releases`](https://github.com/obsidianmd/obsidian-releases) and append an entry to `community-plugins.json`:
+
+   ```json
+   {
+     "id": "focus-first-matrix",
+     "name": "Focus First",
+     "author": "Christian Luger",
+     "description": "Focus First helps you prioritize your tasks with the Eisenhower matrix.",
+     "repo": "christian-luger-at/obsidian-focus-first"
+   }
+   ```
+
+3. Open a pull request. An automated bot validates the repo (root `manifest.json`, a release tagged with the exact version and the three files, valid `minAppVersion`, `versions.json`, etc.), followed by a manual review.
+
+### Ongoing updates (after acceptance)
+
+1. Bump `manifest.json` **and** `versions.json` (the `--bump` flag does both).
+2. Publish a new release tagged with the exact new version, no `v` prefix, with the three files — e.g. `npm run release:patch` / `release:minor` / `release:major`.
+3. No further PR is needed; Obsidian clients detect the new release automatically.
+
+> [!note]
+> The existing `v1.x` tags can stay — the store only cares that current and future releases are tagged without the `v` prefix.
 
 ## Additional resources
 

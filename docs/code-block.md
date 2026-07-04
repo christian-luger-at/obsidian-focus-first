@@ -4,7 +4,7 @@ A `focus-first-tasks` code block embeds a task list into any note. It has two mo
 
 ## Show a Focus First section
 
-Add a `show-focus` line to render exactly the tasks Focus First would show for one of its sections — the focus list or a single quadrant — as a plain checklist:
+Add a `show-focus` line to render exactly the tasks Focus First would show for one of its sections — the focus list or a single quadrant — as a checklist:
 
 ````markdown
 ```focus-first-tasks
@@ -13,7 +13,9 @@ empty-text 🎉 Nothing urgent and important
 ```
 ````
 
-`show-focus` accepts `focus`, `do`, `schedule`, `delegate`, or `eliminate`. The tasks are selected with Focus First's own classification (so they match the view exactly, including your urgency threshold, important priorities, quadrant tags, and hide tag) and the list stays in sync as tasks change. When the section is empty, the optional `empty-text` message is shown. This mode does **not** require the Tasks plugin.
+`show-focus` accepts `focus`, `do`, `schedule`, `delegate`, or `eliminate`. The tasks are selected with Focus First's own classification (so they match the view exactly, including your urgency threshold, important priorities, quadrant tags, and hide tag) and the list stays in sync as tasks change. When the section is empty, the optional `empty-text` message is shown.
+
+The tasks are rendered through Obsidian's Markdown renderer, so they get the same formatting as normal tasks — including the Tasks plugin's rendering when it is enabled. The Tasks plugin is not required (without it, the tasks appear as a plain checklist), and checking a box completes the correct task in its source note.
 
 ## Wrap a Tasks-plugin query
 

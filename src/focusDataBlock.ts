@@ -1,4 +1,4 @@
-import { MarkdownRenderChild, debounce } from 'obsidian';
+import { MarkdownRenderChild, MarkdownRenderer, debounce } from 'obsidian';
 import FocusFirstPlugin from './main';
 import { scanTasks, TaskItem } from './taskScanner';
 import { classifyTasks } from './matrixClassifier';
@@ -10,22 +10,31 @@ export type { FocusSection };
 
 /**
  * Renders one Focus First data section (the focus list or a single quadrant)
- * inside a ```focus-first-tasks``` block with `show-focus`. It selects exactly the
- * same tasks the view would show for that section — using the shared
- * classifier — and presents them as a plain native checklist (same look as the
- * wrapped Tasks output). Re-renders on metadata changes to stay in sync.
+ * inside a ```focus-first-tasks``` block with `show-focus`. It selects exactly
+ * the same tasks the view would show for that section — using the shared
+ * classifier — then renders their Markdown lines through Obsidian so they get
+ * the same formatting as normal tasks (including the Tasks plugin's rendering,
+ * when it is enabled). Re-renders on metadata changes to stay in sync.
  */
 export class FocusDataBlock extends MarkdownRenderChild {
 	private plugin: FocusFirstPlugin;
 	private section: FocusSection;
 	private emptyText: string;
+	private sourcePath: string;
 	private debouncedRender = debounce(() => { void this.render(); }, 500, true);
 
-	constructor(containerEl: HTMLElement, plugin: FocusFirstPlugin, section: FocusSection, emptyText: string) {
+	constructor(
+		containerEl: HTMLElement,
+		plugin: FocusFirstPlugin,
+		section: FocusSection,
+		emptyText: string,
+		sourcePath: string,
+	) {
 		super(containerEl);
 		this.plugin = plugin;
 		this.section = section;
 		this.emptyText = emptyText;
+		this.sourcePath = sourcePath;
 	}
 
 	onload(): void {
@@ -49,20 +58,32 @@ export class FocusDataBlock extends MarkdownRenderChild {
 			return;
 		}
 
-		const list = el.createEl('ul', { cls: 'contains-task-list focus-first-tasks-list' });
-		for (const task of selected) {
-			const li = list.createEl('li', { cls: 'task-list-item' });
-			const checkbox = li.createEl('input', {
-				cls: 'task-list-item-checkbox',
-				attr: { type: 'checkbox' },
-			});
+		// Render the raw task lines as a Markdown checklist so Obsidian — and the
+		// Tasks plugin, when enabled — format them exactly like normal tasks.
+		const markdown = selected.map((task) => task.line).join('\n');
+		const result = el.createDiv({ cls: 'focus-first-tasks-result' });
+		await MarkdownRenderer.render(this.plugin.app, markdown, result, this.sourcePath, this);
+
+		this.rewireCheckboxes(result, selected);
+	}
+
+	/**
+	 * The checkboxes rendered above map to this code block, not to each task's
+	 * real location, so toggling them would edit the wrong place. Re-wire each to
+	 * complete the correct file/line instead (capture phase, so it wins over any
+	 * handler the Tasks plugin attached).
+	 */
+	private rewireCheckboxes(result: HTMLElement, selected: TaskItem[]): void {
+		const checkboxes = result.querySelectorAll('.task-list-item-checkbox');
+		checkboxes.forEach((checkbox, i) => {
+			const task = selected[i];
+			if (!task) return;
 			checkbox.addEventListener('click', (e) => {
 				e.preventDefault();
+				e.stopImmediatePropagation();
 				void completeTaskLine(this.plugin.app, task.file.path, task.lineNumber);
-			});
-			const desc = task.line.replace(/^[\s\-*]*\[.\]\s*/, '').trim();
-			li.createEl('span', { text: desc, cls: 'focus-first-tasks-item-text' });
-		}
+			}, { capture: true });
+		});
 	}
 
 	/** Selects the same tasks the Focus First view shows for this section. */

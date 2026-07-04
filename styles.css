@@ -193,11 +193,6 @@
 	color: var(--text-muted);
 }
 
-/* Native checklist for `show:` sections — inherits the note's task-list look. */
-.focus-first-tasks-list {
-	margin: 0;
-}
-
 /* ── Cards wrapper (search + focus stacked above the matrix) ── */
 
 .focus-first-cards-wrapper {

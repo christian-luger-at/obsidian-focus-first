@@ -41,7 +41,7 @@ export default class FocusFirstPlugin extends Plugin {
 			const { showFocus, emptyText } = parseTasksBlock(source);
 			if (showFocus) {
 				if (isFocusSection(showFocus)) {
-					ctx.addChild(new FocusDataBlock(el, this, showFocus, emptyText));
+					ctx.addChild(new FocusDataBlock(el, this, showFocus, emptyText, ctx.sourcePath));
 				} else {
 					el.createEl('p', { text: t().tasksBlock.invalidShow, cls: 'focus-first-tasks-missing' });
 				}

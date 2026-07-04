@@ -3,9 +3,9 @@
 	"name": "Focus First",
 	"version": "0.9.1",
 	"minAppVersion": "1.12.0",
-	"description": "Focus First helps you prioritize your tasks with the Eisenhower matrix.",
+	"description": "Prioritize your tasks with the Eisenhower matrix.",
 	"author": "Christian Luger",
 	"authorUrl": "https://www.christian-luger.at",
 	"fundingUrl": "https://www.christian-luger.at/pricing",
-	"isDesktopOnly": true
+	"isDesktopOnly": false
 }

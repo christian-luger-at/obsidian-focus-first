@@ -38,9 +38,12 @@ class FakeEl {
 		return el;
 	}
 
-	// The wrapper queries for rendered task items / an existing fallback; the
-	// Tasks plugin never runs in tests, so there is nothing to find.
-	querySelector(_selector: string): FakeEl | null { return null; }
+	// querySelector consults an overridable map (default: nothing found), so
+	// tests can simulate "the Tasks plugin rendered results" / "a message exists".
+	queryResults: Record<string, FakeEl | null> = {};
+	removed = false;
+	querySelector(selector: string): FakeEl | null { return this.queryResults[selector] ?? null; }
+	remove() { this.removed = true; }
 
 	findAllByClass(cls: string): FakeEl[] {
 		const result: FakeEl[] = [];
@@ -125,7 +128,11 @@ describe('WrappedTasksBlock', () => {
 		const child = new WrappedTasksBlock(container as never, plugin as never, source, 'Note.md');
 		return { child, container };
 	}
-	const priv = (child: unknown) => child as { render(): Promise<void> };
+	const priv = (child: unknown) => child as {
+		render(): Promise<void>;
+		updateEmptyText(): void;
+		resultEl?: FakeEl;
+	};
 
 	it('shows the missing-plugin message when Tasks is not enabled', async () => {
 		const { child, container } = makeChild('not done', []);
@@ -143,5 +150,43 @@ describe('WrappedTasksBlock', () => {
 		// (MarkdownRenderer is a no-op mock; the observer never fires here.)
 		expect(container.findByClass('focus-first-tasks-missing')).toBeUndefined();
 		expect(container.findByClass('focus-first-tasks-result')).toBeDefined();
+	});
+
+	it('onload adds the wrapper class', () => {
+		const { child, container } = makeChild('not done', []);
+		child.onload();
+		expect(container.cls.has('focus-first-tasks-wrapper')).toBe(true);
+	});
+
+	it('onunload is safe before rendering and after rendering', async () => {
+		const before = makeChild('not done', []);
+		expect(() => before.child.onunload()).not.toThrow();
+
+		const after = makeChild('not done', ['obsidian-tasks-plugin']);
+		await priv(after.child).render(); // sets observer + safety timer
+		expect(() => after.child.onunload()).not.toThrow();
+	});
+
+	it('updateEmptyText shows the message when the query produced no results', () => {
+		const { child, container } = makeChild('empty-text Nothing here', ['obsidian-tasks-plugin']);
+		priv(child).resultEl = new FakeEl('div'); // querySelector → null → no results
+		priv(child).updateEmptyText();
+		expect(container.findByClass('focus-first-tasks-empty')?.text).toBe('Nothing here');
+	});
+
+	it('updateEmptyText removes an existing message once results appear', () => {
+		const { child, container } = makeChild('empty-text X', ['obsidian-tasks-plugin']);
+		const resultEl = new FakeEl('div');
+		resultEl.queryResults['.task-list-item, .plugin-tasks-list-item'] = new FakeEl('li');
+		const existing = new FakeEl('p');
+		container.queryResults['.focus-first-tasks-empty'] = existing;
+		priv(child).resultEl = resultEl;
+		priv(child).updateEmptyText();
+		expect(existing.removed).toBe(true);
+	});
+
+	it('updateEmptyText does nothing before the result element exists', () => {
+		const { child } = makeChild('empty-text X', []);
+		expect(() => priv(child).updateEmptyText()).not.toThrow();
 	});
 });

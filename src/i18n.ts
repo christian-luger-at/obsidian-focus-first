@@ -4,15 +4,9 @@ type Lang = 'en' | 'de';
 
 interface Translations {
 	ribbon: { tooltip: string };
-	notice: { clicked: string };
-	statusBar: { text: string };
 	commands: {
-		openModalSimple: { name: string };
-		replaceSelected: { name: string; replacement: string };
-		openModalComplex: { name: string };
 		openView: { name: string };
 	};
-	modal: { content: string };
 	view: {
 		title: string;
 		refresh: string;
@@ -91,18 +85,9 @@ interface Translations {
 const translations: Record<Lang, Translations> = {
 	en: {
 		ribbon: { tooltip: 'Focus first' },
-		notice: { clicked: 'This is a notice!' },
-		statusBar: { text: 'Status bar text' },
 		commands: {
-			openModalSimple: { name: 'Open modal (simple)' },
-			replaceSelected: {
-				name: 'Replace selected content',
-				replacement: 'Sample editor command',
-			},
-			openModalComplex: { name: 'Open modal (complex)' },
 			openView: { name: 'Open Focus First' },
 		},
-		modal: { content: 'Woah!' },
 		view: {
 			title: 'Focus First',
 			refresh: 'Refresh',
@@ -220,18 +205,9 @@ const translations: Record<Lang, Translations> = {
 	},
 	de: {
 		ribbon: { tooltip: 'Focus First' },
-		notice: { clicked: 'Das ist eine Benachrichtigung!' },
-		statusBar: { text: 'Statusleisten-Text' },
 		commands: {
-			openModalSimple: { name: 'Modal öffnen (einfach)' },
-			replaceSelected: {
-				name: 'Ausgewählten Text ersetzen',
-				replacement: 'Beispiel-Editorbefehl',
-			},
-			openModalComplex: { name: 'Modal öffnen (komplex)' },
 			openView: { name: 'Focus First öffnen' },
 		},
-		modal: { content: 'Hallo!' },
 		view: {
 			title: 'Focus First',
 			refresh: 'Aktualisieren',

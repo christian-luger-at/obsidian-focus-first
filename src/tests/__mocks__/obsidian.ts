@@ -32,6 +32,8 @@ export class Plugin {
 	addSettingTab(tab: unknown) { this.lastSettingTab = tab; }
 	registerView(_type: string, viewCreator: (leaf: unknown) => unknown) { this.lastViewCreator = viewCreator; }
 	registerEvent(_eventRef: unknown) {}
+	// Provided by Obsidian's Component/Plugin base class; no-op unless overridden.
+	onunload() {}
 	lastCodeBlockLang?: string;
 	lastCodeBlockProcessor?: (source: string, el: unknown, ctx: unknown) => unknown;
 	registerMarkdownCodeBlockProcessor(lang: string, processor: (source: string, el: unknown, ctx: unknown) => unknown) {
@@ -66,22 +68,8 @@ export const createdSettings: Setting[] = [];
 export function clearCreatedSettings(): void { createdSettings.length = 0; }
 
 export class Setting {
-	private _mockEl = (): MockEl => ({
-		createEl: (_tag: string, _o?: unknown) => ({
-			classList: { add: () => {}, toggle: () => {}, contains: () => false },
-			addEventListener: (_event: string, _handler: unknown) => {},
-			style: { display: '' },
-		}),
-		createDiv: (_o?: unknown) => this._mockEl(),
-		after: (_el: unknown) => {},
-		style: { display: '' },
-		classList: { add: () => {}, toggle: () => {}, contains: () => false },
-		addClass: (_cls: string) => {},
-		addEventListener: (_event: string, _handler: unknown) => {},
-	});
-
-	settingEl = this._mockEl();
-	controlEl = this._mockEl();
+	settingEl = new FakeDomEl();
+	controlEl = new FakeDomEl();
 
 	name = '';
 	lastDropdown?: DropdownComponent;
@@ -89,6 +77,7 @@ export class Setting {
 	lastToggle?: ToggleComponent;
 	lastButton?: ButtonComponent;
 	lastExtraButton?: ExtraButtonComponent;
+	lastSlider?: SliderComponent;
 
 	constructor(_containerEl: unknown) {
 		createdSettings.push(this);
@@ -111,7 +100,8 @@ export class Setting {
 	}
 
 	addSlider(cb: (s: SliderComponent) => void) {
-		cb(new SliderComponent());
+		this.lastSlider = new SliderComponent();
+		cb(this.lastSlider);
 		return this;
 	}
 
@@ -132,16 +122,6 @@ export class Setting {
 		cb(this.lastExtraButton);
 		return this;
 	}
-}
-
-interface MockEl {
-	createEl: (tag: string, o?: unknown) => unknown;
-	createDiv: (o?: unknown) => MockEl;
-	after: (el: unknown) => void;
-	style: { display: string };
-	classList: { add: () => void; toggle: () => void; contains: () => boolean };
-	addClass: (cls: string) => void;
-	addEventListener: (event: string, handler: unknown) => void;
 }
 
 export class ButtonComponent {
@@ -191,18 +171,62 @@ export class DropdownComponent {
 	async simulate(v: string): Promise<void> { this._value = v; await this._onChange?.(v); }
 }
 
-export class TextComponent {
-	inputEl = {
-		value: '',
-		type: '',
-		classList: {
-			add: (_cls: string) => {},
-			toggle: (_cls: string, _force?: boolean) => {},
-			contains: (_cls: string) => false,
+// Minimal fake DOM element that records event listeners and children so tests
+// can dispatch events (e.g. the color <input> and its reset button).
+export class FakeDomEl {
+	tag: string;
+	value = '';
+	type = '';
+	parentElement: FakeDomEl | null = null;
+	children: FakeDomEl[] = [];
+	private _classes = new Set<string>();
+	private _listeners: Record<string, Array<(e?: unknown) => void>> = {};
+	classList = {
+		add: (c: string) => { this._classes.add(c); },
+		remove: (c: string) => { this._classes.delete(c); },
+		toggle: (c: string, force?: boolean) => {
+			const on = force ?? !this._classes.has(c);
+			if (on) this._classes.add(c); else this._classes.delete(c);
 		},
-		setAttribute: (_k: string, _v: string) => {},
-		addEventListener: (_event: string, _cb: () => void) => {},
-	} as unknown as HTMLInputElement;
+		contains: (c: string) => this._classes.has(c),
+	};
+	text = '';
+	style: Record<string, string> = {};
+	constructor(tag = 'div') { this.tag = tag; }
+	setAttribute(_k: string, _v: string) {}
+	addClass(c: string) { this._classes.add(c); }
+	setText(t: string) { this.text = t; }
+	getText() { return this.text; }
+	after(_el: unknown) {}
+	empty() { this.children = []; }
+	addEventListener(event: string, cb: (e?: unknown) => void) { (this._listeners[event] ??= []).push(cb); }
+	dispatch(event: string, e?: unknown) { for (const cb of this._listeners[event] ?? []) cb(e); }
+	createDiv(o?: { cls?: string; text?: string }) { return this.createEl('div', o); }
+	createEl(tag: string, o?: { cls?: string; text?: string }) {
+		const el = new FakeDomEl(tag);
+		if (o?.cls) for (const c of o.cls.split(' ').filter(Boolean)) el.classList.add(c);
+		if (o?.text) el.text = o.text;
+		el.parentElement = this;
+		this.children.push(el);
+		return el;
+	}
+	/** First descendant (or self) carrying the class — test helper. */
+	findByClass(cls: string): FakeDomEl | undefined {
+		if (this._classes.has(cls)) return this;
+		for (const child of this.children) {
+			const found = child.findByClass(cls);
+			if (found) return found;
+		}
+		return undefined;
+	}
+}
+
+export class TextComponent {
+	inputEl = ((): HTMLInputElement => {
+		const el = new FakeDomEl('input');
+		el.parentElement = new FakeDomEl('div');
+		return el as unknown as HTMLInputElement;
+	})();
 
 	private _onChange?: (v: string) => unknown;
 
@@ -214,11 +238,18 @@ export class TextComponent {
 }
 
 export class AbstractInputSuggest<T> {
-	constructor(_app: unknown, _inputEl: HTMLInputElement) {}
+	protected app: unknown;
+	constructor(app: unknown, _inputEl: HTMLInputElement) { this.app = app; }
 	getSuggestions(_q: string): T[] { return []; }
 	renderSuggestion(_item: T, _el: HTMLElement): void {}
 	selectSuggestion(_item: T): void {}
 	close() {}
+}
+
+// Obsidian augments String with `contains`; emulate it for the test env.
+if (typeof (String.prototype as unknown as { contains?: unknown }).contains !== 'function') {
+	(String.prototype as unknown as { contains: (s: string) => boolean }).contains =
+		function (this: string, s: string) { return this.indexOf(s) !== -1; };
 }
 
 export class TFolder {

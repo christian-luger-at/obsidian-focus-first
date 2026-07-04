@@ -42,7 +42,7 @@ export class FocusFirstView extends ItemView {
 	}
 
 	getIcon(): string {
-		return 'checkmark';
+		return 'list-checks';
 	}
 
 	async onOpen(): Promise<void> {

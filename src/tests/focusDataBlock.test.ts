@@ -191,6 +191,17 @@ describe('FocusDataBlock — focus section', () => {
 		expect(app.metadataCache.on).toHaveBeenCalledWith('changed', expect.any(Function));
 		expect(onChange.handler).toBeTypeOf('function');
 	});
+
+	it('re-renders when a metadata change fires', async () => {
+		const { block, onChange } = makeBlock('focus', '', { focusTag: '#focus' }, []);
+		block.onload();
+		scanTasksMock.mockClear();
+
+		onChange.handler?.(); // simulate a task file change
+		await Promise.resolve();
+
+		expect(scanTasksMock).toHaveBeenCalled();
+	});
 });
 
 describe('FocusDataBlock — quadrant sections', () => {

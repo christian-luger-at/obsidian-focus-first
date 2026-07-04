@@ -491,8 +491,12 @@
 	padding: 0 var(--size-4-4);
 }
 
-input.is-invalid {
-	border-color: var(--color-red) !important;
+/* Also match :focus so the invalid state wins over Obsidian's focus border
+   without needing !important. */
+input.is-invalid,
+input.is-invalid:focus {
+	border-color: var(--color-red);
+	box-shadow: 0 0 0 2px rgba(var(--color-red-rgb), 0.2);
 }
 
 .focus-first-pill-group {

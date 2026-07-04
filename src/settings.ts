@@ -36,7 +36,6 @@ export const PRIORITY_OPTIONS = [
 export type Priority = (typeof PRIORITY_OPTIONS)[number]['value'];
 
 export interface FokusFirstSettings {
-	mySetting: string;
 	taskScope: TaskScope;
 	taskFolder: string;
 	urgencyDays: number;
@@ -49,7 +48,6 @@ export interface FokusFirstSettings {
 }
 
 export const DEFAULT_SETTINGS: FokusFirstSettings = {
-	mySetting: 'default',
 	taskScope: 'all',
 	taskFolder: '',
 	urgencyDays: 3,
@@ -66,7 +64,7 @@ export const DEFAULT_SETTINGS: FokusFirstSettings = {
 	fontSize: 100,
 };
 
-class FolderSuggest extends AbstractInputSuggest<TFolder> {
+export class FolderSuggest extends AbstractInputSuggest<TFolder> {
 	private inputEl: HTMLInputElement;
 
 	constructor(app: App, inputEl: HTMLInputElement) {

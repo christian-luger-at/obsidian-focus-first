@@ -22,7 +22,7 @@ export default class FocusFirstPlugin extends Plugin {
 
 		this.applyFontSize();
 
-		this.addRibbonIcon('checkmark', t().ribbon.tooltip, async () => {
+		this.addRibbonIcon('list-checks', t().ribbon.tooltip, async () => {
 			await this.activateView();
 		});
 
@@ -49,10 +49,6 @@ export default class FocusFirstPlugin extends Plugin {
 			}
 			ctx.addChild(new WrappedTasksBlock(el, this, source, ctx.sourcePath));
 		});
-	}
-
-	onunload() {
-		
 	}
 
 	async activateView() {

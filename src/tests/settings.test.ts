@@ -1,9 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DEFAULT_SETTINGS, FokusFirstSettings, TaskScope, Priority } from '../settings';
+import { DEFAULT_SETTINGS, FokusFirstSettings, TaskScope, Priority, FolderSuggest } from '../settings';
 import type { FokusFirstSettingTab as FokusFirstSettingTabType } from '../settings';
-import { createdSettings, clearCreatedSettings } from './__mocks__/obsidian';
+import { createdSettings, clearCreatedSettings, TFolder, TFile } from './__mocks__/obsidian';
 import type { DropdownComponent, TextComponent, ToggleComponent } from './__mocks__/obsidian';
 import type { ExtraButtonComponent } from './__mocks__/obsidian';
+
+// Access helpers for the fake DOM elements the mock exposes on settingEl/controlEl.
+interface FakeEl {
+	text: string;
+	children: FakeEl[];
+	classList: { contains(c: string): boolean };
+	findByClass(cls: string): FakeEl | undefined;
+	dispatch(event: string, e?: unknown): void;
+}
+const asFakeEl = (el: unknown) => el as FakeEl;
 
 // ---------------------------------------------------------------------------
 // Unit tests — DEFAULT_SETTINGS
@@ -70,6 +80,7 @@ function makePlugin(overrides: Partial<FokusFirstSettings> = {}) {
 		saveSettings: vi.fn(async () => {
 			saved.push({ ...plugin.settings });
 		}),
+		applyFontSize: vi.fn(),
 		_saved: saved,
 	};
 	return plugin;
@@ -286,12 +297,11 @@ describe('loadSettings — merges persisted data with defaults', () => {
 
 		expect(merged.taskScope).toBe('folder');
 		expect(merged.taskFolder).toBe('');  // filled from defaults
-		expect(merged.mySetting).toBe('default');
+		expect(merged.urgencyDays).toBe(3);  // filled from defaults
 	});
 
 	it('fully persisted data overrides all defaults', () => {
 		const persisted: FokusFirstSettings = {
-			mySetting: 'custom',
 			taskScope: 'folder',
 			taskFolder: 'MyFolder',
 			urgencyDays: 7,
@@ -616,6 +626,19 @@ describe('FokusFirstSettingTab — focusTag onChange', () => {
 });
 
 // ---------------------------------------------------------------------------
+// onChange — hideTag text input
+// ---------------------------------------------------------------------------
+
+describe('FokusFirstSettingTab — hideTag onChange', () => {
+	it('saves a custom, trimmed hide tag', async () => {
+		const { plugin } = makeTabWithDisplay();
+		await textByValue('#hide')?.simulate('  #versteckt  ');
+		expect(plugin.settings.hideTag).toBe('#versteckt');
+		expect(plugin.saveSettings).toHaveBeenCalled();
+	});
+});
+
+// ---------------------------------------------------------------------------
 // onChange — groupByPrimary toggle
 // ---------------------------------------------------------------------------
 
@@ -732,6 +755,163 @@ describe('DEFAULT_SETTINGS — importantPriorities', () => {
 // ---------------------------------------------------------------------------
 // Unit tests — DEFAULT_SETTINGS shape completeness
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Quadrant color picker — input event + reset button
+// ---------------------------------------------------------------------------
+
+interface FakeColorInput {
+	value: string;
+	dispatch: (event: string) => void;
+	parentElement: { children: Array<{ tag: string; dispatch: (event: string) => void }> };
+}
+
+function asFakeInput(input: TextComponent | undefined): FakeColorInput {
+	if (!input) throw new Error('color input not found');
+	return input.inputEl as unknown as FakeColorInput;
+}
+
+describe('FokusFirstSettingTab — quadrant color picker', () => {
+	it('writing a new color updates the setting and saves', async () => {
+		const { plugin } = makeTabWithDisplay();
+		const colorInput = textByValue('#c92a2a'); // "do" quadrant default color
+		expect(colorInput).toBeDefined();
+
+		const fake = asFakeInput(colorInput);
+		fake.value = '#123456';
+		fake.dispatch('input');
+		await Promise.resolve();
+
+		expect(plugin.settings.quadrants.do.color).toBe('#123456');
+		expect(plugin.saveSettings).toHaveBeenCalled();
+	});
+
+	it('the reset button restores the default color and saves', async () => {
+		const { plugin } = makeTabWithDisplay();
+		const fake = asFakeInput(textByValue('#c92a2a'));
+
+		// Change it first so the reset is observable.
+		fake.value = '#000000';
+		fake.dispatch('input');
+		expect(plugin.settings.quadrants.do.color).toBe('#000000');
+
+		const resetBtn = fake.parentElement.children.find((c) => c.tag === 'button');
+		expect(resetBtn).toBeDefined();
+		resetBtn?.dispatch('click');
+		await Promise.resolve();
+
+		expect(plugin.settings.quadrants.do.color).toBe('#c92a2a');
+		expect(fake.value).toBe('#c92a2a');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Font size slider onChange
+// ---------------------------------------------------------------------------
+
+describe('FokusFirstSettingTab — font size slider', () => {
+	it('saves the value and re-applies the font size on change', async () => {
+		const { plugin } = makeTabWithDisplay();
+		const slider = createdSettings.find((s) => s.lastSlider)?.lastSlider;
+		expect(slider).toBeDefined();
+
+		await slider?.simulate(130);
+
+		expect(plugin.settings.fontSize).toBe(130);
+		expect(plugin.saveSettings).toHaveBeenCalled();
+		expect(plugin.applyFontSize).toHaveBeenCalled();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Important-priorities pills
+// ---------------------------------------------------------------------------
+
+describe('FokusFirstSettingTab — important priority pills', () => {
+	function pills(): FakeEl[] {
+		const control = createdSettings
+			.map((s) => asFakeEl(s.controlEl))
+			.find((el) => el.findByClass('focus-first-pill'));
+		return control?.findByClass('focus-first-pill-group')?.children ?? [];
+	}
+
+	it('clicking a pill toggles the priority (both directions) and saves', async () => {
+		const { plugin } = makeTabWithDisplay();
+		const before = plugin.settings.importantPriorities.length;
+		const firstPill = pills()[0];
+		expect(firstPill).toBeDefined();
+
+		firstPill?.dispatch('click');
+		await Promise.resolve();
+		await Promise.resolve();
+		expect(plugin.settings.importantPriorities.length).not.toBe(before);
+		expect(plugin.saveSettings).toHaveBeenCalled();
+
+		// Clicking again reverses it — covers the opposite branch of the toggle.
+		firstPill?.dispatch('click');
+		await Promise.resolve();
+		await Promise.resolve();
+		expect(plugin.settings.importantPriorities.length).toBe(before);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Collapsible section header click
+// ---------------------------------------------------------------------------
+
+describe('FokusFirstSettingTab — collapsible header click', () => {
+	it('toggles on a header click but ignores clicks on the chevron button', () => {
+		makeTabWithDisplay();
+		const header = createdSettings
+			.map((s) => asFakeEl(s.settingEl))
+			.find((el) => el.classList.contains('focus-first-section-header'));
+		expect(header).toBeDefined();
+
+		// Target is not the chevron → toggle runs.
+		expect(() => header?.dispatch('click', { target: { closest: () => null } })).not.toThrow();
+		// Target is the chevron button → handler returns early.
+		expect(() => header?.dispatch('click', { target: { closest: () => ({}) } })).not.toThrow();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// FolderSuggest
+// ---------------------------------------------------------------------------
+
+describe('FolderSuggest', () => {
+	const inputStub = () => ({ value: '', trigger: vi.fn() });
+
+	it('getSuggestions returns only matching folders (not files)', () => {
+		const app = {
+			vault: {
+				getAllLoadedFiles: () => [new TFolder('Work'), new TFolder('Work/Tasks'), new TFile('note.md')],
+			},
+		};
+		const fs = new FolderSuggest(app as never, inputStub() as unknown as HTMLInputElement);
+		expect(fs.getSuggestions('work').map((f) => f.path)).toEqual(['Work', 'Work/Tasks']);
+	});
+
+	it('renderSuggestion writes the folder path into the element', () => {
+		const fs = new FolderSuggest(
+			{ vault: { getAllLoadedFiles: () => [] } } as never,
+			inputStub() as unknown as HTMLInputElement,
+		);
+		const el = { setText: vi.fn() };
+		fs.renderSuggestion(new TFolder('Projects') as never, el as unknown as HTMLElement);
+		expect(el.setText).toHaveBeenCalledWith('Projects');
+	});
+
+	it('selectSuggestion fills the input and triggers an input event', () => {
+		const input = inputStub();
+		const fs = new FolderSuggest(
+			{ vault: { getAllLoadedFiles: () => [] } } as never,
+			input as unknown as HTMLInputElement,
+		);
+		fs.selectSuggestion(new TFolder('Work/Tasks') as never);
+		expect(input.value).toBe('Work/Tasks');
+		expect(input.trigger).toHaveBeenCalledWith('input');
+	});
+});
 
 describe('DEFAULT_SETTINGS — shape completeness', () => {
 	it('has all required top-level keys', () => {

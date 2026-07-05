@@ -188,7 +188,6 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 					slider
 						.setLimits(70, 150, 10)
 						.setValue(this.plugin.settings.fontSize)
-						.setDynamicTooltip()
 						.onChange(async (value) => {
 							this.plugin.settings.fontSize = value;
 							await this.plugin.saveSettings();
@@ -249,8 +248,7 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 				.setDesc(t().settings.focusTag.desc)
 				.addText((text) =>
 					text
-						// eslint-disable-next-line obsidianmd/ui/sentence-case
-						.setPlaceholder('#focus')
+						.setPlaceholder(DEFAULT_SETTINGS.focusTag)
 						.setValue(this.plugin.settings.focusTag)
 						.onChange(async (value) => {
 							this.plugin.settings.focusTag = value.trim();
@@ -265,8 +263,7 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 				.setDesc(t().settings.hideTag.desc)
 				.addText((text) =>
 					text
-						// eslint-disable-next-line obsidianmd/ui/sentence-case
-						.setPlaceholder('#hide')
+						.setPlaceholder(DEFAULT_SETTINGS.hideTag)
 						.setValue(this.plugin.settings.hideTag)
 						.onChange(async (value) => {
 							this.plugin.settings.hideTag = value.trim();

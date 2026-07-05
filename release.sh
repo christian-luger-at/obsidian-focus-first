@@ -116,8 +116,33 @@ if git rev-parse "$TAG" &> /dev/null; then
 	exit 1
 fi
 
+# Release notes: use --notes if provided, otherwise auto-generate them from the
+# Conventional Commits since the previous tag, grouped into Features / Fixes /
+# Other. Noise (chore/ci/test/docs/style/build) is omitted.
 if [[ -z "$NOTES" ]]; then
-	NOTES="Release ${TAG}"
+	PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+	RANGE="HEAD"
+	[[ -n "$PREV_TAG" ]] && RANGE="${PREV_TAG}..HEAD"
+
+	SUBJECTS=$(git log "$RANGE" --no-merges --pretty='%s' || true)
+	FEATS=$(printf '%s\n' "$SUBJECTS" | sed -n -E 's/^feat(\([^)]*\))?(!)?: /- /p' || true)
+	FIXES=$(printf '%s\n' "$SUBJECTS" | sed -n -E 's/^fix(\([^)]*\))?(!)?: /- /p' || true)
+	OTHERS=$(printf '%s\n' "$SUBJECTS" \
+		| { grep -vE '^(feat|fix|chore|ci|test|docs|style|refactor|build|perf)(\([^)]*\))?(!)?: ' || true; } \
+		| sed '/^$/d; s/^/- /')
+
+	NOTES=""
+	[[ -n "$FEATS"  ]] && NOTES+="### Features"$'\n'"$FEATS"$'\n\n'
+	[[ -n "$FIXES"  ]] && NOTES+="### Fixes"$'\n'"$FIXES"$'\n\n'
+	[[ -n "$OTHERS" ]] && NOTES+="### Other"$'\n'"$OTHERS"$'\n\n'
+
+	[[ -z "$NOTES" ]] && NOTES="Release ${TAG}"
+
+	echo ""
+	echo "Auto-generated release notes:"
+	echo "-----------------------------"
+	printf '%s\n' "$NOTES"
+	echo "-----------------------------"
 fi
 
 read -r -p "Publish ${TAG} to GitHub? This will push a tag and create a public release. [y/N] " CONFIRM

@@ -211,9 +211,11 @@ The release script can also tag, push, and publish the GitHub release for you. T
 npm run release:publish
 # equivalent to: bash release.sh --publish
 
-# with custom release notes:
+# override the auto-generated notes with your own text:
 bash release.sh --publish --notes "Adds collapsible settings sections"
 ```
+
+**Release notes are generated automatically** from the [Conventional Commits](https://www.conventionalcommits.org/) since the previous tag: `feat:` commits become **Features**, `fix:` commits become **Fixes**, and non-conventional subjects go under **Other** (noise like `chore:` / `ci:` / `test:` / `docs:` is dropped). The script prints a preview before the publish confirmation. Pass `--notes "…"` to override.
 
 To bump the version, build, and publish in a single command, use the combined shortcuts (these chain `--bump <type> --publish`):
 

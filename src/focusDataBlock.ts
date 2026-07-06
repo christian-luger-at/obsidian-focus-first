@@ -3,6 +3,7 @@ import FocusFirstPlugin from './main';
 import { scanTasks, TaskItem } from './taskScanner';
 import { classifyTasks } from './matrixClassifier';
 import { completeTaskLine } from './taskRenderer';
+import { canonicalizeTaskLine } from './tasksFormat';
 import { FocusSection } from './focusSection';
 
 export { isFocusSection } from './focusSection';
@@ -58,9 +59,11 @@ export class FocusDataBlock extends MarkdownRenderChild {
 			return;
 		}
 
-		// Render the raw task lines as a Markdown checklist so Obsidian — and the
-		// Tasks plugin, when enabled — format them exactly like normal tasks.
-		const markdown = selected.map((task) => task.line).join('\n');
+		// Render the task lines as a Markdown checklist so Obsidian — and the Tasks
+		// plugin, when enabled — format them like normal tasks. The metadata is
+		// reordered into the Tasks plugin's canonical order first, so the output
+		// matches a native ```tasks``` query.
+		const markdown = selected.map((task) => canonicalizeTaskLine(task.line)).join('\n');
 		const result = el.createDiv({ cls: 'focus-first-tasks-result' });
 		await MarkdownRenderer.render(this.plugin.app, markdown, result, this.sourcePath, this);
 

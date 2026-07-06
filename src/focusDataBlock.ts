@@ -65,6 +65,55 @@ export class FocusDataBlock extends MarkdownRenderChild {
 		await MarkdownRenderer.render(this.plugin.app, markdown, result, this.sourcePath, this);
 
 		this.rewireCheckboxes(result, selected);
+		this.appendBacklinks(result, selected);
+	}
+
+	/**
+	 * The Markdown renderer formats the task lines like the Tasks plugin, but it
+	 * doesn't add the source backlink the Tasks plugin appends to its own query
+	 * results. Recreate that `(Document > Heading)` backlink so the output matches
+	 * a normal Tasks query. Uses the same `tasks-backlink` markup for styling.
+	 */
+	private appendBacklinks(result: HTMLElement, selected: TaskItem[]): void {
+		const items = result.querySelectorAll('.task-list-item');
+		items.forEach((item, i) => {
+			const task = selected[i];
+			if (!task) return;
+
+			const heading = this.precedingHeading(task);
+			const linkText = heading ? `${task.file.basename} > ${heading}` : task.file.basename;
+			const linkHref = heading ? `${task.file.path}#${heading}` : task.file.path;
+
+			const backlink = item.createSpan({ cls: 'tasks-backlink' });
+			backlink.appendText(' (');
+			const link = backlink.createEl('a', {
+				cls: 'internal-link',
+				text: linkText,
+				href: linkHref,
+				attr: { 'data-href': linkHref, rel: 'noopener', target: '_blank' },
+			});
+			link.addEventListener('click', (evt) => {
+				evt.preventDefault();
+				void this.plugin.app.workspace.openLinkText(
+					linkHref,
+					this.sourcePath,
+					evt.ctrlKey || evt.metaKey,
+				);
+			});
+			backlink.appendText(')');
+		});
+	}
+
+	/** The nearest heading at or above the task's line, or null if none. */
+	private precedingHeading(task: TaskItem): string | null {
+		const headings = this.plugin.app.metadataCache.getFileCache(task.file)?.headings;
+		if (!headings || headings.length === 0) return null;
+		let result: string | null = null;
+		for (const heading of headings) {
+			if (heading.position.start.line <= task.lineNumber) result = heading.heading;
+			else break;
+		}
+		return result;
 	}
 
 	/**

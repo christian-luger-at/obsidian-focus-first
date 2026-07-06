@@ -38,11 +38,14 @@ class FakeEl {
 	addClass(cls: string) { this.cls.add(cls); }
 
 	createDiv(o?: { cls?: string; text?: string }): FakeEl { return this.createEl('div', o); }
+	createSpan(o?: { cls?: string; text?: string }): FakeEl { return this.createEl('span', o); }
+	appendText(t: string) { this.text += t; }
 
-	createEl(tag: string, o?: { cls?: string; text?: string; attr?: Record<string, string> }): FakeEl {
+	createEl(tag: string, o?: { cls?: string; text?: string; href?: string; attr?: Record<string, string> }): FakeEl {
 		const el = new FakeEl(tag);
 		if (o?.cls) for (const c of o.cls.split(' ').filter(Boolean)) el.cls.add(c);
 		if (o?.text) el.text = o.text;
+		if (o?.href) el.attrs.href = o.href;
 		if (o?.attr) Object.assign(el.attrs, o.attr);
 		this.children.push(el);
 		return el;
@@ -98,7 +101,9 @@ function makeBlock(
 	const app = {
 		metadataCache: {
 			on: vi.fn((_evt: string, handler: () => void) => { onChange.handler = handler; return {}; }),
+			getFileCache: vi.fn(() => undefined as unknown),
 		},
+		workspace: { openLinkText: vi.fn(async () => {}) },
 		vault: { modify: vi.fn(async () => {}) } as {
 			modify: ReturnType<typeof vi.fn>;
 			getAbstractFileByPath?: (path: string) => unknown;
@@ -116,6 +121,7 @@ const priv = (block: unknown) => block as {
 	render(): Promise<void>;
 	select(tasks: TaskItem[]): TaskItem[];
 	rewireCheckboxes(result: unknown, selected: TaskItem[]): void;
+	appendBacklinks(result: unknown, selected: TaskItem[]): void;
 };
 
 // ---------------------------------------------------------------------------
@@ -199,6 +205,59 @@ describe('FocusDataBlock — focus section', () => {
 		await Promise.resolve();
 
 		expect(app.vault.modify).toHaveBeenCalled();
+	});
+
+	it('appends a source backlink to each task, like the Tasks plugin', () => {
+		const tasks = [makeTask({ file: new TFile('Notes/Meeting.md') as never, lineNumber: 0 })];
+		const { block } = makeBlock('focus', '', { focusTag: '#focus' }, tasks);
+
+		const result = new FakeEl('div');
+		result.createEl('li', { cls: 'task-list-item' });
+		priv(block).appendBacklinks(result, tasks);
+
+		const backlink = result.findByClass('tasks-backlink');
+		expect(backlink).toBeDefined();
+		expect(backlink?.text).toBe(' ()'); // ' (' + link + ')' — link text lives in the child
+		const link = backlink?.findByClass('internal-link');
+		expect(link?.text).toBe('Meeting'); // file basename, no heading
+		expect(link?.attrs['data-href']).toBe('Notes/Meeting.md');
+	});
+
+	it('includes the preceding heading as the backlink anchor', () => {
+		const tasks = [makeTask({ file: new TFile('Notes/Meeting.md') as never, lineNumber: 5 })];
+		const { block, app } = makeBlock('focus', '', { focusTag: '#focus' }, tasks);
+		app.metadataCache.getFileCache = vi.fn(() => ({
+			headings: [
+				{ heading: 'Intro', position: { start: { line: 0 } } },
+				{ heading: 'Action items', position: { start: { line: 3 } } },
+				{ heading: 'Later', position: { start: { line: 9 } } },
+			],
+		}));
+
+		const result = new FakeEl('div');
+		result.createEl('li', { cls: 'task-list-item' });
+		priv(block).appendBacklinks(result, tasks);
+
+		const link = result.findByClass('tasks-backlink')?.findByClass('internal-link');
+		expect(link?.text).toBe('Meeting > Action items');
+		expect(link?.attrs['data-href']).toBe('Notes/Meeting.md#Action items');
+	});
+
+	it('opens the linked note when the backlink is clicked', () => {
+		const tasks = [makeTask({ file: new TFile('Notes/Meeting.md') as never, lineNumber: 0 })];
+		const { block, app } = makeBlock('focus', '', { focusTag: '#focus' }, tasks, 'Dashboard.md');
+
+		const result = new FakeEl('div');
+		result.createEl('li', { cls: 'task-list-item' });
+		priv(block).appendBacklinks(result, tasks);
+
+		result.findByClass('internal-link')?.dispatch('click', {
+			preventDefault: () => {},
+			ctrlKey: false,
+			metaKey: false,
+		});
+
+		expect(app.workspace.openLinkText).toHaveBeenCalledWith('Notes/Meeting.md', 'Dashboard.md', false);
 	});
 
 	it('subscribes to metadata changes on load', () => {

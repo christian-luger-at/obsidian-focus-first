@@ -572,6 +572,18 @@ describe('drag and drop', () => {
 
 		expect(app.vault.modify).not.toHaveBeenCalled();
 	});
+
+	it('ignores a drop with a malformed JSON payload without throwing', async () => {
+		const { container, app } = renderTwoQuadrants();
+		const targetCell = container.findAllByClass('focus-first-quadrant')[1]!; // "schedule"
+		const store = { 'application/json': 'not json {{{' };
+		const dataTransfer = { getData: (k: string) => store[k as keyof typeof store] };
+
+		expect(() => targetCell.dispatch('drop', { preventDefault: () => {}, dataTransfer })).not.toThrow();
+		await Promise.resolve();
+
+		expect(app.vault.modify).not.toHaveBeenCalled();
+	});
 });
 
 // ---------------------------------------------------------------------------

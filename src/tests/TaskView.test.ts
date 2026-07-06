@@ -14,6 +14,7 @@ vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 const { FocusFirstView } = await import('../TaskView');
 const { DEFAULT_SETTINGS } = await import('../settings');
 const { TFile } = await import('./__mocks__/obsidian');
+const { removeTagFromLine } = await import('../taskRenderer');
 
 import type { MatrixTask, Quadrant } from '../matrixClassifier';
 import type { FocusFirstSettings, SortField } from '../settings';
@@ -349,6 +350,33 @@ describe('passesDateFilter', () => {
 });
 
 // ---------------------------------------------------------------------------
+// removeTagFromLine — targeted tag removal that preserves whitespace
+// ---------------------------------------------------------------------------
+
+describe('removeTagFromLine', () => {
+	it('removes the tag and its leading space, keeping the rest', () => {
+		expect(removeTagFromLine('- [ ] Task one #focus', '#focus')).toBe('- [ ] Task one');
+	});
+
+	it('preserves leading indentation of nested tasks', () => {
+		expect(removeTagFromLine('\t- [ ] Nested #focus', '#focus')).toBe('\t- [ ] Nested');
+		expect(removeTagFromLine('    - [ ] Nested #hide', '#hide')).toBe('    - [ ] Nested');
+	});
+
+	it('is case-insensitive', () => {
+		expect(removeTagFromLine('- [ ] Task #Focus', '#focus')).toBe('- [ ] Task');
+	});
+
+	it('does not touch a longer tag that starts the same', () => {
+		expect(removeTagFromLine('- [ ] Task #done', '#do')).toBe('- [ ] Task #done');
+	});
+
+	it('leaves the line unchanged when the tag is absent', () => {
+		expect(removeTagFromLine('- [ ] Task one', '#focus')).toBe('- [ ] Task one');
+	});
+});
+
+// ---------------------------------------------------------------------------
 // toggleFocusTag / toggleHideTag / completeTask / moveTaskToQuadrant
 // ---------------------------------------------------------------------------
 
@@ -365,6 +393,13 @@ describe('toggleFocusTag', () => {
 		const { view } = makeView({ focusTag: '#focus' }, vault);
 		await priv(view).toggleFocusTag('a.md', 0, '#focus', false);
 		expect(vault._store['a.md']).toBe('- [ ] Task one');
+	});
+
+	it('keeps indentation of a nested task when removing the tag', async () => {
+		const vault = makeFakeVault({ 'a.md': '\t- [ ] Nested #focus' });
+		const { view } = makeView({ focusTag: '#focus' }, vault);
+		await priv(view).toggleFocusTag('a.md', 0, '#focus', false);
+		expect(vault._store['a.md']).toBe('\t- [ ] Nested');
 	});
 
 	it('does nothing when the file does not exist', async () => {

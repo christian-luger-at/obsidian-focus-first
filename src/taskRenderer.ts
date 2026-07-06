@@ -38,6 +38,16 @@ export async function openTaskFile(app: App, task: TaskItem): Promise<void> {
 	}
 }
 
+/**
+ * Removes every occurrence of a tag (together with its leading whitespace) from
+ * a line, case-insensitively, leaving the rest of the line's whitespace — in
+ * particular any leading indentation of nested tasks — untouched.
+ */
+export function removeTagFromLine(line: string, tag: string): string {
+	const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	return line.replace(new RegExp(`\\s*${escaped}(?=\\s|$)`, 'gi'), '');
+}
+
 export async function completeTaskLine(app: App, filePath: string, lineNumber: number): Promise<void> {
 	const file = app.vault.getAbstractFileByPath(filePath);
 	if (!(file instanceof TFile)) return;
@@ -66,10 +76,7 @@ export async function toggleFocusTagLine(
 	if (add) {
 		lines[lineNumber] = line.trimEnd() + ' ' + settings.focusTag;
 	} else {
-		lines[lineNumber] = line
-			.split(/\s+/)
-			.filter((token) => token.toLowerCase() !== focusTag)
-			.join(' ');
+		lines[lineNumber] = removeTagFromLine(line, focusTag);
 	}
 	await app.vault.modify(file, lines.join('\n'));
 }
@@ -89,10 +96,7 @@ export async function toggleHideTagLine(
 	if (line === undefined) return;
 	const already = line.split(/\s+/).some((token) => token.toLowerCase() === hideTag);
 	if (already) {
-		lines[lineNumber] = line
-			.split(/\s+/)
-			.filter((token) => token.toLowerCase() !== hideTag)
-			.join(' ');
+		lines[lineNumber] = removeTagFromLine(line, hideTag);
 	} else {
 		lines[lineNumber] = line.trimEnd() + ' ' + settings.hideTag;
 	}

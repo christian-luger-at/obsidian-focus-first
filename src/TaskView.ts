@@ -11,6 +11,7 @@ import {
 	completeTaskLine,
 	toggleFocusTagLine,
 	toggleHideTagLine,
+	removeTagFromLine,
 } from './taskRenderer';
 
 export const FOCUS_FIRST_VIEW_TYPE = 'focus-first-view';
@@ -452,11 +453,21 @@ export class FocusFirstView extends ItemView {
 			cell.classList.remove('is-drag-over');
 			const raw = e.dataTransfer?.getData('application/json');
 			if (!raw) return;
-			const { filePath, lineNumber, quadrant: sourceQuadrant } = JSON.parse(raw) as {
-				filePath: string;
-				lineNumber: number;
-				quadrant: Quadrant;
+
+			// Defensively parse — a drop can carry foreign or malformed payloads.
+			let data: unknown;
+			try {
+				data = JSON.parse(raw);
+			} catch {
+				return;
+			}
+			if (typeof data !== 'object' || data === null) return;
+			const { filePath, lineNumber, quadrant: sourceQuadrant } = data as {
+				filePath?: unknown;
+				lineNumber?: unknown;
+				quadrant?: unknown;
 			};
+			if (typeof filePath !== 'string' || typeof lineNumber !== 'number') return;
 			if (sourceQuadrant === targetQuadrant) return;
 			void this.moveTaskToQuadrant(filePath, lineNumber, targetQuadrant);
 		});
@@ -478,8 +489,7 @@ export class FocusFirstView extends ItemView {
 
 		let newLine = line;
 		for (const tag of quadrantTags) {
-			const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-			newLine = newLine.replace(new RegExp(`\\s*${escaped}(?=\\s|$)`, 'g'), '');
+			newLine = removeTagFromLine(newLine, tag);
 		}
 
 		const targetTag = this.plugin.settings.quadrants[targetQuadrant].tag.trim();

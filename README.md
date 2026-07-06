@@ -116,6 +116,10 @@ See **[docs/code-block.md](docs/code-block.md)** for both modes, all parameters,
 
 Found a bug or have a feature request? Please [open an issue](../../issues).
 
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report issues, set up the project, and open a pull request. Note that Focus First is **source-available**, not open source — please read the licensing note in the guide before sending code.
+
 ## License
 
 © 2026 Christian Luger. Focus First is **source-available**: you may install, use, and privately modify it, but you may not redistribute it or publish modified versions. See [LICENSE](LICENSE) for the full terms.

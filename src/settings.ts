@@ -197,6 +197,10 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 		});
 
 		this.createSection(containerEl, t().settings.taskSourcesHeading, (body) => {
+			// The folder field is always rendered and just shown/hidden based on the
+			// scope, so switching the scope doesn't require re-rendering the tab.
+			let updateFolderVisibility: () => void = () => {};
+
 			new Setting(body)
 				.setName(t().settings.taskScope.name)
 				.setDesc(t().settings.taskScope.desc)
@@ -208,38 +212,41 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 						.onChange(async (value: string) => {
 							this.plugin.settings.taskScope = value as TaskScope;
 							await this.plugin.saveSettings();
-							this.display();
+							updateFolderVisibility();
 						}),
 				);
 
-			if (this.plugin.settings.taskScope === 'folder') {
-				const folderSetting = new Setting(body)
-					.setName(t().settings.taskFolder.name)
-					.setDesc(t().settings.taskFolder.desc)
-					.addText((text) => {
-						text
-							.setPlaceholder(t().settings.taskFolder.placeholder)
-							.setValue(this.plugin.settings.taskFolder)
-							.onChange(async (value) => {
-								const empty = value.trim() === '';
-								text.inputEl.classList.toggle('is-invalid', empty);
-								folderErrorEl.classList.toggle('focus-first-hidden', !empty);
-								this.plugin.settings.taskFolder = value;
-								await this.plugin.saveSettings();
-							});
-						new FolderSuggest(this.app, text.inputEl);
-					});
-
-				const folderErrorEl = body.createEl('p', {
-					text: t().settings.taskFolder.error,
-					cls: 'focus-first-setting-error',
+			const folderSetting = new Setting(body)
+				.setName(t().settings.taskFolder.name)
+				.setDesc(t().settings.taskFolder.desc)
+				.addText((text) => {
+					text
+						.setPlaceholder(t().settings.taskFolder.placeholder)
+						.setValue(this.plugin.settings.taskFolder)
+						.onChange(async (value) => {
+							const empty = value.trim() === '';
+							text.inputEl.classList.toggle('is-invalid', empty);
+							this.plugin.settings.taskFolder = value;
+							await this.plugin.saveSettings();
+							updateFolderVisibility();
+						});
+					new FolderSuggest(this.app, text.inputEl);
 				});
-				folderErrorEl.classList.toggle(
-					'focus-first-hidden',
-					this.plugin.settings.taskFolder.trim() !== '',
-				);
-				folderSetting.settingEl.after(folderErrorEl);
-			}
+
+			const folderErrorEl = body.createEl('p', {
+				text: t().settings.taskFolder.error,
+				cls: 'focus-first-setting-error',
+			});
+			folderSetting.settingEl.after(folderErrorEl);
+
+			updateFolderVisibility = () => {
+				const isFolder = this.plugin.settings.taskScope === 'folder';
+				folderSetting.settingEl.classList.toggle('focus-first-hidden', !isFolder);
+				// Error only when the folder scope is active and the folder is empty.
+				const showError = isFolder && this.plugin.settings.taskFolder.trim() === '';
+				folderErrorEl.classList.toggle('focus-first-hidden', !showError);
+			};
+			updateFolderVisibility();
 		});
 
 		this.createSection(containerEl, t().settings.focusHeading, (body) => {

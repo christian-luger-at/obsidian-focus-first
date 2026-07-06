@@ -374,6 +374,19 @@ describe('FocusFirstSettingTab — scope dropdown onChange', () => {
 		expect(plugin.settings.taskScope).toBe('all');
 		expect(plugin.saveSettings).toHaveBeenCalled();
 	});
+
+	it('toggles the folder field visibility without re-rendering the tab', async () => {
+		makeTabWithDisplay({ taskScope: 'all' });
+		const folderSetting = createdSettings.find((s) => s.settingEl.classList.contains('focus-first-hidden'));
+		// The folder field starts hidden while the scope is "all".
+		expect(folderSetting).toBeDefined();
+
+		await scopeDropdown()?.simulate('folder');
+		expect(folderSetting?.settingEl.classList.contains('focus-first-hidden')).toBe(false);
+
+		await scopeDropdown()?.simulate('all');
+		expect(folderSetting?.settingEl.classList.contains('focus-first-hidden')).toBe(true);
+	});
 });
 
 // ---------------------------------------------------------------------------

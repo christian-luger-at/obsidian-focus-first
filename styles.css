@@ -77,6 +77,31 @@
 	gap: var(--size-4-2);
 }
 
+/* The add ("+") button is an icon button. Give it an explicit theme-adaptive
+   colour so the icon stays visible in dark mode (some themes leave a bare
+   clickable-icon on a <button> without a resolved icon colour). */
+.focus-first-add-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background-color: transparent;
+	box-shadow: none;
+	padding: var(--size-2-2);
+	color: var(--icon-color, var(--text-muted));
+	cursor: pointer;
+}
+
+.focus-first-add-btn svg {
+	width: var(--icon-s, 18px);
+	height: var(--icon-s, 18px);
+	color: inherit;
+}
+
+.focus-first-add-btn:hover {
+	color: var(--text-normal);
+	background-color: var(--background-modifier-hover);
+}
+
 /* ── Quick-add dialog ────────────────────────────────────── */
 
 .focus-first-quickadd-input {

@@ -1,10 +1,11 @@
 name: Attest release build
 
 # Runs after release.sh has created and published the GitHub release. It rebuilds
-# main.js in CI, generates a signed build-provenance attestation for it, and
-# replaces the release's main.js with the attested CI build so what users download
-# matches the attestation. Verify with:
+# main.js in CI, generates a signed build-provenance attestation for all three
+# release assets (main.js, styles.css, manifest.json), and re-uploads them so what
+# users download matches the attestation. Verify any asset with, e.g.:
 #   gh attestation verify main.js --repo christian-luger-at/obsidian-focus-first
+#   gh attestation verify styles.css --repo christian-luger-at/obsidian-focus-first
 #
 # Also runnable manually (workflow_dispatch) with a tag input to attest an
 # already-published release retroactively.
@@ -40,12 +41,17 @@ jobs:
             - run: npm ci
             - run: npm run build
 
-            - name: Attest build provenance for main.js
+            - name: Attest build provenance for the release assets
               uses: actions/attest-build-provenance@v2
               with:
-                  subject-path: main.js
+                  # All three published assets: the built main.js plus the
+                  # shipped styles.css and manifest.json (checked out at the tag).
+                  subject-path: |
+                      main.js
+                      styles.css
+                      manifest.json
 
-            - name: Upload attested main.js to the release
+            - name: Upload attested assets to the release
               env:
                   GH_TOKEN: ${{ github.token }}
-              run: gh release upload "${TAG}" main.js --clobber
+              run: gh release upload "${TAG}" main.js styles.css manifest.json --clobber

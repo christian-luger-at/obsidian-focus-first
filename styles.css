@@ -233,6 +233,10 @@
 	overflow: hidden;
 	padding: var(--size-4-3);
 	box-sizing: border-box;
+	/* Establish a size container so the matrix can react to the view's own width
+	   (issue #12) — this also stacks the quadrants in a narrow desktop sidebar,
+	   not just on a phone. */
+	container-type: inline-size;
 }
 
 /* ── Matrix grid ─────────────────────────────────────────── */
@@ -244,6 +248,19 @@
 	gap: var(--size-4-4);
 	height: 100%;
 	overflow: hidden;
+}
+
+/* Issue #12: in a narrow view (phone, or a narrow desktop sidebar) the 2×2 grid
+   squeezes each quadrant unreadably. Stack the quadrants in a single column and
+   let the whole matrix scroll vertically, with each quadrant sized to its
+   content instead of stretched to a grid cell. */
+@container (max-width: 480px) {
+	.focus-first-matrix {
+		grid-template-columns: 1fr;
+		grid-template-rows: none;
+		grid-auto-rows: max-content;
+		overflow-y: auto;
+	}
 }
 
 /* ── Quadrant cell ───────────────────────────────────────── */
@@ -409,6 +426,38 @@
 
 .focus-first-task-btn.is-active svg {
 	fill: var(--interactive-accent);
+}
+
+/* Issue #13: on mobile there is no hover, so the hover-revealed action buttons
+   are never shown and never tappable. Gate on Obsidian's own `is-mobile` body
+   class (reliable in the mobile app, unlike a hover/pointer media query which the
+   webview may not report). Always show the actions in flow below the title,
+   right-aligned, with a comfortable ~44px hit area. */
+body.is-mobile .focus-first-task-actions {
+	position: static;
+	opacity: 1;
+	pointer-events: auto;
+	justify-content: flex-end;
+	margin-top: var(--size-2-2);
+	gap: var(--size-2-3);
+}
+
+body.is-mobile .focus-first-task-btn {
+	min-width: 44px;
+	min-height: 44px;
+	padding: 0;
+	justify-content: center;
+}
+
+body.is-mobile .focus-first-task-btn svg {
+	width: 20px;
+	height: 20px;
+}
+
+/* Reveal the task meta (priority / due / tags / source), which is otherwise
+   hover-only and thus invisible on touch. */
+body.is-mobile .focus-first-task-hover {
+	max-height: none;
 }
 
 /* ── Settings ────────────────────────────────────────────── */

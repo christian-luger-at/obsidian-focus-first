@@ -1,8 +1,9 @@
-import { App, TFile, MarkdownView, setIcon } from 'obsidian';
+import { App, TFile, MarkdownView, Menu, Platform, setIcon } from 'obsidian';
 import { MatrixTask } from './matrixClassifier';
 import { TaskItem } from './taskScanner';
 import { FocusFirstSettings } from './settings';
 import { getTasksApi } from './tasksPlugin';
+import { setDueDate, shiftDueDate, setPriority, addDaysToIso } from './tasksFormat';
 import { t } from './i18n';
 
 /**
@@ -108,6 +109,29 @@ export async function completeTaskLine(
 	await app.vault.modify(file, lines.join('\n'));
 }
 
+/**
+ * Reads a file, applies `transform` to a single task line, and writes it back —
+ * the shared read-modify-write behind the inline task edits. Skips the write if
+ * the transform leaves the line unchanged.
+ */
+export async function updateTaskLine(
+	app: App,
+	filePath: string,
+	lineNumber: number,
+	transform: (line: string) => string,
+): Promise<void> {
+	const file = app.vault.getAbstractFileByPath(filePath);
+	if (!(file instanceof TFile)) return;
+	const content = await app.vault.read(file);
+	const lines = content.split('\n');
+	const line = lines[lineNumber];
+	if (line === undefined) return;
+	const next = transform(line);
+	if (next === line) return;
+	lines[lineNumber] = next;
+	await app.vault.modify(file, lines.join('\n'));
+}
+
 export async function toggleFocusTagLine(
 	app: App,
 	settings: FocusFirstSettings,
@@ -182,11 +206,6 @@ export function renderTaskItem(
 	const titleEl = li.createEl('span', { text, cls: 'focus-first-task-text' });
 	titleEl.addEventListener('click', () => { void openTaskFile(app, task); });
 
-	// Action buttons — absolutely positioned top-right overlay so they sit at
-	// the top of the item (title height), not down in the meta row. Revealed
-	// on hover via CSS. Buttons are appended further below.
-	const actions = li.createDiv({ cls: 'focus-first-task-actions' });
-
 	// Hover panel — visible only on hover via CSS
 	const hover = li.createDiv({ cls: 'focus-first-task-hover' });
 	const hoverInner = hover.createDiv({ cls: 'focus-first-task-hover-inner' });
@@ -205,33 +224,127 @@ export function renderTaskItem(
 	}
 	meta.createEl('span', { text: task.file.basename, cls: 'focus-first-task-source' });
 
-	const doneBtn = actions.createEl('button', { cls: 'focus-first-task-btn' });
-	setIcon(doneBtn, 'check');
-	doneBtn.setAttribute('aria-label', String(t().view.focusDone));
+	// Action toolbar — appended last so it sits below the whole row (title + meta),
+	// revealed on hover via CSS. Buttons are appended below.
+	const actions = li.createDiv({ cls: 'focus-first-task-actions' });
+
+	const focusRun = focusTag
+		? () => void toggleFocusTagLine(app, settings, task.file.path, task.lineNumber, focusTag, !isFocused)
+		: null;
+	const hideRun = hideTag
+		? () => void toggleHideTagLine(app, settings, task.file.path, task.lineNumber, hideTag)
+		: null;
+
+	// Done stays a single-tap button on every platform.
+	const doneBtn = actionButton(actions, 'check', String(t().view.focusDone));
 	doneBtn.addEventListener('click', (e) => {
 		e.stopPropagation();
 		void completeTaskLine(app, task.file.path, task.lineNumber);
 	});
 
-	if (focusTag) {
-		const focusBtn = actions.createEl('button', {
-			cls: `focus-first-task-btn${isFocused ? ' is-active' : ''}`,
-		});
-		setIcon(focusBtn, 'star');
-		focusBtn.setAttribute('aria-label', String(isFocused ? t().view.focusRemove : t().view.focusAdd));
-		focusBtn.addEventListener('click', (e) => {
+	if (Platform.isMobile) {
+		// Mobile has no hover and little width: collapse everything except Done
+		// behind a single overflow (⋯) menu so the row stays at two finger-sized
+		// targets. Postpone/priority become submenus of that menu.
+		const moreBtn = actionButton(actions, 'more-horizontal', String(t().view.actions.more), 'focus-first-more-btn');
+		moreBtn.addEventListener('click', (e) => {
 			e.stopPropagation();
-			void toggleFocusTagLine(app, settings, task.file.path, task.lineNumber, focusTag, !isFocused);
+			const va = t().view.actions;
+			const menu = new Menu();
+			if (focusRun) {
+				menu.addItem((item) => item
+					.setTitle(String(isFocused ? t().view.focusRemove : t().view.focusAdd))
+					.setIcon('star').onClick(focusRun));
+			}
+			if (hideRun) {
+				menu.addItem((item) => item.setTitle(String(t().view.hideTask)).setIcon('eye-off').onClick(hideRun));
+			}
+			// Submenus aren't in the typed public API, so flatten the two groups
+			// under non-clickable section labels instead.
+			menu.addSeparator();
+			menu.addItem((item) => item.setTitle(String(va.postpone)).setIsLabel(true));
+			buildPostponeMenu(menu, task, app);
+			menu.addSeparator();
+			menu.addItem((item) => item.setTitle(String(va.priority)).setIsLabel(true));
+			buildPriorityMenu(menu, task, app);
+			menu.showAtMouseEvent(e);
 		});
+		return;
 	}
 
-	if (hideTag) {
-		const hideBtn = actions.createEl('button', { cls: 'focus-first-task-btn' });
-		setIcon(hideBtn, 'eye-off');
-		hideBtn.setAttribute('aria-label', String(t().view.hideTask));
-		hideBtn.addEventListener('click', (e) => {
-			e.stopPropagation();
-			void toggleHideTagLine(app, settings, task.file.path, task.lineNumber, hideTag);
-		});
+	// Desktop: the full icon row, revealed on hover.
+	if (focusRun) {
+		const focusBtn = actionButton(actions, 'star',
+			String(isFocused ? t().view.focusRemove : t().view.focusAdd),
+			isFocused ? 'is-active' : '');
+		focusBtn.addEventListener('click', (e) => { e.stopPropagation(); focusRun(); });
+	}
+	if (hideRun) {
+		const hideBtn = actionButton(actions, 'eye-off', String(t().view.hideTask));
+		hideBtn.addEventListener('click', (e) => { e.stopPropagation(); hideRun(); });
+	}
+
+	const postponeBtn = actionButton(actions, 'calendar-clock', String(t().view.actions.postpone), 'focus-first-postpone-btn');
+	postponeBtn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		const menu = new Menu();
+		buildPostponeMenu(menu, task, app);
+		menu.showAtMouseEvent(e);
+	});
+
+	const priorityBtn = actionButton(actions, 'flag', String(t().view.actions.priority), 'focus-first-priority-btn');
+	priorityBtn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		const menu = new Menu();
+		buildPriorityMenu(menu, task, app);
+		menu.showAtMouseEvent(e);
+	});
+}
+
+/** Creates one action button (icon + aria-label) in the actions row. */
+function actionButton(parent: HTMLElement, icon: string, ariaLabel: string, extraCls = ''): HTMLElement {
+	const btn = parent.createEl('button', { cls: `focus-first-task-btn${extraCls ? ` ${extraCls}` : ''}` });
+	setIcon(btn, icon);
+	btn.setAttribute('aria-label', ariaLabel);
+	return btn;
+}
+
+/** Populates a menu with the postpone (reschedule) options for a task. */
+function buildPostponeMenu(menu: Menu, task: MatrixTask, app: App): void {
+	const a = t().view.actions;
+	const edit = (transform: (line: string) => string) =>
+		void updateTaskLine(app, task.file.path, task.lineNumber, transform);
+	if (task.dueDate) {
+		menu.addItem((item) => item.setTitle(String(a.postponePlusDay)).setIcon('chevron-right')
+			.onClick(() => edit((l) => shiftDueDate(l, 1))));
+		menu.addItem((item) => item.setTitle(String(a.postponePlusWeek)).setIcon('chevrons-right')
+			.onClick(() => edit((l) => shiftDueDate(l, 7))));
+	} else {
+		const today = formatDate(new Date());
+		menu.addItem((item) => item.setTitle(String(a.dueToday)).setIcon('calendar')
+			.onClick(() => edit((l) => setDueDate(l, today))));
+		menu.addItem((item) => item.setTitle(String(a.dueTomorrow)).setIcon('calendar')
+			.onClick(() => edit((l) => setDueDate(l, addDaysToIso(today, 1)))));
+	}
+}
+
+/** Populates a menu with the priority options for a task. */
+function buildPriorityMenu(menu: Menu, task: MatrixTask, app: App): void {
+	const a = t().view.actions;
+	const options: { emoji: string | null; label: string }[] = [
+		{ emoji: '🔺', label: String(a.priorityHighest) },
+		{ emoji: '⏫', label: String(a.priorityHigh) },
+		{ emoji: '🔼', label: String(a.priorityMedium) },
+		{ emoji: '🔽', label: String(a.priorityLow) },
+		{ emoji: '⏬', label: String(a.priorityLowest) },
+		{ emoji: null, label: String(a.priorityNone) },
+	];
+	for (const opt of options) {
+		menu.addItem((item) => item
+			.setTitle(opt.label)
+			.setChecked(task.priority === (opt.emoji ?? undefined))
+			.onClick(() => void updateTaskLine(
+				app, task.file.path, task.lineNumber, (l) => setPriority(l, opt.emoji),
+			)));
 	}
 }

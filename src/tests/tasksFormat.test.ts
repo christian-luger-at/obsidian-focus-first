@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { canonicalizeTaskLine } from '../tasksFormat';
+import {
+	canonicalizeTaskLine,
+	addDaysToIso,
+	setDueDate,
+	shiftDueDate,
+	setPriority,
+} from '../tasksFormat';
 
 describe('canonicalizeTaskLine', () => {
 	it('moves priority and due date after the description and tags', () => {
@@ -49,5 +55,76 @@ describe('canonicalizeTaskLine', () => {
 	it('returns non-task lines unchanged', () => {
 		expect(canonicalizeTaskLine('Just a paragraph')).toBe('Just a paragraph');
 		expect(canonicalizeTaskLine('- A bullet, not a task')).toBe('- A bullet, not a task');
+	});
+});
+
+describe('addDaysToIso', () => {
+	it('adds days within a month', () => {
+		expect(addDaysToIso('2026-07-07', 1)).toBe('2026-07-08');
+		expect(addDaysToIso('2026-07-07', 7)).toBe('2026-07-14');
+	});
+
+	it('rolls over month and year boundaries', () => {
+		expect(addDaysToIso('2026-07-31', 1)).toBe('2026-08-01');
+		expect(addDaysToIso('2026-12-31', 1)).toBe('2027-01-01');
+	});
+});
+
+describe('setDueDate', () => {
+	it('replaces an existing due date, preserving other tokens', () => {
+		expect(setDueDate('- [ ] Task ⏫ 📅 2026-07-05 #do', '2026-07-10')).toBe(
+			'- [ ] Task ⏫ 📅 2026-07-10 #do',
+		);
+	});
+
+	it('appends a due date when there is none', () => {
+		expect(setDueDate('- [ ] Task #do', '2026-07-10')).toBe('- [ ] Task #do 📅 2026-07-10');
+	});
+
+	it('preserves indentation of nested tasks', () => {
+		expect(setDueDate('\t- [ ] Sub 📅 2026-07-05', '2026-07-10')).toBe('\t- [ ] Sub 📅 2026-07-10');
+	});
+
+	it('leaves non-task lines unchanged', () => {
+		expect(setDueDate('Just text', '2026-07-10')).toBe('Just text');
+	});
+});
+
+describe('shiftDueDate', () => {
+	it('shifts an existing due date by the given days', () => {
+		expect(shiftDueDate('- [ ] Task 📅 2026-07-07', 1)).toBe('- [ ] Task 📅 2026-07-08');
+		expect(shiftDueDate('- [ ] Task 📅 2026-07-07', 7)).toBe('- [ ] Task 📅 2026-07-14');
+	});
+
+	it('leaves a task without a due date unchanged', () => {
+		expect(shiftDueDate('- [ ] Task #do', 1)).toBe('- [ ] Task #do');
+	});
+});
+
+describe('setPriority', () => {
+	it('adds a priority in canonical position (before recurrence and dates)', () => {
+		expect(setPriority('- [ ] Task 🔁 every week 📅 2026-07-07', '⏫')).toBe(
+			'- [ ] Task ⏫ 🔁 every week 📅 2026-07-07',
+		);
+	});
+
+	it('replaces an existing priority', () => {
+		expect(setPriority('- [ ] Task 🔺 📅 2026-07-07', '🔽')).toBe('- [ ] Task 🔽 📅 2026-07-07');
+	});
+
+	it('removes the priority when passed null', () => {
+		expect(setPriority('- [ ] Task 🔺 📅 2026-07-07', null)).toBe('- [ ] Task 📅 2026-07-07');
+	});
+
+	it('appends the priority when there is no other metadata', () => {
+		expect(setPriority('- [ ] Plain task', '🔼')).toBe('- [ ] Plain task 🔼');
+	});
+
+	it('preserves indentation', () => {
+		expect(setPriority('    - [ ] Nested 📅 2026-07-07', '⏬')).toBe('    - [ ] Nested ⏬ 📅 2026-07-07');
+	});
+
+	it('leaves non-task lines unchanged', () => {
+		expect(setPriority('Just text', '🔺')).toBe('Just text');
 	});
 });

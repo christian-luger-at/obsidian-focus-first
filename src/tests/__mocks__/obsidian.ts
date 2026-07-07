@@ -281,6 +281,35 @@ export class MarkdownView {}
 
 export function setIcon(_el: HTMLElement, _icon: string): void {}
 
+// Minimal Menu stub. Instances register in `createdMenus` so tests can find the
+// menu opened by a click, inspect its items, and invoke their onClick handlers.
+export const createdMenus: Menu[] = [];
+export function clearCreatedMenus(): void { createdMenus.length = 0; }
+
+export class MenuItem {
+	title = '';
+	checked = false;
+	isLabel = false;
+	callback?: () => void;
+	setTitle(v: string) { this.title = v; return this; }
+	setIcon(_v: string) { return this; }
+	setChecked(v: boolean | null) { this.checked = !!v; return this; }
+	setIsLabel(v: boolean) { this.isLabel = !!v; return this; }
+	onClick(cb: () => void) { this.callback = cb; return this; }
+}
+
+export class Menu {
+	items: MenuItem[] = [];
+	constructor() { createdMenus.push(this); }
+	addItem(cb: (item: MenuItem) => void) { const item = new MenuItem(); cb(item); this.items.push(item); return this; }
+	addSeparator() { return this; }
+	showAtMouseEvent(_e: unknown) { return this; }
+	showAtPosition(_p: unknown) { return this; }
+}
+
+// Mutable so tests can flip the platform to exercise the mobile action layout.
+export const Platform = { isMobile: false };
+
 export function debounce<T extends (...args: never[]) => void>(fn: T, _wait: number, _resetTimer?: boolean): T {
 	return fn;
 }

@@ -14,7 +14,7 @@ vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 
 const { FocusFirstView } = await import('../TaskView');
 const { DEFAULT_SETTINGS } = await import('../settings');
-const { TFile, MarkdownView } = await import('./__mocks__/obsidian');
+const { TFile, MarkdownView, createdMenus, clearCreatedMenus, Platform } = await import('./__mocks__/obsidian');
 
 import type { TaskItem } from '../taskScanner';
 import type { FocusFirstSettings } from '../settings';
@@ -495,6 +495,68 @@ describe('task item actions in the matrix', () => {
 		const { container } = renderSingleTaskMatrix({ tags: ['#focus'] }, { focusTag: '#focus' });
 		const item = container.findByClass('focus-first-task-item');
 		expect(item?.classList.contains('is-focused')).toBe(true);
+	});
+
+	it('the priority button opens a menu and writes the chosen priority', async () => {
+		const { container, app } = renderSingleTaskMatrix();
+		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
+		app.vault.read = vi.fn(async () => '- [ ] Sample task 📅 2026-07-07');
+		clearCreatedMenus();
+
+		container.findByClass('focus-first-priority-btn')?.dispatch('click', { stopPropagation: () => {} });
+
+		const menu = createdMenus[createdMenus.length - 1];
+		expect(menu?.items.map((i) => i.title)).toContain('⏫ High');
+		menu?.items.find((i) => i.title === '⏫ High')?.callback?.();
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), '- [ ] Sample task ⏫ 📅 2026-07-07');
+	});
+
+	it('the postpone button shifts an existing due date by one day', async () => {
+		const { container, app } = renderSingleTaskMatrix({ dueDate: daysFromToday(0) });
+		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
+		app.vault.read = vi.fn(async () => '- [ ] Sample task 📅 2026-07-07');
+		clearCreatedMenus();
+
+		container.findByClass('focus-first-postpone-btn')?.dispatch('click', { stopPropagation: () => {} });
+
+		const menu = createdMenus[createdMenus.length - 1];
+		menu?.items.find((i) => i.title === '+1 day')?.callback?.();
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), '- [ ] Sample task 📅 2026-07-08');
+	});
+
+	it('on mobile, collapses actions into a Done + overflow (⋯) menu', async () => {
+		Platform.isMobile = true;
+		try {
+			const { container, app } = renderSingleTaskMatrix();
+			app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
+			app.vault.read = vi.fn(async () => '- [ ] Sample task 📅 2026-07-07');
+			clearCreatedMenus();
+
+			// The inline postpone/priority icon buttons are gone on mobile.
+			expect(container.findByClass('focus-first-postpone-btn')).toBeUndefined();
+			expect(container.findByClass('focus-first-priority-btn')).toBeUndefined();
+
+			const moreBtn = container.findByClass('focus-first-more-btn');
+			expect(moreBtn).toBeDefined();
+			moreBtn?.dispatch('click', { stopPropagation: () => {} });
+
+			// The overflow menu flattens the priority/postpone options; picking one writes back.
+			const menu = createdMenus[createdMenus.length - 1];
+			expect(menu?.items.map((i) => i.title)).toContain('⏫ High');
+			menu?.items.find((i) => i.title === '⏫ High')?.callback?.();
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), '- [ ] Sample task ⏫ 📅 2026-07-07');
+		} finally {
+			Platform.isMobile = false;
+		}
 	});
 });
 

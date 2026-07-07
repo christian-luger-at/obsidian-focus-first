@@ -26,6 +26,21 @@ interface Translations {
 		focusDone: string;
 		hideTask: string;
 		unhideTask: string;
+		actions: {
+			more: string;
+			postpone: string;
+			priority: string;
+			postponePlusDay: string;
+			postponePlusWeek: string;
+			dueToday: string;
+			dueTomorrow: string;
+			priorityNone: string;
+			priorityHighest: string;
+			priorityHigh: string;
+			priorityMedium: string;
+			priorityLow: string;
+			priorityLowest: string;
+		};
 		quadrants: {
 			do: { title: string; subtitle: string; emptyState: string };
 			schedule: { title: string; subtitle: string; emptyState: string };
@@ -109,6 +124,21 @@ const translations: Record<Lang, Translations> = {
 			focusDone: 'Mark as done',
 			hideTask: 'Hide task',
 			unhideTask: 'Unhide task',
+			actions: {
+				more: 'More actions',
+				postpone: 'Postpone',
+				priority: 'Set priority',
+				postponePlusDay: '+1 day',
+				postponePlusWeek: '+1 week',
+				dueToday: 'Due today',
+				dueTomorrow: 'Due tomorrow',
+				priorityNone: 'No priority',
+				priorityHighest: '🔺 Highest',
+				priorityHigh: '⏫ High',
+				priorityMedium: '🔼 Medium',
+				priorityLow: '🔽 Low',
+				priorityLowest: '⏬ Lowest',
+			},
 			quadrants: {
 				do:       { title: 'Do',       subtitle: 'Urgent · Important',        emptyState: 'Nothing urgent right now' },
 				schedule: { title: 'Schedule', subtitle: 'Not urgent · Important',     emptyState: 'No important tasks pending' },
@@ -231,6 +261,21 @@ const translations: Record<Lang, Translations> = {
 			hideTask: 'Aufgabe ausblenden',
 			unhideTask: 'Aufgabe einblenden',
 			focusDone: 'Als erledigt markieren',
+			actions: {
+				more: 'Weitere Aktionen',
+				postpone: 'Verschieben',
+				priority: 'Priorität setzen',
+				postponePlusDay: '+1 Tag',
+				postponePlusWeek: '+1 Woche',
+				dueToday: 'Fällig heute',
+				dueTomorrow: 'Fällig morgen',
+				priorityNone: 'Keine Priorität',
+				priorityHighest: '🔺 Höchste',
+				priorityHigh: '⏫ Hoch',
+				priorityMedium: '🔼 Mittel',
+				priorityLow: '🔽 Niedrig',
+				priorityLowest: '⏬ Niedrigste',
+			},
 			quadrants: {
 				do:       { title: 'Erledigen',  subtitle: 'Dringend · Wichtig',             emptyState: 'Aktuell nichts Dringendes' },
 				schedule: { title: 'Einplanen',  subtitle: 'Nicht dringend · Wichtig',        emptyState: 'Keine wichtigen Aufgaben ausstehend' },

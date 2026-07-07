@@ -60,3 +60,73 @@ export function canonicalizeTaskLine(line: string): string {
 
 	return `- [${status}] ${parts.filter(Boolean).join(' ')}`;
 }
+
+// Matches a task line, splitting off its `- [ ] ` prefix (with indentation) from
+// the body, so edits can rewrite the body while preserving indentation exactly.
+const TASK_LINE_RE = /^(\s*[-*+]\s+\[.\]\s*)(.*)$/u;
+// A due date token and its ISO value.
+const DUE_RE = /📅\s*(\d{4}-\d{2}-\d{2})/u;
+// The first metadata signifier a priority sorts before (recurrence or any date).
+const FIRST_META_RE = /🔁|[➕🛫⏳📅❌✅]/u;
+
+/** Adds `days` to an ISO date (YYYY-MM-DD), returning the shifted ISO date. */
+export function addDaysToIso(iso: string, days: number): string {
+	const [y, m, d] = iso.split('-').map(Number);
+	const date = new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
+	date.setDate(date.getDate() + days);
+	const yy = date.getFullYear();
+	const mm = String(date.getMonth() + 1).padStart(2, '0');
+	const dd = String(date.getDate()).padStart(2, '0');
+	return `${yy}-${mm}-${dd}`;
+}
+
+/**
+ * Sets the due date (📅) on a task line to `iso`, replacing an existing due date
+ * or appending one. Indentation and all other tokens are preserved. Non-task
+ * lines are returned unchanged.
+ */
+export function setDueDate(line: string, iso: string): string {
+	if (!TASK_LINE_RE.test(line)) return line;
+	if (DUE_RE.test(line)) {
+		return line.replace(DUE_RE, `📅 ${iso}`);
+	}
+	return `${line.replace(/[ \t]+$/, '')} 📅 ${iso}`;
+}
+
+/**
+ * Shifts an existing due date (📅) by `days`. If the line has no due date it is
+ * returned unchanged (callers use setDueDate for the "no date yet" case).
+ */
+export function shiftDueDate(line: string, days: number): string {
+	const match = DUE_RE.exec(line);
+	if (!match?.[1]) return line;
+	return line.replace(DUE_RE, `📅 ${addDaysToIso(match[1], days)}`);
+}
+
+/**
+ * Sets (or clears, when `priority` is null) the priority signifier on a task
+ * line. Any existing priority is removed first; a new one is inserted in
+ * canonical position (before recurrence and dates). Indentation and other tokens
+ * are preserved. Non-task lines are returned unchanged.
+ */
+export function setPriority(line: string, priority: string | null): string {
+	const match = TASK_LINE_RE.exec(line);
+	if (!match) return line;
+	const prefix = match[1] ?? '';
+	let body = (match[2] ?? '')
+		.replace(/[🔺⏫🔼🔽⏬]/gu, '')
+		.replace(/\s{2,}/g, ' ')
+		.replace(/[ \t]+$/, '');
+
+	if (priority) {
+		const meta = FIRST_META_RE.exec(body);
+		if (meta) {
+			const head = body.slice(0, meta.index).replace(/[ \t]+$/, '');
+			body = `${head} ${priority} ${body.slice(meta.index)}`.replace(/\s{2,}/g, ' ');
+		} else {
+			body = `${body} ${priority}`.replace(/^\s+/, '');
+		}
+	}
+
+	return prefix + body;
+}

@@ -71,6 +71,47 @@
 	font-size: calc(var(--font-ui-large) * var(--focus-first-font-scale));
 }
 
+.focus-first-header-actions {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+/* ── Quick-add dialog ────────────────────────────────────── */
+
+.focus-first-quickadd-input {
+	width: 100%;
+	margin-bottom: var(--size-4-3);
+	padding: var(--size-2-3) var(--size-4-2);
+	font-size: var(--font-ui-medium);
+}
+
+.focus-first-quickadd-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-2-2);
+	margin-bottom: var(--size-4-3);
+}
+
+.focus-first-quickadd-chip {
+	padding: var(--size-2-1) var(--size-2-3);
+	border-radius: var(--radius-s);
+	background: var(--background-modifier-hover);
+	color: var(--text-muted);
+	cursor: pointer;
+	font-size: var(--font-ui-smaller);
+}
+
+.focus-first-quickadd-chip.is-active {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.focus-first-quickadd-controls {
+	display: flex;
+	justify-content: flex-end;
+}
+
 /* Refresh uses Obsidian's native primary/CTA button (.mod-cta) — the
    focus-first-refresh-btn class is kept only as an identification hook. */
 

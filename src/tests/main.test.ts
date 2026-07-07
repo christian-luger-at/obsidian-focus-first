@@ -17,6 +17,7 @@ interface MockPluginExtras {
 	lastSettingTab?: unknown;
 	lastRibbonCb?: () => unknown;
 	lastCommand?: { id: string; name: string; callback?: () => unknown };
+	commands?: { id: string; name: string; callback?: () => unknown }[];
 	lastCodeBlockLang?: string;
 	lastCodeBlockProcessor?: (source: string, el: unknown, ctx: unknown) => unknown;
 }
@@ -233,11 +234,25 @@ describe('FocusFirstPlugin — onload', () => {
 		const plugin = new FocusFirstPlugin(app, {});
 		await plugin.onload();
 
-		const cmd = withMockExtras(plugin).lastCommand;
+		const cmd = withMockExtras(plugin).commands?.find((c) => c.id === 'open-view');
 		expect(cmd?.id).toBe('open-view');
 		await cmd?.callback?.();
 
 		expect(revealLeaf).toHaveBeenCalled();
+	});
+
+	it('registers the "add-task" command whose callback opens the quick-add dialog', async () => {
+		const app = { workspace: { getLeavesOfType: () => [] } };
+		// @ts-expect-error — stub app/manifest, not real Obsidian types
+		const plugin = new FocusFirstPlugin(app, {});
+		await plugin.onload();
+
+		const cmd = withMockExtras(plugin).commands?.find((c) => c.id === 'add-task');
+		expect(cmd?.id).toBe('add-task');
+
+		const openSpy = vi.spyOn(plugin, 'openQuickAdd').mockImplementation(() => {});
+		cmd?.callback?.();
+		expect(openSpy).toHaveBeenCalled();
 	});
 });
 

@@ -316,6 +316,8 @@ describe('loadSettings — merges persisted data with defaults', () => {
 			focusTag: '#focus',
 			hideTag: '#hide',
 			futureTasks: 'hide',
+			quickAddTarget: 'active',
+			quickAddInbox: 'Tasks/Inbox.md',
 			fontSize: 120,
 			tasksPluginWarningDismissed: true,
 		};

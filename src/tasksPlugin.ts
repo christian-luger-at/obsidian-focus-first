@@ -32,15 +32,38 @@ export interface TasksApi {
 	executeToggleTaskDoneCommand: (line: string, path: string) => string;
 }
 
+export interface TasksCreateApi {
+	/**
+	 * Opens the Tasks plugin's own "Create task" dialog (date pickers, priority,
+	 * recurrence, etc.) and resolves with the composed Markdown task line, or an
+	 * empty string if the user cancelled.
+	 */
+	createTaskLineModal: () => Promise<string>;
+}
+
+/** The raw apiV1 object of the Tasks plugin, if present. */
+function rawTasksApi(app: App): Record<string, unknown> | undefined {
+	return (app as unknown as {
+		plugins?: { plugins?: Record<string, { apiV1?: Record<string, unknown> }> };
+	}).plugins?.plugins?.[TASKS_PLUGIN_ID]?.apiV1;
+}
+
 /**
- * The Tasks plugin's apiV1, or null if the plugin is absent or doesn't expose
- * the method. Read defensively (this is not part of Obsidian's public typings)
- * so a future change can only make it return null, never throw.
+ * The Tasks plugin's toggle API, or null if the plugin is absent or doesn't
+ * expose the method. Read defensively (this is not part of Obsidian's public
+ * typings) so a future change can only make it return null, never throw.
  */
 export function getTasksApi(app: App): TasksApi | null {
-	const plugin = (app as unknown as {
-		plugins?: { plugins?: Record<string, { apiV1?: TasksApi }> };
-	}).plugins?.plugins?.[TASKS_PLUGIN_ID];
-	const api = plugin?.apiV1;
-	return api && typeof api.executeToggleTaskDoneCommand === 'function' ? api : null;
+	const api = rawTasksApi(app);
+	return api && typeof api.executeToggleTaskDoneCommand === 'function'
+		? (api as unknown as TasksApi)
+		: null;
+}
+
+/** The Tasks plugin's "create task" dialog API, or null if unavailable. */
+export function getTasksCreateApi(app: App): TasksCreateApi | null {
+	const api = rawTasksApi(app);
+	return api && typeof api.createTaskLineModal === 'function'
+		? (api as unknown as TasksCreateApi)
+		: null;
 }

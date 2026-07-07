@@ -6,6 +6,16 @@ interface Translations {
 	ribbon: { tooltip: string };
 	commands: {
 		openView: { name: string };
+		addTask: { name: string };
+	};
+	quickAdd: {
+		title: string;
+		placeholder: string;
+		add: string;
+		addTaskButton: string;
+		focus: string;
+		addedNotice: string;
+		noActiveNote: string;
 	};
 	view: {
 		title: string;
@@ -80,6 +90,14 @@ interface Translations {
 			optionDim: string;
 			optionHide: string;
 		};
+		quickAddHeading: string;
+		quickAddTarget: {
+			name: string;
+			desc: string;
+			optionInbox: string;
+			optionActive: string;
+		};
+		quickAddInbox: { name: string; desc: string; placeholder: string };
 		matrixDesc: string;
 		quadrantsHeading: string;
 		quadrantColor: { name: string; desc: string; reset: string };
@@ -112,6 +130,16 @@ const translations: Record<Lang, Translations> = {
 		ribbon: { tooltip: 'Focus first' },
 		commands: {
 			openView: { name: 'Open Focus First' },
+			addTask: { name: 'Add task' },
+		},
+		quickAdd: {
+			title: 'Add task',
+			placeholder: 'e.g. Call the dentist 📅 2026-07-10 🔼 #do',
+			add: 'Add',
+			addTaskButton: 'Add task',
+			focus: 'Focus',
+			addedNotice: 'Task added',
+			noActiveNote: 'No active note — add one to the inbox instead, or open a note.',
 		},
 		view: {
 			title: 'Focus First',
@@ -207,6 +235,18 @@ const translations: Record<Lang, Translations> = {
 				optionDim: 'Dim',
 				optionHide: 'Hide',
 			},
+			quickAddHeading: 'Quick Add',
+			quickAddTarget: {
+				name: 'Add tasks to',
+				desc: 'Where the quick-add dialog (the "+" button in the view header, or the "Add task" command) appends new tasks.',
+				optionInbox: 'Inbox note',
+				optionActive: 'Active note',
+			},
+			quickAddInbox: {
+				name: 'Inbox note',
+				desc: 'Path to the note that receives quick-added tasks when "Add tasks to" is set to the inbox. Created if it does not exist.',
+				placeholder: 'Inbox.md',
+			},
 			matrixDesc: 'These rules determine how tasks are automatically placed into quadrants based on their due date and priority.',
 			quadrantsHeading: 'Quadrants',
 			quadrantColor: {
@@ -257,6 +297,16 @@ const translations: Record<Lang, Translations> = {
 		ribbon: { tooltip: 'Focus First' },
 		commands: {
 			openView: { name: 'Focus First öffnen' },
+			addTask: { name: 'Aufgabe hinzufügen' },
+		},
+		quickAdd: {
+			title: 'Aufgabe hinzufügen',
+			placeholder: 'z. B. Zahnarzt anrufen 📅 2026-07-10 🔼 #do',
+			add: 'Hinzufügen',
+			addTaskButton: 'Aufgabe hinzufügen',
+			focus: 'Fokus',
+			addedNotice: 'Aufgabe hinzugefügt',
+			noActiveNote: 'Keine aktive Notiz — stattdessen in die Inbox einfügen oder eine Notiz öffnen.',
 		},
 		view: {
 			title: 'Focus First',
@@ -351,6 +401,18 @@ const translations: Record<Lang, Translations> = {
 				optionShow: 'Anzeigen',
 				optionDim: 'Abschwächen',
 				optionHide: 'Ausblenden',
+			},
+			quickAddHeading: 'Schnell hinzufügen',
+			quickAddTarget: {
+				name: 'Aufgaben hinzufügen zu',
+				desc: 'Wohin der Schnell-Hinzufügen-Dialog (der „+"-Button im View-Header oder der Befehl „Aufgabe hinzufügen") neue Aufgaben anhängt.',
+				optionInbox: 'Inbox-Notiz',
+				optionActive: 'Aktive Notiz',
+			},
+			quickAddInbox: {
+				name: 'Inbox-Notiz',
+				desc: 'Pfad zur Notiz, die schnell hinzugefügte Aufgaben erhält, wenn „Aufgaben hinzufügen zu" auf die Inbox gesetzt ist. Wird erstellt, falls nicht vorhanden.',
+				placeholder: 'Inbox.md',
 			},
 			matrixDesc: 'Diese Regeln bestimmen, wie Aufgaben anhand von Fälligkeitsdatum und Priorität automatisch in Quadranten eingeordnet werden.',
 			quadrantsHeading: 'Quadranten',

@@ -27,6 +27,7 @@ No manual sorting needed — though you can still pin any task to a quadrant by 
 - **Hide tasks** — tag a task with `#hide` (or use the hide button) to remove it from the matrix without completing it — useful for tasks you're not ready to act on yet.
 - **Inline actions** — postpone a task's due date or change its priority straight from the view, without opening the note.
 - **Future tasks** — tasks with a start (`🛫`) or scheduled (`⏳`) date still in the future aren't actionable yet; choose to show, dim, or hide them until their date arrives.
+- **Quick add** — capture a task without leaving the view (the `+` button in the header, or the "Add task" command / hotkey). When the Tasks plugin is enabled, this opens its full create dialog (date, priority, and recurrence pickers); otherwise a simple input is used. The new task is appended to a configurable inbox note or the active note.
 - **Drag & drop** — drag a task between quadrants to instantly re-tag it.
 - **Search & filters** — search across all visible tasks, or filter by due-date bucket (overdue, today, this week, upcoming, no date).
 - **Grouping & sorting** — group tasks within a quadrant by priority, due date, or alphabetically, with independently configurable primary/secondary sort order per quadrant.
@@ -124,6 +125,7 @@ When the query matches no tasks, the `empty-text` message is shown instead. (The
 | **Focus Task** | The tag used to pin tasks to the Focus Tasks section (default `#focus`) |
 | **Hide Task** | The tag used to hide tasks from the matrix (default `#hide`) |
 | **Future Tasks** | How to treat tasks whose start (`🛫`) or scheduled (`⏳`) date is still in the future: show, dim, or hide (default: show) |
+| **Quick Add** | Where quick-added tasks go: a configurable inbox note (created if missing) or the active note |
 | **Eisenhower Matrix** | Urgency threshold (days) and which priorities count as "important" |
 | **Quadrants** | Per-quadrant accent color, manual override tag, sort order, and grouping |
 | **Reset** | Restore every setting to its default value |

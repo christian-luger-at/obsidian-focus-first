@@ -9,6 +9,9 @@ export type SortField = 'priority' | 'dueDate' | 'alpha';
 /** How to treat tasks whose start/scheduled date is still in the future. */
 export type FutureTasksMode = 'show' | 'dim' | 'hide';
 
+/** Where quick-added tasks are written. */
+export type QuickAddTarget = 'inbox' | 'active';
+
 export interface QuadrantSort {
 	primary: SortField;
 	secondary: SortField;
@@ -48,6 +51,8 @@ export interface FocusFirstSettings {
 	focusTag: string;
 	hideTag: string;
 	futureTasks: FutureTasksMode;
+	quickAddTarget: QuickAddTarget;
+	quickAddInbox: string;
 	fontSize: number;
 	/** Set once the user dismisses the "Tasks plugin not enabled" notice. */
 	tasksPluginWarningDismissed: boolean;
@@ -68,6 +73,8 @@ export const DEFAULT_SETTINGS: FocusFirstSettings = {
 	focusTag: '#focus',
 	hideTag: '#hide',
 	futureTasks: 'show',
+	quickAddTarget: 'inbox',
+	quickAddInbox: 'Inbox.md',
 	fontSize: 100,
 	tasksPluginWarningDismissed: false,
 };
@@ -300,6 +307,46 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 							this.plugin.refreshViews();
 						}),
 				);
+		});
+
+		this.createSection(containerEl, t().settings.quickAddHeading, (body) => {
+			// The inbox path field is always rendered and shown/hidden by target, so
+			// switching the target doesn't require re-rendering the whole tab.
+			let updateInboxVisibility: () => void = () => {};
+
+			new Setting(body)
+				.setName(t().settings.quickAddTarget.name)
+				.setDesc(t().settings.quickAddTarget.desc)
+				.addDropdown((drop) =>
+					drop
+						.addOption('inbox', t().settings.quickAddTarget.optionInbox)
+						.addOption('active', t().settings.quickAddTarget.optionActive)
+						.setValue(this.plugin.settings.quickAddTarget)
+						.onChange(async (value: string) => {
+							this.plugin.settings.quickAddTarget = value as QuickAddTarget;
+							await this.plugin.saveSettings();
+							updateInboxVisibility();
+						}),
+				);
+
+			const inboxSetting = new Setting(body)
+				.setName(t().settings.quickAddInbox.name)
+				.setDesc(t().settings.quickAddInbox.desc)
+				.addText((text) =>
+					text
+						.setPlaceholder(t().settings.quickAddInbox.placeholder)
+						.setValue(this.plugin.settings.quickAddInbox)
+						.onChange(async (value) => {
+							this.plugin.settings.quickAddInbox = value.trim();
+							await this.plugin.saveSettings();
+						}),
+				);
+
+			updateInboxVisibility = () => {
+				const isInbox = this.plugin.settings.quickAddTarget === 'inbox';
+				inboxSetting.settingEl.classList.toggle('focus-first-hidden', !isInbox);
+			};
+			updateInboxVisibility();
 		});
 
 		this.createSection(containerEl, t().settings.matrixHeading, (body) => {

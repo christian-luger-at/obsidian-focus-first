@@ -18,6 +18,7 @@ export class Plugin {
 	app: unknown;
 	lastRibbonCb?: () => unknown;
 	lastCommand?: MockCommand;
+	commands: MockCommand[] = [];
 	lastViewCreator?: (leaf: unknown) => unknown;
 	lastSettingTab?: unknown;
 
@@ -28,7 +29,7 @@ export class Plugin {
 		this.lastRibbonCb = cb;
 		return {} as HTMLElement;
 	}
-	addCommand(cmd: MockCommand) { this.lastCommand = cmd; }
+	addCommand(cmd: MockCommand) { this.lastCommand = cmd; this.commands.push(cmd); }
 	addSettingTab(tab: unknown) { this.lastSettingTab = tab; }
 	registerView(_type: string, viewCreator: (leaf: unknown) => unknown) { this.lastViewCreator = viewCreator; }
 	registerEvent(_eventRef: unknown) {}
@@ -278,6 +279,21 @@ export class ItemView {
 }
 
 export class MarkdownView {}
+
+export class Modal {
+	app: unknown;
+	contentEl = new FakeDomEl();
+	titleEl = new FakeDomEl();
+	constructor(app: unknown) { this.app = app; }
+	open() {}
+	close() {}
+	onOpen() {}
+	onClose() {}
+}
+
+export class Notice {
+	constructor(_message?: string) {}
+}
 
 export function setIcon(_el: HTMLElement, _icon: string): void {}
 

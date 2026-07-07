@@ -1,4 +1,4 @@
-import { Plugin, WorkspaceLeaf } from 'obsidian';
+import { Plugin, WorkspaceLeaf, Notice } from 'obsidian';
 import {
 	DEFAULT_SETTINGS,
 	FocusFirstSettingTab,
@@ -8,6 +8,9 @@ import { t } from './i18n';
 import { FocusFirstView, FOCUS_FIRST_VIEW_TYPE } from './TaskView';
 import { WrappedTasksBlock, parseTasksBlock } from './wrappedTasksBlock';
 import { FocusDataBlock, isFocusSection } from './focusDataBlock';
+import { QuickAddModal } from './quickAddModal';
+import { commitTask } from './quickAdd';
+import { getTasksCreateApi, TasksCreateApi } from './tasksPlugin';
 
 export default class FocusFirstPlugin extends Plugin {
 	settings!: FocusFirstSettings;
@@ -32,6 +35,12 @@ export default class FocusFirstPlugin extends Plugin {
 			callback: async () => await this.activateView(),
 		});
 
+		this.addCommand({
+			id: 'add-task',
+			name: t().commands.addTask.name,
+			callback: () => this.openQuickAdd(),
+		});
+
 		this.addSettingTab(new FocusFirstSettingTab(this.app, this));
 
 		// A ```focus-first-tasks``` block either renders a Focus First data section
@@ -49,6 +58,32 @@ export default class FocusFirstPlugin extends Plugin {
 			}
 			ctx.addChild(new WrappedTasksBlock(el, this, source, ctx.sourcePath));
 		});
+	}
+
+	/**
+	 * Captures a new task. When the Tasks plugin is enabled, uses its own create
+	 * dialog (date/priority/recurrence pickers) and appends the result to the
+	 * configured target. Otherwise falls back to a simple built-in dialog.
+	 */
+	openQuickAdd() {
+		const createApi = getTasksCreateApi(this.app);
+		if (createApi) {
+			void this.quickAddViaTasks(createApi);
+		} else {
+			new QuickAddModal(this).open();
+		}
+	}
+
+	private async quickAddViaTasks(api: TasksCreateApi): Promise<void> {
+		const line = await api.createTaskLineModal();
+		const result = await commitTask(this.app, this.settings, line);
+		if (result === 'no-target') {
+			new Notice(t().quickAdd.noActiveNote);
+			return;
+		}
+		if (result === 'empty') return; // cancelled or blank
+		new Notice(t().quickAdd.addedNotice);
+		this.refreshViews();
 	}
 
 	async activateView() {

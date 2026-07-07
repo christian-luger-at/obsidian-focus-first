@@ -20,14 +20,10 @@ issue on the current release before reporting it.
 
 **Please do not open a public issue for a security vulnerability.**
 
-Report it privately using either channel:
-
-1. **GitHub private vulnerability reporting (preferred).** Go to the
-   [Security tab](https://github.com/christian-luger-at/obsidian-focus-first/security)
-   of the repository and choose **Report a vulnerability**. This keeps the
-   report private until a fix is available.
-2. **Email.** Write to **christian@luger.digital** with `SECURITY` in the
-   subject line.
+Report it privately through GitHub: go to the
+[Security tab](https://github.com/christian-luger-at/obsidian-focus-first/security)
+of the repository and choose **Report a vulnerability**. This opens a private
+advisory that only you and the maintainer can see until a fix is available.
 
 To help triage, please include where practical:
 

@@ -29,6 +29,7 @@ No manual sorting needed — though you can still pin any task to a quadrant by 
 - **Future tasks** — tasks with a start (`🛫`) or scheduled (`⏳`) date still in the future aren't actionable yet; choose to show, dim, or hide them until their date arrives.
 - **Quick add** — capture a task without leaving the view (the `+` button in the header, or the "Add task" command / hotkey). When the Tasks plugin is enabled, this opens its full create dialog (date, priority, and recurrence pickers); otherwise a simple input is used. The new task is appended to a configurable inbox note or the active note.
 - **Drag & drop** — drag a task between quadrants to instantly re-tag it.
+- **Keyboard navigation** — move the selection with the arrow keys and act on the selected task (complete, focus, hide, move to a quadrant, open) without the mouse; see the shortcuts below.
 - **Search & filters** — search across all visible tasks, or filter by due-date bucket (overdue, today, this week, upcoming, no date).
 - **Grouping & sorting** — group tasks within a quadrant by priority, due date, or alphabetically, with independently configurable primary/secondary sort order per quadrant.
 - **Folder scope** — scan your entire vault or limit Focus First to a single folder (including sub-folders).
@@ -50,6 +51,20 @@ No manual sorting needed — though you can still pin any task to a quadrant by 
    ```
 
 4. Open the Focus First view — your tasks will already be sorted into the four quadrants.
+
+## Keyboard shortcuts
+
+While the view is focused, navigate and act on tasks without the mouse:
+
+| Key | Action |
+| --- | --- |
+| `↑` / `↓` | Move the selection to the previous / next task |
+| `←` / `→` | Jump to the previous / next section (focus or a quadrant) |
+| `Enter` | Open the selected task in its source note |
+| `Space` / `C` | Complete the selected task |
+| `F` | Toggle the focus tag |
+| `H` | Hide the selected task |
+| `1` – `4` | Move the task to Do / Schedule / Delegate / Eliminate |
 
 ## How tasks are classified
 

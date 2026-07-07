@@ -206,6 +206,15 @@ export function renderTaskItem(
 		.replace(/#\S+/g, '')
 		.trim();
 
+	// Keyboard navigation (issue #11): each item is a selectable option carrying
+	// its file/line so the view's handler can act on it. tabindex is managed by
+	// the view's roving-selection logic.
+	li.setAttribute('role', 'option');
+	li.setAttribute('aria-label', text);
+	li.setAttribute('tabindex', '-1');
+	li.setAttribute('data-file-path', task.file.path);
+	li.setAttribute('data-line', String(task.lineNumber));
+
 	// Title — always visible
 	const titleEl = li.createEl('span', { text, cls: 'focus-first-task-text' });
 	titleEl.addEventListener('click', () => { void openTaskFile(app, task); });

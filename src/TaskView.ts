@@ -1,6 +1,7 @@
 import { ItemView, WorkspaceLeaf, TFile, setIcon, debounce } from 'obsidian';
 import FocusFirstPlugin from './main';
 import { scanTasks, TaskItem, isFutureTask } from './taskScanner';
+import { resolveAction, moveLinear, moveSection, KeyAction } from './keyboardNav';
 import { classifyTasks, MatrixTask, Quadrant } from './matrixClassifier';
 import { SortField } from './settings';
 import { isTasksPluginEnabled } from './tasksPlugin';
@@ -28,6 +29,10 @@ export class FocusFirstView extends ItemView {
 	private searchQuery = '';
 	private activeDateFilters = new Set<DateBucket>();
 	private filtersVisible = false;
+	// Keyboard selection: the `file:line` of the selected task, and whether the
+	// view held focus across a re-render (so we can restore it, issue #11).
+	private selectedKey: string | null = null;
+	private restoreFocus = false;
 	private debouncedRefresh = debounce(() => this.refresh(), 500, true);
 
 	constructor(leaf: WorkspaceLeaf, plugin: FocusFirstPlugin) {
@@ -55,6 +60,7 @@ export class FocusFirstView extends ItemView {
 				this.debouncedRefresh();
 			}),
 		);
+		this.registerDomEvent(this.contentEl, 'keydown', (e) => this.handleKeydown(e));
 		await this.refresh();
 	}
 
@@ -65,6 +71,9 @@ export class FocusFirstView extends ItemView {
 
 	private render(): void {
 		const { contentEl } = this;
+		// If a task was keyboard-focused, restore focus after the rebuild.
+		const active = contentEl.ownerDocument?.activeElement ?? null;
+		this.restoreFocus = !!active && typeof contentEl.contains === 'function' && contentEl.contains(active);
 		contentEl.empty();
 
 		const header = contentEl.createDiv({ cls: 'focus-first-header' });
@@ -255,6 +264,8 @@ export class FocusFirstView extends ItemView {
 		}
 
 		const list = container.createEl('ul', { cls: 'focus-first-task-list' });
+		list.setAttribute('role', 'listbox');
+		list.setAttribute('aria-label', String(t().view.focusSectionTitle));
 		for (const task of focusTasks) {
 			const mt = matrixByKey.get(`${task.file.path}:${task.lineNumber}`);
 			if (mt) this.renderTask(list, mt);
@@ -291,6 +302,7 @@ export class FocusFirstView extends ItemView {
 
 		if (open.length === 0) {
 			container.createEl('p', { text: t().view.empty, cls: 'focus-first-empty' });
+			this.markSelection();
 			return;
 		}
 
@@ -314,6 +326,8 @@ export class FocusFirstView extends ItemView {
 			}
 
 			const list = cell.createEl('ul', { cls: 'focus-first-task-list' });
+			list.setAttribute('role', 'listbox');
+			list.setAttribute('aria-label', quadrant.title);
 			const sorted = this.sortTasks(tasks, key);
 
 			if (this.plugin.settings.groupByPrimary) {
@@ -334,10 +348,148 @@ export class FocusFirstView extends ItemView {
 				}
 			}
 		}
+
+		this.markSelection();
 	}
 
 	private renderTask(parent: HTMLElement, task: MatrixTask): void {
 		renderTaskItem(parent, task, this.app, this.plugin.settings);
+	}
+
+	// --- Keyboard navigation (issue #11) -----------------------------------
+
+	/** All rendered task items in document order (focus section, then quadrants). */
+	private taskItems(): HTMLElement[] {
+		const el = this.contentEl as HTMLElement & { findAll?: (selector: string) => HTMLElement[] };
+		return typeof el.findAll === 'function' ? el.findAll('.focus-first-task-item') : [];
+	}
+
+	private itemKey(el: HTMLElement): string {
+		return `${el.getAttribute('data-file-path') ?? ''}:${el.getAttribute('data-line') ?? ''}`;
+	}
+
+	/** The section a task item belongs to, used for ←/→ section jumps. */
+	private itemSection(el: HTMLElement): string {
+		const quadrant = el.closest('.focus-first-quadrant');
+		if (quadrant) {
+			const match = /focus-first-quadrant--(\w+)/.exec(quadrant.className);
+			return match?.[1] ? `q:${match[1]}` : 'q';
+		}
+		return el.closest('.focus-first-focus-container') ? 'focus' : '';
+	}
+
+	/**
+	 * Applies the current selection to the rendered items: marks the selected one
+	 * (class + aria + tabindex) and makes exactly one item tabbable so the list is
+	 * reachable by Tab. Restores DOM focus if the view held it across a rebuild.
+	 */
+	private markSelection(): void {
+		const items = this.taskItems();
+		const restore = this.restoreFocus;
+		this.restoreFocus = false;
+		if (items.length === 0) return;
+
+		let selected = this.selectedKey
+			? items.find((el) => this.itemKey(el) === this.selectedKey)
+			: undefined;
+		if (!selected) this.selectedKey = null;
+
+		items.forEach((el) => {
+			const isSel = el === selected;
+			el.classList.toggle('is-selected', isSel);
+			el.setAttribute('aria-selected', String(isSel));
+			el.tabIndex = isSel ? 0 : -1;
+		});
+		// Keep the list Tab-reachable even with nothing selected.
+		const tabbable = selected ?? items[0];
+		if (tabbable) tabbable.tabIndex = 0;
+
+		if (restore && tabbable) {
+			tabbable.focus();
+			tabbable.scrollIntoView({ block: 'nearest' });
+		}
+	}
+
+	private selectIndex(items: HTMLElement[], index: number): void {
+		const el = items[index];
+		if (!el) return;
+		this.selectedKey = this.itemKey(el);
+		items.forEach((item) => {
+			const isSel = item === el;
+			item.classList.toggle('is-selected', isSel);
+			item.setAttribute('aria-selected', String(isSel));
+			item.tabIndex = isSel ? 0 : -1;
+		});
+		el.focus();
+		el.scrollIntoView({ block: 'nearest' });
+	}
+
+	private async openTaskAt(filePath: string, lineNumber: number): Promise<void> {
+		const file = this.app.vault.getAbstractFileByPath(filePath);
+		if (file instanceof TFile) {
+			await openTaskFile(this.app, { file, lineNumber } as TaskItem);
+		}
+	}
+
+	private handleKeydown(e: KeyboardEvent): void {
+		const action = resolveAction(e);
+		if (!action) return;
+		const items = this.taskItems();
+		if (items.length === 0) return;
+
+		let index = this.selectedKey
+			? items.findIndex((el) => this.itemKey(el) === this.selectedKey)
+			: -1;
+		if (index < 0) index = 0;
+
+		if (action.kind === 'move') {
+			e.preventDefault();
+			this.selectIndex(items, this.nextIndex(items, index, action));
+			return;
+		}
+
+		const el = items[index];
+		if (!el) return;
+		const filePath = el.getAttribute('data-file-path') ?? '';
+		const line = Number(el.getAttribute('data-line') ?? '0');
+		if (!filePath) return;
+		e.preventDefault();
+		this.dispatchAction(action, el, filePath, line);
+	}
+
+	private nextIndex(items: HTMLElement[], index: number, action: KeyAction): number {
+		if (action.kind !== 'move') return index;
+		if (action.dir === 'up') return moveLinear(index, items.length, -1);
+		if (action.dir === 'down') return moveLinear(index, items.length, 1);
+		const sections = items.map((el) => this.itemSection(el));
+		return moveSection(sections, index, action.dir === 'nextSection' ? 1 : -1);
+	}
+
+	private dispatchAction(action: KeyAction, el: HTMLElement, filePath: string, line: number): void {
+		const settings = this.plugin.settings;
+		switch (action.kind) {
+			case 'open':
+				void this.openTaskAt(filePath, line);
+				break;
+			case 'complete':
+				void this.completeTask(filePath, line);
+				break;
+			case 'focus': {
+				const focusTag = settings.focusTag.trim();
+				if (!focusTag) break;
+				void this.toggleFocusTag(filePath, line, focusTag, !el.classList.contains('is-focused'));
+				break;
+			}
+			case 'hide': {
+				const hideTag = settings.hideTag.trim();
+				if (!hideTag) break;
+				void this.toggleHideTag(filePath, line, hideTag);
+				break;
+			}
+			case 'moveQuadrant':
+				void this.moveTaskToQuadrant(filePath, line, action.quadrant);
+				break;
+		}
 	}
 
 	private static readonly PRIORITY_ORDER = ['🔺', '⏫', '🔼', '🔽', '⏬'];

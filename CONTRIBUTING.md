@@ -4,14 +4,9 @@ Thanks for taking the time to contribute. This guide explains how to report
 issues, propose changes, and get a pull request merged.
 
 > [!important]
-> **Licensing note.** Focus First is published under a **source-available**
-> license (see [LICENSE](LICENSE)), not an open-source one. The source is public
-> for transparency, review, and personal use, but redistribution is not
-> permitted. By submitting a contribution (issue, code, or documentation) you
-> agree that your contribution may be incorporated into the Software and
-> distributed by the author under that same license, and that you grant the
-> author the rights needed to do so. If you are not comfortable with this,
-> please open an issue to discuss before sending code.
+> **Licensing note.** Focus First is licensed under the [MIT License](LICENSE).
+> By submitting a contribution (issue, code, or documentation) you agree that
+> your contribution is provided under the same MIT License.
 
 ## Ways to contribute
 

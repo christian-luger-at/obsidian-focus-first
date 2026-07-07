@@ -2,7 +2,7 @@
 
 [![Version](https://img.shields.io/github/manifest-json/v/christian-luger-at/obsidian-focus-first?color=blue&label=version)](https://github.com/christian-luger-at/obsidian-focus-first/releases)
 [![Obsidian minimum version](https://img.shields.io/badge/Obsidian-%E2%89%A5%201.12.0-7c3aed)](https://obsidian.md)
-[![License: source-available](https://img.shields.io/badge/license-source--available-lightgrey)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Coverage](https://raw.githubusercontent.com/christian-luger-at/obsidian-focus-first/badges/coverage.svg)](https://github.com/christian-luger-at/obsidian-focus-first/actions/workflows/coverage.yml)
 [![GitHub issues](https://img.shields.io/github/issues/christian-luger-at/obsidian-focus-first)](../../issues)
 
@@ -171,8 +171,8 @@ Found a bug or have a feature request? Please [open an issue](../../issues).
 
 ## Contributing
 
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report issues, set up the project, and open a pull request. Note that Focus First is **source-available**, not open source — please read the licensing note in the guide before sending code.
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report issues, set up the project, and open a pull request.
 
 ## License
 
-© 2026 Christian Luger. Focus First is **source-available**: you may install, use, and privately modify it, but you may not redistribute it or publish modified versions. See [LICENSE](LICENSE) for the full terms.
+Focus First is licensed under the [MIT License](LICENSE). © 2026 Christian Luger.

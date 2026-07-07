@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { scanTasks } from '../taskScanner';
+import { scanTasks, isFutureTask, TaskItem } from '../taskScanner';
 import { DEFAULT_SETTINGS, FocusFirstSettings } from '../settings';
 import { TFile } from './__mocks__/obsidian';
 
@@ -92,6 +92,72 @@ describe('due-date parsing', () => {
 		const app = makeApp([{ path: 'a.md', lines: ['- [ ] Task 📅 2025-01-01 📅 2025-06-30'] }]);
 		const [task] = await scanTasks(app, makeSettings());
 		expect(task?.dueDate?.toISOString().startsWith('2025-01-01')).toBe(true);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Start / scheduled date parsing (issue #7)
+// ---------------------------------------------------------------------------
+
+describe('start/scheduled date parsing', () => {
+	it('parses the 🛫 start date', async () => {
+		const app = makeApp([{ path: 'a.md', lines: ['- [ ] Task 🛫 2026-08-01'] }]);
+		const [task] = await scanTasks(app, makeSettings());
+		expect(task?.startDate?.toISOString().startsWith('2026-08-01')).toBe(true);
+		expect(task?.scheduledDate).toBeUndefined();
+	});
+
+	it('parses the ⏳ scheduled date', async () => {
+		const app = makeApp([{ path: 'a.md', lines: ['- [ ] Task ⏳ 2026-08-02'] }]);
+		const [task] = await scanTasks(app, makeSettings());
+		expect(task?.scheduledDate?.toISOString().startsWith('2026-08-02')).toBe(true);
+		expect(task?.startDate).toBeUndefined();
+	});
+
+	it('parses start, scheduled, and due dates together without confusing them', async () => {
+		const app = makeApp([{
+			path: 'a.md',
+			lines: ['- [ ] Task 🛫 2026-08-01 ⏳ 2026-08-02 📅 2026-08-03'],
+		}]);
+		const [task] = await scanTasks(app, makeSettings());
+		expect(task?.startDate?.toISOString().startsWith('2026-08-01')).toBe(true);
+		expect(task?.scheduledDate?.toISOString().startsWith('2026-08-02')).toBe(true);
+		expect(task?.dueDate?.toISOString().startsWith('2026-08-03')).toBe(true);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// isFutureTask (issue #7)
+// ---------------------------------------------------------------------------
+
+describe('isFutureTask', () => {
+	const NOW = new Date('2026-07-07T12:00:00');
+	function make(overrides: Partial<TaskItem>): TaskItem {
+		return {
+			file: new TFile('a.md') as never,
+			line: '- [ ] Task',
+			lineNumber: 0,
+			completed: false,
+			tags: [],
+			...overrides,
+		};
+	}
+
+	it('is false when there is no start or scheduled date', () => {
+		expect(isFutureTask(make({ dueDate: new Date('2026-01-01') }), NOW)).toBe(false);
+	});
+
+	it('is true when the start date is after today', () => {
+		expect(isFutureTask(make({ startDate: new Date('2026-08-01') }), NOW)).toBe(true);
+	});
+
+	it('is true when the scheduled date is after today', () => {
+		expect(isFutureTask(make({ scheduledDate: new Date('2026-08-01') }), NOW)).toBe(true);
+	});
+
+	it('is false when start/scheduled dates are today or past', () => {
+		expect(isFutureTask(make({ startDate: new Date('2026-07-07') }), NOW)).toBe(false);
+		expect(isFutureTask(make({ scheduledDate: new Date('2026-06-01') }), NOW)).toBe(false);
 	});
 });
 

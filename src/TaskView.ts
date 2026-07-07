@@ -1,6 +1,6 @@
 import { ItemView, WorkspaceLeaf, TFile, setIcon, debounce } from 'obsidian';
 import FocusFirstPlugin from './main';
-import { scanTasks, TaskItem } from './taskScanner';
+import { scanTasks, TaskItem, isFutureTask } from './taskScanner';
 import { classifyTasks, MatrixTask, Quadrant } from './matrixClassifier';
 import { SortField } from './settings';
 import { isTasksPluginEnabled } from './tasksPlugin';
@@ -228,7 +228,8 @@ export class FocusFirstView extends ItemView {
 		const focusTasks = this.tasks.filter(
 			(t) => !t.completed
 				&& t.tags.some((tag) => tag.toLowerCase() === focusTag)
-				&& (!hideTag || !t.tags.some((tag) => tag.toLowerCase() === hideTag)),
+				&& (!hideTag || !t.tags.some((tag) => tag.toLowerCase() === hideTag))
+				&& (this.plugin.settings.futureTasks !== 'hide' || !isFutureTask(t)),
 		);
 
 		if (focusTasks.length === 0) { container.classList.add('focus-first-hidden'); return; }
@@ -280,7 +281,8 @@ export class FocusFirstView extends ItemView {
 				const text = task.line.replace(/^[\s\-*]*\[.\]\s*/, '').toLowerCase();
 				return text.includes(query) || task.file.basename.toLowerCase().includes(query);
 			})
-			.filter((task) => this.passesDateFilter(task));
+			.filter((task) => this.passesDateFilter(task))
+			.filter((task) => this.plugin.settings.futureTasks !== 'hide' || !isFutureTask(task));
 
 		if (open.length === 0) {
 			container.createEl('p', { text: t().view.empty, cls: 'focus-first-empty' });

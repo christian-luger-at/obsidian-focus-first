@@ -1,6 +1,6 @@
 import { MarkdownRenderChild, MarkdownRenderer, debounce } from 'obsidian';
 import FocusFirstPlugin from './main';
-import { scanTasks, TaskItem } from './taskScanner';
+import { scanTasks, TaskItem, isFutureTask } from './taskScanner';
 import { classifyTasks } from './matrixClassifier';
 import { completeTaskLine } from './taskRenderer';
 import { canonicalizeTaskLine } from './tasksFormat';
@@ -141,9 +141,11 @@ export class FocusDataBlock extends MarkdownRenderChild {
 	/** Selects the same tasks the Focus First view shows for this section. */
 	private select(tasks: TaskItem[]): TaskItem[] {
 		const hideTag = this.plugin.settings.hideTag.trim().toLowerCase();
+		const hideFuture = this.plugin.settings.futureTasks === 'hide';
 		const open = tasks.filter(
 			(task) => !task.completed
-				&& (!hideTag || !task.tags.some((tag) => tag.toLowerCase() === hideTag)),
+				&& (!hideTag || !task.tags.some((tag) => tag.toLowerCase() === hideTag))
+				&& (!hideFuture || !isFutureTask(task)),
 		);
 
 		if (this.section === 'focus') {

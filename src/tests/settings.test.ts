@@ -315,6 +315,7 @@ describe('loadSettings — merges persisted data with defaults', () => {
 			groupByPrimary: false,
 			focusTag: '#focus',
 			hideTag: '#hide',
+			futureTasks: 'hide',
 			fontSize: 120,
 			tasksPluginWarningDismissed: true,
 		};

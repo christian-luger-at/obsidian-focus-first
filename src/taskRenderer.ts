@@ -1,6 +1,6 @@
 import { App, TFile, MarkdownView, Menu, Platform, setIcon } from 'obsidian';
 import { MatrixTask } from './matrixClassifier';
-import { TaskItem } from './taskScanner';
+import { TaskItem, isFutureTask } from './taskScanner';
 import { FocusFirstSettings } from './settings';
 import { getTasksApi } from './tasksPlugin';
 import { setDueDate, shiftDueDate, setPriority, addDaysToIso } from './tasksFormat';
@@ -192,7 +192,11 @@ export function renderTaskItem(
 		? task.tags.some((tag) => tag.toLowerCase() === focusTag)
 		: false;
 	const hideTag = settings.hideTag.trim().toLowerCase();
-	const li = parent.createEl('li', { cls: `focus-first-task-item${isFocused ? ' is-focused' : ''}` });
+	// "Future" tasks (start/scheduled date ahead) are dimmed when that mode is on.
+	const isFuture = settings.futureTasks === 'dim' && isFutureTask(task);
+	const li = parent.createEl('li', {
+		cls: `focus-first-task-item${isFocused ? ' is-focused' : ''}${isFuture ? ' is-future' : ''}`,
+	});
 	makeTaskDraggable(li, task);
 
 	const text = task.line

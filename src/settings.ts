@@ -6,6 +6,9 @@ export type TaskScope = 'all' | 'folder';
 
 export type SortField = 'priority' | 'dueDate' | 'alpha';
 
+/** How to treat tasks whose start/scheduled date is still in the future. */
+export type FutureTasksMode = 'show' | 'dim' | 'hide';
+
 export interface QuadrantSort {
 	primary: SortField;
 	secondary: SortField;
@@ -44,6 +47,7 @@ export interface FocusFirstSettings {
 	groupByPrimary: boolean;
 	focusTag: string;
 	hideTag: string;
+	futureTasks: FutureTasksMode;
 	fontSize: number;
 	/** Set once the user dismisses the "Tasks plugin not enabled" notice. */
 	tasksPluginWarningDismissed: boolean;
@@ -63,6 +67,7 @@ export const DEFAULT_SETTINGS: FocusFirstSettings = {
 	groupByPrimary: true,
 	focusTag: '#focus',
 	hideTag: '#hide',
+	futureTasks: 'show',
 	fontSize: 100,
 	tasksPluginWarningDismissed: false,
 };
@@ -275,6 +280,24 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 						.onChange(async (value) => {
 							this.plugin.settings.hideTag = value.trim();
 							await this.plugin.saveSettings();
+						}),
+				);
+		});
+
+		this.createSection(containerEl, t().settings.futureTasksHeading, (body) => {
+			new Setting(body)
+				.setName(t().settings.futureTasks.name)
+				.setDesc(t().settings.futureTasks.desc)
+				.addDropdown((drop) =>
+					drop
+						.addOption('show', t().settings.futureTasks.optionShow)
+						.addOption('dim', t().settings.futureTasks.optionDim)
+						.addOption('hide', t().settings.futureTasks.optionHide)
+						.setValue(this.plugin.settings.futureTasks)
+						.onChange(async (value: string) => {
+							this.plugin.settings.futureTasks = value as FutureTasksMode;
+							await this.plugin.saveSettings();
+							this.plugin.refreshViews();
 						}),
 				);
 		});

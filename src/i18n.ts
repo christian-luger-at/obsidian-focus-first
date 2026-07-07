@@ -72,6 +72,14 @@ interface Translations {
 		focusTag: { name: string; desc: string };
 		hideHeading: string;
 		hideTag: { name: string; desc: string };
+		futureTasksHeading: string;
+		futureTasks: {
+			name: string;
+			desc: string;
+			optionShow: string;
+			optionDim: string;
+			optionHide: string;
+		};
 		matrixDesc: string;
 		quadrantsHeading: string;
 		quadrantColor: { name: string; desc: string; reset: string };
@@ -190,6 +198,14 @@ const translations: Record<Lang, Translations> = {
 			hideTag: {
 				name: 'Hide tag',
 				desc: 'Tasks carrying this tag are hidden from the matrix. Use the hide button on any task to toggle this tag.',
+			},
+			futureTasksHeading: 'Future Tasks',
+			futureTasks: {
+				name: 'Not-yet-started tasks',
+				desc: 'How to treat tasks whose start (🛫) or scheduled (⏳) date is still in the future — they are not actionable yet. The due date still drives urgency and classification.',
+				optionShow: 'Show',
+				optionDim: 'Dim',
+				optionHide: 'Hide',
 			},
 			matrixDesc: 'These rules determine how tasks are automatically placed into quadrants based on their due date and priority.',
 			quadrantsHeading: 'Quadrants',
@@ -327,6 +343,14 @@ const translations: Record<Lang, Translations> = {
 			hideTag: {
 				name: 'Ausblenden-Tag',
 				desc: 'Aufgaben mit diesem Tag werden in der Matrix nicht angezeigt. Über den Ausblenden-Button an jeder Aufgabe kann der Tag gesetzt oder entfernt werden.',
+			},
+			futureTasksHeading: 'Zukünftige Aufgaben',
+			futureTasks: {
+				name: 'Noch nicht gestartete Aufgaben',
+				desc: 'Wie mit Aufgaben umgegangen wird, deren Startdatum (🛫) oder geplantes Datum (⏳) noch in der Zukunft liegt — sie sind noch nicht bearbeitbar. Das Fälligkeitsdatum bestimmt weiterhin Dringlichkeit und Einordnung.',
+				optionShow: 'Anzeigen',
+				optionDim: 'Abschwächen',
+				optionHide: 'Ausblenden',
 			},
 			matrixDesc: 'Diese Regeln bestimmen, wie Aufgaben anhand von Fälligkeitsdatum und Priorität automatisch in Quadranten eingeordnet werden.',
 			quadrantsHeading: 'Quadranten',

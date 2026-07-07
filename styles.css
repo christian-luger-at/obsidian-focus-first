@@ -226,6 +226,16 @@
 	padding-left: calc(var(--size-4-2) - 2px);
 }
 
+/* Future tasks (start/scheduled date ahead) in "dim" mode — de-emphasised but
+   still readable and interactive on hover. */
+.focus-first-task-item.is-future .focus-first-task-text {
+	opacity: 0.5;
+}
+
+.focus-first-task-item.is-future:hover .focus-first-task-text {
+	opacity: 0.75;
+}
+
 /* ── Matrix container ────────────────────────────────────── */
 
 .focus-first-matrix-container {

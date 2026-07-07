@@ -422,6 +422,46 @@ describe('renderMatrix()', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Future tasks (start/scheduled ahead) — show / dim / hide modes (issue #7)
+// ---------------------------------------------------------------------------
+
+describe('future tasks mode', () => {
+	function renderMatrixWith(mode: FocusFirstSettings['futureTasks']) {
+		// A task that is important+urgent (so it lands in a quadrant) but starts in
+		// the future, plus a normal task so "hide" doesn't just empty the matrix.
+		const tasks = [
+			makeTask({ line: '- [ ] Future task', priority: '🔺', dueDate: daysFromToday(0), startDate: daysFromToday(10) }),
+			makeTask({ line: '- [ ] Normal task', priority: '🔺', dueDate: daysFromToday(0) }),
+		];
+		const { view, contentEl } = makeView({ importantPriorities: ['🔺'], futureTasks: mode }, tasks);
+		const container = contentEl.createDiv();
+		priv(view).renderMatrix(contentEl, container);
+		return container;
+	}
+
+	it('shows future tasks normally in "show" mode', () => {
+		const container = renderMatrixWith('show');
+		const texts = container.findAllByClass('focus-first-task-text').map((t) => t.text);
+		expect(texts).toContain('Future task');
+		expect(container.findByClass('focus-first-task-item')?.classList.contains('is-future')).toBe(false);
+	});
+
+	it('renders future tasks with the is-future class in "dim" mode', () => {
+		const container = renderMatrixWith('dim');
+		const items = container.findAllByClass('focus-first-task-item');
+		const future = items.find((i) => i.findByClass('focus-first-task-text')?.text === 'Future task');
+		expect(future?.classList.contains('is-future')).toBe(true);
+	});
+
+	it('excludes future tasks in "hide" mode', () => {
+		const container = renderMatrixWith('hide');
+		const texts = container.findAllByClass('focus-first-task-text').map((t) => t.text);
+		expect(texts).toContain('Normal task');
+		expect(texts).not.toContain('Future task');
+	});
+});
+
+// ---------------------------------------------------------------------------
 // renderTask() — action buttons (exercised via renderMatrix)
 // ---------------------------------------------------------------------------
 

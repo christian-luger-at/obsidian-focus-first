@@ -93,4 +93,14 @@ export default class FocusFirstPlugin extends Plugin {
 			}
 		}
 	}
+
+	/** Re-renders every open Focus First view (used after a settings change). */
+	refreshViews() {
+		for (const leaf of this.app.workspace.getLeavesOfType(FOCUS_FIRST_VIEW_TYPE)) {
+			const view = leaf.view;
+			if (view instanceof FocusFirstView) {
+				void view.refresh();
+			}
+		}
+	}
 }

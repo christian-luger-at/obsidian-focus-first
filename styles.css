@@ -548,6 +548,30 @@ body.is-mobile .focus-first-task-hover {
 	max-height: none;
 }
 
+/* On mobile, scroll the whole view as one page instead of pinning the search +
+   focus cards and scrolling only the matrix. Otherwise, with several focus
+   tasks, the top section eats the screen and the quadrants below are barely
+   visible. Everything flows and sizes to its content; the view scrolls. */
+body.is-mobile .focus-first-view {
+	overflow-y: auto;
+}
+
+body.is-mobile .focus-first-matrix-container {
+	flex: 0 0 auto;
+	overflow: visible;
+}
+
+body.is-mobile .focus-first-matrix {
+	height: auto;
+	overflow: visible;
+}
+
+/* Let the focus and quadrant lists grow to their content (the page scrolls),
+   rather than scrolling internally inside a squeezed area. */
+body.is-mobile .focus-first-task-list {
+	overflow: visible;
+}
+
 /* ── Settings ────────────────────────────────────────────── */
 
 .focus-first-color-input {

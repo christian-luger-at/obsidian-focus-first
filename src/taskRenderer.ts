@@ -2,6 +2,7 @@ import { App, TFile, MarkdownView, setIcon } from 'obsidian';
 import { MatrixTask } from './matrixClassifier';
 import { TaskItem } from './taskScanner';
 import { FocusFirstSettings } from './settings';
+import { getTasksApi } from './tasksPlugin';
 import { t } from './i18n';
 
 /**
@@ -48,14 +49,62 @@ export function removeTagFromLine(line: string, tag: string): string {
 	return line.replace(new RegExp(`\\s*${escaped}(?=\\s|$)`, 'gi'), '');
 }
 
-export async function completeTaskLine(app: App, filePath: string, lineNumber: number): Promise<void> {
+// The date signifiers a created date (➕) sorts before, per the Tasks plugin's
+// canonical order (start, scheduled, due, cancelled, done).
+const DATE_SIGNIFIER_RE = /[🛫⏳📅❌✅]/u;
+
+function formatDate(date: Date): string {
+	const y = date.getFullYear();
+	const m = String(date.getMonth() + 1).padStart(2, '0');
+	const d = String(date.getDate()).padStart(2, '0');
+	return `${y}-${m}-${d}`;
+}
+
+/**
+ * Adds a `➕ <today>` created date to a task line, matching what the Tasks plugin
+ * writes on a newly generated recurrence instance. No-op if the line already has
+ * a created date. Placed before the first other date signifier (canonical order)
+ * so it reads like a native Tasks line; indentation is preserved.
+ */
+function withCreatedDate(line: string, today: string): string {
+	if (line.includes('➕')) return line;
+	const created = `➕ ${today}`;
+	const match = DATE_SIGNIFIER_RE.exec(line);
+	if (match) {
+		return `${line.slice(0, match.index)}${created} ${line.slice(match.index)}`;
+	}
+	return `${line.trimEnd()} ${created}`;
+}
+
+export async function completeTaskLine(
+	app: App,
+	filePath: string,
+	lineNumber: number,
+	now: Date = new Date(),
+): Promise<void> {
 	const file = app.vault.getAbstractFileByPath(filePath);
 	if (!(file instanceof TFile)) return;
 	const content = await app.vault.read(file);
 	const lines = content.split('\n');
 	const line = lines[lineNumber];
 	if (line === undefined) return;
-	lines[lineNumber] = line.replace(/\[\s\]/, '[x]');
+
+	// Delegate to the Tasks plugin when it's available: it applies the user's
+	// done-date/status settings and, for recurring (🔁) tasks, generates the next
+	// occurrence. The result can be multiple lines, so splice it in. Without the
+	// plugin, 🔁 has no engine anyway — just flip the checkbox as before.
+	const api = getTasksApi(app);
+	if (api) {
+		const today = formatDate(now);
+		// The newly generated next occurrence is the still-open `[ ]` line; give it
+		// a created date like the Tasks plugin does. The completed line is left as-is.
+		const replacement = api.executeToggleTaskDoneCommand(line, filePath)
+			.split('\n')
+			.map((l) => (/^\s*[-*+] \[ \]/.test(l) ? withCreatedDate(l, today) : l));
+		lines.splice(lineNumber, 1, ...replacement);
+	} else {
+		lines[lineNumber] = line.replace(/\[\s\]/, '[x]');
+	}
 	await app.vault.modify(file, lines.join('\n'));
 }
 

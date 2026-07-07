@@ -12,6 +12,9 @@ import { t } from './i18n';
  * `app` + `settings` rather than the view/leaf.
  */
 
+// Monotonic counter for unique task-title element ids (used by aria-labelledby).
+let taskTitleCounter = 0;
+
 export function makeTaskDraggable(li: HTMLElement, task: MatrixTask): void {
 	li.draggable = true;
 	li.addEventListener('dragstart', (e) => {
@@ -208,15 +211,19 @@ export function renderTaskItem(
 
 	// Keyboard navigation (issue #11): each item is a selectable option carrying
 	// its file/line so the view's handler can act on it. tabindex is managed by
-	// the view's roving-selection logic.
+	// the view's roving-selection logic. Its accessible name comes from the title
+	// via aria-labelledby — not aria-label, which would trigger Obsidian's hover
+	// tooltip and show the (already visible) task text on every hover.
+	const titleId = `focus-first-task-title-${taskTitleCounter++}`;
 	li.setAttribute('role', 'option');
-	li.setAttribute('aria-label', text);
+	li.setAttribute('aria-labelledby', titleId);
 	li.setAttribute('tabindex', '-1');
 	li.setAttribute('data-file-path', task.file.path);
 	li.setAttribute('data-line', String(task.lineNumber));
 
 	// Title — always visible
 	const titleEl = li.createEl('span', { text, cls: 'focus-first-task-text' });
+	titleEl.setAttribute('id', titleId);
 	titleEl.addEventListener('click', () => { void openTaskFile(app, task); });
 
 	// Hover panel — visible only on hover via CSS

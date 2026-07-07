@@ -45,7 +45,7 @@ export class QuickAddModal extends Modal {
 		const addBtn = controls.createEl('button', { text: t().quickAdd.add, cls: 'mod-cta' });
 		addBtn.addEventListener('click', () => { void this.submit(); });
 
-		window.setTimeout(() => this.input.focus(), 0);
+		this.input.focus();
 	}
 
 	private addChip(parent: HTMLElement, label: string, tag: string): void {

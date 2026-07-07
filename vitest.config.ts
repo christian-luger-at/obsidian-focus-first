@@ -18,6 +18,14 @@ export default defineConfig({
 			all: true,
 			// text: console report; json-summary: consumed by the coverage badge CI.
 			reporter: ['text', 'json-summary'],
+			// Keep every file above 85% statement/line coverage (checked per file so
+			// no single file can silently regress). Branches/functions are not gated:
+			// some files have defensive branches that are impractical to exercise.
+			thresholds: {
+				perFile: true,
+				statements: 85,
+				lines: 85,
+			},
 		},
 	},
 });

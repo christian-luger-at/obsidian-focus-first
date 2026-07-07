@@ -4,6 +4,7 @@ import { DEFAULT_SETTINGS } from '../settings';
 vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 
 const { default: FocusFirstPlugin } = await import('../main');
+const { TFile } = await import('./__mocks__/obsidian');
 const { FOCUS_FIRST_VIEW_TYPE, FocusFirstView } = await import('../TaskView');
 const { FocusDataBlock } = await import('../focusDataBlock');
 const { WrappedTasksBlock } = await import('../wrappedTasksBlock');
@@ -314,5 +315,91 @@ describe('FocusFirstPlugin — onunload', () => {
 		// @ts-expect-error — stub app/manifest, not real Obsidian types
 		const plugin = new FocusFirstPlugin(app, {});
 		expect(() => plugin.onunload()).not.toThrow();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// openQuickAdd / quickAddViaTasks / refreshViews
+// ---------------------------------------------------------------------------
+
+describe('FocusFirstPlugin — quick add', () => {
+	async function flush() {
+		for (let i = 0; i < 8; i++) await Promise.resolve();
+	}
+
+	function makeApp(opts: {
+		tasksApi?: { createTaskLineModal: () => Promise<string> };
+		activePath?: string | null;
+		files?: Record<string, string>;
+	}) {
+		const store = { ...(opts.files ?? {}) };
+		const plugins = opts.tasksApi
+			? { plugins: { 'obsidian-tasks-plugin': { apiV1: opts.tasksApi } } }
+			: { plugins: {} };
+		return {
+			store,
+			app: {
+				plugins,
+				workspace: {
+					getActiveFile: () => (opts.activePath ? { path: opts.activePath } : null),
+					getLeavesOfType: () => [],
+				},
+				vault: {
+					getAbstractFileByPath: (p: string) => (p in store ? new TFile(p) : null),
+					read: vi.fn(async (f: { path: string }) => store[f.path] ?? ''),
+					modify: vi.fn(async (f: { path: string }, c: string) => { store[f.path] = c; }),
+					create: vi.fn(async (p: string, c: string) => { store[p] = c; }),
+					createFolder: vi.fn(async () => {}),
+				},
+			},
+		};
+	}
+
+	function makePlugin(app: unknown, settings = {}) {
+		// @ts-expect-error — stub app/manifest, not real Obsidian types
+		const plugin = new FocusFirstPlugin(app, {});
+		plugin.settings = { ...DEFAULT_SETTINGS, quickAddTarget: 'inbox', quickAddInbox: 'Inbox.md', ...settings };
+		return plugin;
+	}
+
+	it('uses the Tasks create dialog and appends its result when the plugin is present', async () => {
+		const { app, store } = makeApp({
+			tasksApi: { createTaskLineModal: () => Promise.resolve('Write report 📅 2026-07-10') },
+			files: { 'Inbox.md': '' },
+		});
+		makePlugin(app).openQuickAdd();
+		await flush();
+		expect(store['Inbox.md']).toBe('- [ ] Write report 📅 2026-07-10\n');
+	});
+
+	it('does nothing when the Tasks create dialog is cancelled (empty string)', async () => {
+		const { app } = makeApp({
+			tasksApi: { createTaskLineModal: () => Promise.resolve('') },
+			files: { 'Inbox.md': '' },
+		});
+		makePlugin(app).openQuickAdd();
+		await flush();
+		expect(app.vault.modify).not.toHaveBeenCalled();
+	});
+
+	it('falls back to the built-in modal when the Tasks plugin is absent', () => {
+		const { app } = makeApp({ files: { 'Inbox.md': '' } });
+		expect(() => makePlugin(app).openQuickAdd()).not.toThrow();
+		// No task written yet — the modal is open awaiting input.
+		expect(app.vault.modify).not.toHaveBeenCalled();
+	});
+
+	it('refreshViews refreshes open Focus First views and ignores other leaves', () => {
+		const refreshed: unknown[] = [];
+		const focusView = Object.create(FocusFirstView.prototype) as { refresh: () => Promise<void> };
+		focusView.refresh = () => { refreshed.push(focusView); return Promise.resolve(); };
+		const app = {
+			workspace: {
+				getLeavesOfType: () => [{ view: focusView }, { view: {} }],
+			},
+		};
+		const plugin = makePlugin(app);
+		plugin.refreshViews();
+		expect(refreshed).toHaveLength(1);
 	});
 });

@@ -195,6 +195,8 @@ export class FakeDomEl {
 	style: Record<string, string> = {};
 	constructor(tag = 'div') { this.tag = tag; }
 	setAttribute(_k: string, _v: string) {}
+	focus() {}
+	scrollIntoView() {}
 	addClass(c: string) { this._classes.add(c); }
 	setText(t: string) { this.text = t; }
 	getText() { return this.text; }

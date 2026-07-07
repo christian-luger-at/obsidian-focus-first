@@ -117,6 +117,29 @@ class FakeEl {
 	findByClass(cls: string): FakeEl | undefined {
 		return this.findAllByClass(cls)[0];
 	}
+
+	// --- Extra DOM surface used by keyboard navigation (issue #11) ---
+	findAll(selector: string): FakeEl[] {
+		return this.findAllByClass(selector.replace(/^\./, ''));
+	}
+
+	closest(selector: string): FakeEl | null {
+		const classes = selector.split(',').map((s) => s.trim().replace(/^\./, ''));
+		const matches = (el: FakeEl) => classes.some((c) => el.cls.has(c));
+		if (matches(this)) return this;
+		let cur = this.parentEl;
+		while (cur) {
+			if (matches(cur)) return cur;
+			cur = cur.parentEl;
+		}
+		return null;
+	}
+
+	get className(): string { return [...this.cls].join(' '); }
+	get ownerDocument(): { activeElement: FakeEl | null } { return { activeElement: null }; }
+	tabIndex = -1;
+	focus() {}
+	scrollIntoView() {}
 }
 
 // ---------------------------------------------------------------------------
@@ -171,6 +194,10 @@ interface TestableView {
 	renderMatrix(contentEl: unknown, container: unknown): void;
 	renderFocusTasks(container: unknown): void;
 	openTask(task: TaskItem): Promise<void>;
+	handleKeydown(e: unknown): void;
+	moveTaskToQuadrant(filePath: string, lineNumber: number, quadrant: string): Promise<void>;
+	makeDropTarget(cell: unknown, quadrant: string): void;
+	selectedKey: string | null;
 }
 
 function priv(view: unknown): TestableView {
@@ -714,5 +741,129 @@ describe('openTask()', () => {
 
 		expect(setCursor).toHaveBeenCalledWith({ line: 5, ch: 0 });
 		expect(scrollIntoView).toHaveBeenCalled();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Keyboard navigation & actions (issue #11)
+// ---------------------------------------------------------------------------
+
+describe('keyboard navigation', () => {
+	function setup(store: Record<string, string>) {
+		const tasks = Object.keys(store).map((path) =>
+			makeTask({ line: store[path], priority: '🔺', dueDate: daysFromToday(0), file: new TFile(path) as never, lineNumber: 0 }),
+		);
+		const res = makeView({ importantPriorities: ['🔺'], focusTag: '#focus', hideTag: '#hide' }, tasks);
+		res.app.vault.getAbstractFileByPath = (p: string) => (p in store ? new TFile(p) : null);
+		res.app.vault.read = vi.fn(async (file: unknown) => store[(file as { path: string }).path] ?? '');
+		res.app.vault.modify = vi.fn(async (file: unknown, c: string) => { store[(file as { path: string }).path] = c; });
+		const container = res.contentEl.createDiv();
+		priv(res.view).renderMatrix(res.contentEl, container);
+		return { ...res, store };
+	}
+
+	const key = (k: string) => ({ key: k, preventDefault: () => {} });
+	async function flush() { for (let i = 0; i < 8; i++) await Promise.resolve(); }
+
+	it('ArrowDown/ArrowUp move the selection in order', () => {
+		const { view } = setup({ 'a.md': '- [ ] A', 'b.md': '- [ ] B' });
+		priv(view).handleKeydown(key('ArrowDown'));
+		expect(priv(view).selectedKey).toBe('b.md:0');
+		priv(view).handleKeydown(key('ArrowUp'));
+		expect(priv(view).selectedKey).toBe('a.md:0');
+	});
+
+	it('marks the selected item with the is-selected class', () => {
+		const { view, contentEl } = setup({ 'a.md': '- [ ] A', 'b.md': '- [ ] B' });
+		priv(view).handleKeydown(key('ArrowDown'));
+		const selected = contentEl.findAllByClass('focus-first-task-item').filter((el) => el.classList.contains('is-selected'));
+		expect(selected).toHaveLength(1);
+		expect(selected[0]?.getAttribute('data-file-path')).toBe('b.md');
+	});
+
+	it('ignores unknown keys', () => {
+		const { view } = setup({ 'a.md': '- [ ] A' });
+		expect(() => priv(view).handleKeydown(key('z'))).not.toThrow();
+		expect(priv(view).selectedKey).toBeNull();
+	});
+
+	it('"c" completes the selected task', async () => {
+		const { view, store } = setup({ 'a.md': '- [ ] A' });
+		priv(view).handleKeydown(key('c'));
+		await flush();
+		expect(store['a.md']).toBe('- [x] A');
+	});
+
+	it('"1" moves the selected task to the Do quadrant', async () => {
+		const { view, store } = setup({ 'a.md': '- [ ] A #schedule' });
+		priv(view).handleKeydown(key('1'));
+		await flush();
+		expect(store['a.md']).toBe('- [ ] A #do');
+	});
+
+	it('Enter opens the selected task', () => {
+		const { view, app } = setup({ 'a.md': '- [ ] A' });
+		const getLeaf = vi.fn(() => ({ openFile: vi.fn(async () => {}), view: undefined }));
+		app.workspace.getLeaf = getLeaf;
+		priv(view).handleKeydown(key('Enter'));
+		expect(getLeaf).toHaveBeenCalled();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// moveTaskToQuadrant & drag-drop target
+// ---------------------------------------------------------------------------
+
+describe('moveTaskToQuadrant', () => {
+	function viewWithFile(content: string) {
+		const store: Record<string, string> = { 'a.md': content };
+		const res = makeView({});
+		res.app.vault.getAbstractFileByPath = (p: string) => (p in store ? new TFile(p) : null);
+		res.app.vault.read = vi.fn(async (_f: unknown) => store['a.md'] ?? '');
+		res.app.vault.modify = vi.fn(async (_f: unknown, c: string) => { store['a.md'] = c; });
+		return { view: res.view, store };
+	}
+	async function flush() { for (let i = 0; i < 6; i++) await Promise.resolve(); }
+
+	it('swaps an existing quadrant tag for the target tag', async () => {
+		const { view, store } = viewWithFile('- [ ] Task #schedule');
+		await priv(view).moveTaskToQuadrant('a.md', 0, 'do');
+		expect(store['a.md']).toBe('- [ ] Task #do');
+	});
+
+	it('adds the target tag when there is none', async () => {
+		const { view, store } = viewWithFile('- [ ] Task');
+		await priv(view).moveTaskToQuadrant('a.md', 0, 'eliminate');
+		expect(store['a.md']).toBe('- [ ] Task #eliminate');
+	});
+
+	it('does nothing when the file is not found', async () => {
+		const res = makeView({});
+		res.app.vault.getAbstractFileByPath = () => null;
+		await expect(priv(res.view).moveTaskToQuadrant('missing.md', 0, 'do')).resolves.toBeUndefined();
+	});
+
+	it('makeDropTarget moves a dropped task to the target quadrant', async () => {
+		const { view, store } = viewWithFile('- [ ] Task #schedule');
+		const cell = new FakeEl('div');
+		priv(view).makeDropTarget(cell, 'delegate');
+		cell.dispatch('dragover', { preventDefault: () => {} });
+		expect(cell.classList.contains('is-drag-over')).toBe(true);
+		cell.dispatch('drop', {
+			preventDefault: () => {},
+			dataTransfer: { getData: () => JSON.stringify({ filePath: 'a.md', lineNumber: 0, quadrant: 'schedule' }) },
+		});
+		await flush();
+		expect(store['a.md']).toBe('- [ ] Task #delegate');
+	});
+
+	it('makeDropTarget ignores a malformed payload', () => {
+		const { view } = viewWithFile('- [ ] Task');
+		const cell = new FakeEl('div');
+		priv(view).makeDropTarget(cell, 'do');
+		expect(() => cell.dispatch('drop', {
+			preventDefault: () => {},
+			dataTransfer: { getData: () => 'not json' },
+		})).not.toThrow();
 	});
 });

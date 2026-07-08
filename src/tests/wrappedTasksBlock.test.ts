@@ -113,11 +113,14 @@ describe('parseTasksBlock', () => {
 
 describe('WrappedTasksBlock', () => {
 	beforeEach(() => {
+		// Fire the observed callback and the safety timer so their handlers (the
+		// two async re-check callbacks in render()) are exercised, not just created.
 		vi.stubGlobal('MutationObserver', class {
-			observe() {}
+			constructor(private cb: () => void) {}
+			observe() { this.cb(); }
 			disconnect() {}
 		});
-		vi.stubGlobal('window', { setTimeout: () => 0, clearTimeout: () => {} });
+		vi.stubGlobal('window', { setTimeout: (fn: () => void) => { fn(); return 0; }, clearTimeout: () => {} });
 	});
 	afterEach(() => vi.unstubAllGlobals());
 

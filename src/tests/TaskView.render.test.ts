@@ -867,3 +867,143 @@ describe('moveTaskToQuadrant', () => {
 		})).not.toThrow();
 	});
 });
+
+// ---------------------------------------------------------------------------
+// Keyboard/drag branch coverage (issue #11)
+// ---------------------------------------------------------------------------
+
+describe('keyboard & drag branches', () => {
+	const key = (k: string) => ({ key: k, preventDefault: () => {} });
+	async function flush() { for (let i = 0; i < 8; i++) await Promise.resolve(); }
+
+	function wire(res: ReturnType<typeof makeView>, store: Record<string, string>) {
+		res.app.vault.getAbstractFileByPath = (p: string) => (p in store ? new TFile(p) : null);
+		res.app.vault.read = vi.fn(async (file: unknown) => store[(file as { path: string }).path] ?? '');
+		res.app.vault.modify = vi.fn(async (file: unknown, c: string) => { store[(file as { path: string }).path] = c; });
+	}
+
+	function renderTasks(tasks: TaskItem[], settings = {}, store: Record<string, string> = {}) {
+		const res = makeView({ importantPriorities: ['🔺'], focusTag: '#focus', hideTag: '#hide', ...settings }, tasks);
+		wire(res, store);
+		const container = res.contentEl.createDiv();
+		priv(res.view).renderMatrix(res.contentEl, container);
+		return res;
+	}
+
+	it('is a no-op when there are no task items', () => {
+		const res = renderTasks([]);
+		expect(() => priv(res.view).handleKeydown(key('ArrowDown'))).not.toThrow();
+	});
+
+	it('ArrowRight/ArrowLeft jump between quadrants', () => {
+		const tasks = [
+			makeTask({ line: '- [ ] Do it', priority: '🔺', dueDate: daysFromToday(0), file: new TFile('do.md') as never }),
+			makeTask({ line: '- [ ] Plan it', priority: '🔺', file: new TFile('sch.md') as never }),
+		];
+		const res = renderTasks(tasks);
+		priv(res.view).handleKeydown(key('ArrowRight'));
+		expect(priv(res.view).selectedKey).toBe('sch.md:0');
+		priv(res.view).handleKeydown(key('ArrowLeft'));
+		expect(priv(res.view).selectedKey).toBe('do.md:0');
+	});
+
+	it('"f" toggles the focus tag off a focused task', async () => {
+		const store = { 'a.md': '- [ ] A #focus' };
+		const tasks = [makeTask({ line: '- [ ] A #focus', tags: ['#focus'], priority: '🔺', dueDate: daysFromToday(0), file: new TFile('a.md') as never })];
+		const res = renderTasks(tasks, { focusTag: '#focus' }, store);
+		priv(res.view).handleKeydown(key('f'));
+		await flush();
+		expect(store['a.md']).toBe('- [ ] A');
+	});
+
+	it('"f" does nothing when no focus tag is configured', async () => {
+		const store = { 'a.md': '- [ ] A' };
+		const tasks = [makeTask({ line: '- [ ] A', priority: '🔺', dueDate: daysFromToday(0), file: new TFile('a.md') as never })];
+		const res = renderTasks(tasks, { focusTag: '' }, store);
+		priv(res.view).handleKeydown(key('f'));
+		await flush();
+		expect(res.app.vault.modify).not.toHaveBeenCalled();
+	});
+
+	it('"h" adds the hide tag', async () => {
+		const store = { 'a.md': '- [ ] A' };
+		const tasks = [makeTask({ line: '- [ ] A', priority: '🔺', dueDate: daysFromToday(0), file: new TFile('a.md') as never })];
+		const res = renderTasks(tasks, { hideTag: '#hide' }, store);
+		priv(res.view).handleKeydown(key('h'));
+		await flush();
+		expect(store['a.md']).toBe('- [ ] A #hide');
+	});
+
+	it('"h" does nothing when no hide tag is configured', async () => {
+		const store = { 'a.md': '- [ ] A' };
+		const tasks = [makeTask({ line: '- [ ] A', priority: '🔺', dueDate: daysFromToday(0), file: new TFile('a.md') as never })];
+		const res = renderTasks(tasks, { hideTag: '' }, store);
+		priv(res.view).handleKeydown(key('h'));
+		await flush();
+		expect(res.app.vault.modify).not.toHaveBeenCalled();
+	});
+
+	it('section navigation runs with a focus section present', () => {
+		const tasks = [makeTask({ line: '- [ ] A #focus', tags: ['#focus'], priority: '🔺', dueDate: daysFromToday(0), file: new TFile('a.md') as never })];
+		const res = makeView({ importantPriorities: ['🔺'], focusTag: '#focus' }, tasks);
+		const fc = res.contentEl.createDiv({ cls: 'focus-first-focus-container' });
+		priv(res.view).renderFocusTasks(fc);
+		const mc = res.contentEl.createDiv();
+		priv(res.view).renderMatrix(res.contentEl, mc);
+		expect(() => priv(res.view).handleKeydown(key('ArrowRight'))).not.toThrow();
+	});
+
+	it('clears a selection whose task has disappeared on re-render', () => {
+		const store = { 'a.md': '- [ ] A', 'b.md': '- [ ] B' };
+		const tasks = [
+			makeTask({ line: '- [ ] A', priority: '🔺', dueDate: daysFromToday(0), file: new TFile('a.md') as never }),
+			makeTask({ line: '- [ ] B', priority: '🔺', dueDate: daysFromToday(0), file: new TFile('b.md') as never }),
+		];
+		const res = makeView({ importantPriorities: ['🔺'] }, tasks);
+		wire(res, store);
+		const container = res.contentEl.createDiv();
+		priv(res.view).renderMatrix(res.contentEl, container);
+		priv(res.view).handleKeydown(key('ArrowDown')); // select b.md
+		expect(priv(res.view).selectedKey).toBe('b.md:0');
+		// Drop the second task and re-render into the SAME container (which is emptied).
+		// @ts-expect-error — assign tasks directly, bypassing scanTasks()
+		res.view.tasks = [tasks[0]];
+		priv(res.view).renderMatrix(res.contentEl, container);
+		expect(priv(res.view).selectedKey).toBeNull();
+	});
+
+	// --- drag-drop target branches ---
+	it('dragleave removes the highlight only when the pointer leaves the cell', () => {
+		const res = makeView({});
+		const cell = new FakeEl('div');
+		priv(res.view).makeDropTarget(cell, 'do');
+		cell.dispatch('dragover', { preventDefault: () => {} });
+		const inside = new FakeEl('div');
+		inside.parentEl = cell;
+		cell.dispatch('dragleave', { relatedTarget: inside });
+		expect(cell.classList.contains('is-drag-over')).toBe(true);
+		cell.dispatch('dragleave', { relatedTarget: new FakeEl('div') });
+		expect(cell.classList.contains('is-drag-over')).toBe(false);
+	});
+
+	it('drop to the same quadrant does nothing', async () => {
+		const store = { 'a.md': '- [ ] A #do' };
+		const res = makeView({});
+		wire(res, store);
+		const cell = new FakeEl('div');
+		priv(res.view).makeDropTarget(cell, 'do');
+		cell.dispatch('drop', { preventDefault: () => {}, dataTransfer: { getData: () => JSON.stringify({ filePath: 'a.md', lineNumber: 0, quadrant: 'do' }) } });
+		await flush();
+		expect(res.app.vault.modify).not.toHaveBeenCalled();
+	});
+
+	it('drop ignores an empty, non-object, or wrongly-typed payload', () => {
+		const res = makeView({});
+		const cell = new FakeEl('div');
+		priv(res.view).makeDropTarget(cell, 'do');
+		const drop = (raw: string) => cell.dispatch('drop', { preventDefault: () => {}, dataTransfer: { getData: () => raw } });
+		expect(() => drop('')).not.toThrow();
+		expect(() => drop('42')).not.toThrow();
+		expect(() => drop(JSON.stringify({ filePath: 5, lineNumber: 'x' }))).not.toThrow();
+	});
+});

@@ -117,6 +117,31 @@ describe('QuickAddModal', () => {
 		expect(vault.create).not.toHaveBeenCalled();
 	});
 
+	it('skips a chip for an empty quadrant tag and toggles a chip off again', async () => {
+		const { plugin, vault } = makePlugin(
+			{
+				quickAddTarget: 'inbox',
+				quickAddInbox: 'Inbox.md',
+				focusTag: '#focus',
+				quadrants: { ...DEFAULT_SETTINGS.quadrants, do: { ...DEFAULT_SETTINGS.quadrants.do, tag: '' } },
+			},
+			null,
+			{ 'Inbox.md': '' },
+		);
+		const modal = openModal(plugin);
+		const content = (modal as unknown as { contentEl: { findByClass(c: string): { value: string; dispatch(t: string, e?: unknown): void } } }).contentEl;
+		const chip = content.findByClass('focus-first-quickadd-chip'); // the #focus chip
+		chip.dispatch('click'); // on
+		chip.dispatch('click'); // off again
+		const input = content.findByClass('focus-first-quickadd-input');
+		input.value = 'Task';
+		input.dispatch('keydown', { key: 'Enter', preventDefault: () => {} });
+		await flush();
+
+		// Toggled off -> no #focus appended; the empty "do" tag chip was skipped.
+		expect(vault._store['Inbox.md']).toBe('- [ ] Task\n');
+	});
+
 	it('onClose empties the content', () => {
 		const { plugin } = makePlugin({}, null, { 'Inbox.md': '' });
 		const modal = openModal(plugin);

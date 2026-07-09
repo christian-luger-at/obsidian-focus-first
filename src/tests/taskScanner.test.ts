@@ -46,8 +46,12 @@ function makeApp(files: { path: string; lines: string[] }[]) {
 					// Matches `- [ ]` or `- [x]` or `- [X]`
 					const m = /^\s*- \[(.)\]/.exec(line);
 					if (!m) return [];
+					// Indented lines are subtasks: Obsidian sets `parent` to the parent
+					// line (>= 0); top-level items get a negative parent.
+					const indented = /^\s+/.test(line);
 					return [{
 						task: m[1],
+						parent: indented ? idx - 1 : -1,
 						position: { start: { line: idx } },
 					}];
 				});
@@ -485,5 +489,30 @@ describe('edge cases', () => {
 		} as unknown as import('obsidian').App;
 		const tasks = await scanTasks(app, makeSettings());
 		expect(tasks[0]?.line).toBe('');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Subtask handling (issue #22)
+// ---------------------------------------------------------------------------
+
+describe('subtask handling', () => {
+	const lines = [
+		'- [ ] Ship release 📅 2026-07-10 🔺',
+		'    - [ ] Write changelog',
+		'    - [ ] Tag version',
+	];
+
+	it('includes indented subtasks by default (showSubtasks: true)', async () => {
+		const app = makeApp([{ path: 'a.md', lines }]);
+		const tasks = await scanTasks(app, makeSettings({ showSubtasks: true }));
+		expect(tasks).toHaveLength(3);
+	});
+
+	it('excludes indented subtasks when showSubtasks is false', async () => {
+		const app = makeApp([{ path: 'a.md', lines }]);
+		const tasks = await scanTasks(app, makeSettings({ showSubtasks: false }));
+		expect(tasks).toHaveLength(1);
+		expect(tasks[0]?.line).toContain('Ship release');
 	});
 });

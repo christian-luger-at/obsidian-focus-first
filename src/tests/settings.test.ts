@@ -304,6 +304,7 @@ describe('loadSettings — merges persisted data with defaults', () => {
 		const persisted: FocusFirstSettings = {
 			taskScope: 'folder',
 			taskFolder: 'MyFolder',
+			showSubtasks: false,
 			urgencyDays: 7,
 			importantPriorities: ['🔺'],
 			quadrants: {

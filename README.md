@@ -121,7 +121,7 @@ When the query matches no tasks, the `empty-text` message is shown instead. (The
 | Section | What it controls |
 | --- | --- |
 | **Appearance** | Font size used throughout the Focus First view |
-| **Task Sources** | Scan the entire vault, or limit to one folder (with sub-folders) |
+| **Task Sources** | Scan the entire vault, or limit to one folder (with sub-folders); optionally exclude indented subtasks |
 | **Focus Task** | The tag used to pin tasks to the Focus Tasks section (default `#focus`) |
 | **Hide Task** | The tag used to hide tasks from the matrix (default `#hide`) |
 | **Future Tasks** | How to treat tasks whose start (`🛫`) or scheduled (`⏳`) date is still in the future: show, dim, or hide (default: show) |

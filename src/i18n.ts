@@ -109,6 +109,10 @@ interface Translations {
 			placeholder: string;
 			error: string;
 		};
+		showSubtasks: {
+			name: string;
+			desc: string;
+		};
 		matrixHeading: string;
 		urgencyDays: { name: string; desc: string; error: string };
 		importantPriorities: { name: string; desc: string; error: string };
@@ -273,6 +277,10 @@ const translations: Record<Lang, Translations> = {
 				desc: 'Only tasks inside this folder (and its sub-folders) will appear in Focus First.',
 				placeholder: 'e.g. Projects/Work',
 				error: 'Please select a folder.',
+			},
+			showSubtasks: {
+				name: 'Include subtasks',
+				desc: 'When off, indented subtasks are ignored and only top-level tasks appear in the matrix. Keeps dateless subtasks from piling up in Eliminate.',
 			},
 			matrixHeading: 'Eisenhower Matrix',
 			urgencyDays: {
@@ -474,6 +482,10 @@ const translations: Record<Lang, Translations> = {
 				desc: 'Nur Aufgaben in diesem Ordner (und seinen Unterordnern) werden in Focus First angezeigt.',
 				placeholder: 'z.B. Projekte/Arbeit',
 				error: 'Bitte einen Ordner auswählen.',
+			},
+			showSubtasks: {
+				name: 'Unteraufgaben einbeziehen',
+				desc: 'Wenn aus, werden eingerückte Unteraufgaben ignoriert und nur Top-Level-Aufgaben erscheinen in der Matrix. Verhindert, dass datenlose Unteraufgaben sich in Eliminieren stapeln.',
 			},
 			matrixHeading: 'Eisenhower-Matrix',
 			urgencyDays: {

@@ -42,7 +42,10 @@ export async function scanTasks(app: App, settings: FocusFirstSettings): Promise
 		const listItems = cache?.listItems;
 		if (!listItems) continue;
 
-		const taskItems = listItems.filter((item) => item.task !== undefined);
+		// A list item is a subtask when it has a parent list item. Obsidian encodes
+		// this in `parent`: >= 0 is the parent's line, negative means top-level.
+		const taskItems = listItems.filter((item) =>
+			item.task !== undefined && (settings.showSubtasks || item.parent < 0));
 		if (taskItems.length === 0) continue;
 
 		const content = await app.vault.cachedRead(file);

@@ -44,6 +44,8 @@ export type Priority = (typeof PRIORITY_OPTIONS)[number]['value'];
 export interface FocusFirstSettings {
 	taskScope: TaskScope;
 	taskFolder: string;
+	/** Whether indented subtasks are scanned as their own matrix items. */
+	showSubtasks: boolean;
 	urgencyDays: number;
 	importantPriorities: Priority[];
 	quadrants: QuadrantConfig;
@@ -61,6 +63,7 @@ export interface FocusFirstSettings {
 export const DEFAULT_SETTINGS: FocusFirstSettings = {
 	taskScope: 'all',
 	taskFolder: '',
+	showSubtasks: true,
 	urgencyDays: 3,
 	importantPriorities: ['🔺', '⏫'],
 	quadrants: {
@@ -259,6 +262,18 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 				folderErrorEl.classList.toggle('focus-first-hidden', !showError);
 			};
 			updateFolderVisibility();
+
+			new Setting(body)
+				.setName(t().settings.showSubtasks.name)
+				.setDesc(t().settings.showSubtasks.desc)
+				.addToggle((toggle) =>
+					toggle
+						.setValue(this.plugin.settings.showSubtasks)
+						.onChange(async (value) => {
+							this.plugin.settings.showSubtasks = value;
+							await this.plugin.saveSettings();
+						}),
+				);
 		});
 
 		this.createSection(containerEl, t().settings.focusHeading, (body) => {

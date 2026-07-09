@@ -424,7 +424,7 @@
 .focus-first-task-item {
 	position: relative;
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	gap: var(--size-2-2);
 	padding: var(--size-2-3) var(--size-4-4);
 }

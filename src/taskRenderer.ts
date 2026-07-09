@@ -234,10 +234,11 @@ export function renderTaskItem(
 		'🔽': String(t().view.actions.priorityLow),
 		'⏬': String(t().view.actions.priorityLowest),
 	};
+	// Label + value are appended straight into the grid (grid-template-columns:
+	// auto 1fr places them in the two columns), so no row wrapper is needed.
 	const addRow = (label: string, build: (value: HTMLElement) => void): void => {
-		const row = meta.createDiv({ cls: 'focus-first-detail-row' });
-		row.createDiv({ cls: 'focus-first-detail-label', text: label });
-		build(row.createDiv({ cls: 'focus-first-detail-value' }));
+		meta.createDiv({ cls: 'focus-first-detail-label', text: label });
+		build(meta.createDiv({ cls: 'focus-first-detail-value' }));
 	};
 	// Why-here reason first, so the automatic classification is transparent.
 	addRow(String(labels.why), (v) => {
@@ -377,17 +378,17 @@ function classificationReasonText(task: MatrixTask, settings: FocusFirstSettings
  * inside the view. An open delay on the row hover keeps it from flickering while
  * scanning the list. No-op in non-DOM tests.
  */
-/* Placement is computed at hover time from on-screen rects, so these coordinates
-   are inherently dynamic and can't be a CSS class. */
-/* eslint-disable obsidianmd/no-static-styles-assignment */
 function showTaskDetail(li: HTMLElement, detail: HTMLElement, mouseX: number, mouseY: number): void {
 	if (typeof li.getBoundingClientRect !== 'function') return;
 	const root = li.closest('.focus-first-view');
 	if (!root) return;
 	root.appendChild(detail);
-	// Show first (unclamped) so its size can be measured, then place it.
-	detail.setCssProps({ display: 'block', position: 'absolute', top: '0', right: '', left: '0', 'max-width': `${Math.max(root.getBoundingClientRect().width - 16, 160)}px` });
+	// The static "shown" styles live in the .is-open CSS class; only the
+	// cursor-relative placement is dynamic, so it goes through CSS custom
+	// properties (the one escape hatch the styling rules allow).
+	detail.classList.add('is-open');
 	const rootRect = root.getBoundingClientRect();
+	detail.setCssProps({ '--ff-detail-max-width': `${Math.max(rootRect.width - 16, 160)}px` });
 	const width = detail.offsetWidth;
 	const height = detail.offsetHeight;
 	const gap = 12;
@@ -400,14 +401,13 @@ function showTaskDetail(li: HTMLElement, detail: HTMLElement, mouseX: number, mo
 	let top = mouseY;
 	if (top + height > rootRect.bottom) top = rootRect.bottom - height;
 	top = Math.max(rootRect.top, top) - rootRect.top;
-	detail.setCssProps({ left: `${left}px`, top: `${top}px` });
+	detail.setCssProps({ '--ff-detail-left': `${left}px`, '--ff-detail-top': `${top}px` });
 }
 
 function hideTaskDetail(detail: HTMLElement): void {
-	detail.setCssProps({ display: '', position: '', top: '', left: '', right: '', 'max-width': '' });
+	detail.classList.remove('is-open');
 	detail.remove();
 }
-/* eslint-enable obsidianmd/no-static-styles-assignment */
 
 /** Creates one action button (icon + aria-label) in the actions row. */
 function actionButton(parent: HTMLElement, icon: string, ariaLabel: string, extraCls = ''): HTMLElement {

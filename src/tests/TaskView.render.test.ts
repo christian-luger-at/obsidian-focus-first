@@ -666,13 +666,11 @@ describe('task item actions in the matrix', () => {
 			const item = container.findByClass('focus-first-task-item');
 			const detail = container.findByClass('focus-first-task-detail');
 			item?.dispatch('mouseenter', { clientX: 100, clientY: 500 }); // stub fires the open delay synchronously
-			expect(detail?.style.display).toBe('block');
-			expect(detail?.style.position).toBe('absolute');
-			expect(detail?.style.left).toBe('112px'); // right of the cursor (100 + 12 gap), room on the right
-			expect(detail?.style.top).toBe('500px'); // at the cursor, room below
+			expect(detail?.classList.contains('is-open')).toBe(true);
+			expect(detail?.style['--ff-detail-left']).toBe('112px'); // right of the cursor (100 + 12 gap), room on the right
+			expect(detail?.style['--ff-detail-top']).toBe('500px'); // at the cursor, room below
 			item?.dispatch('mouseleave'); // stubbed setTimeout fires synchronously
-			expect(detail?.style.display).toBe('');
-			expect(detail?.style.position).toBe('');
+			expect(detail?.classList.contains('is-open')).toBe(false);
 		} finally {
 			vi.unstubAllGlobals();
 		}
@@ -687,9 +685,9 @@ describe('task item actions in the matrix', () => {
 			const detail = container.findByClass('focus-first-task-detail');
 			item?.dispatch('mouseenter', { clientX: 350, clientY: 515 });
 			// right of cursor (350+12=362, +width 100 = 462 > 400) → flip left: 350-12-100 = 238.
-			expect(detail?.style.left).toBe('238px');
+			expect(detail?.style['--ff-detail-left']).toBe('238px');
 			// at cursor (515) + height 10 = 525 > bottom 520 → shift up to 520-10 = 510.
-			expect(detail?.style.top).toBe('510px');
+			expect(detail?.style['--ff-detail-top']).toBe('510px');
 		} finally {
 			vi.unstubAllGlobals();
 		}
@@ -703,10 +701,10 @@ describe('task item actions in the matrix', () => {
 			const item = container.findByClass('focus-first-task-item');
 			const detail = container.findByClass('focus-first-task-detail');
 			item?.dispatch('mouseenter', { clientX: 100, clientY: 500 });
-			expect(detail?.style.display).toBe('block');
+			expect(detail?.classList.contains('is-open')).toBe(true);
 			detail?.dispatch('mouseenter'); // hover bridge cancels the hide
 			detail?.dispatch('mouseleave'); // leaving hides it
-			expect(detail?.style.display).toBe('');
+			expect(detail?.classList.contains('is-open')).toBe(false);
 		} finally {
 			vi.unstubAllGlobals();
 		}

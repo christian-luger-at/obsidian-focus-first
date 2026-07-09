@@ -509,15 +509,23 @@
 	max-width: min(90vw, 24rem);
 }
 
-/* Metadata as an aligned label/value grid — calm and easy to scan. */
+/* Shown state: the static styles live here; only the cursor-relative position is
+   passed in as CSS custom properties (set from JS at hover time). */
+.focus-first-task-detail.is-open {
+	display: block;
+	position: absolute;
+	top: var(--ff-detail-top, 0);
+	left: var(--ff-detail-left, 0);
+	max-width: var(--ff-detail-max-width, min(90vw, 24rem));
+}
+
+/* Metadata as an aligned label/value grid — labels in column 1, values in
+   column 2, appended directly so no wrapper (and no `display: contents`). */
 .focus-first-task-meta {
 	display: grid;
 	grid-template-columns: auto 1fr;
 	gap: var(--size-2-1) var(--size-4-3);
-}
-
-.focus-first-detail-row {
-	display: contents;
+	align-items: baseline;
 }
 
 .focus-first-detail-label {
@@ -597,8 +605,8 @@ body.is-mobile .focus-first-task-item {
 }
 
 body.is-mobile .focus-first-task-detail {
-	display: block !important;
-	position: static !important;
+	display: block;
+	position: static;
 	background: transparent;
 	border: none;
 	box-shadow: none;

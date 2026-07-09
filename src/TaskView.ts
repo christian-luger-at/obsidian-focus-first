@@ -75,7 +75,10 @@ export class FocusFirstView extends ItemView {
 		addBtn.createSpan({ text: String(t().view.add) });
 		addBtn.setAttribute('aria-label', String(t().quickAdd.addTaskButton));
 		addBtn.addEventListener('click', () => { this.plugin.openQuickAdd(); });
-		const refreshBtn = headerActions.createEl('button', { text: t().view.refresh, cls: 'focus-first-refresh-btn' });
+		const refreshBtn = headerActions.createEl('button', { cls: 'clickable-icon focus-first-refresh-btn' });
+		setIcon(refreshBtn, 'refresh-cw');
+		refreshBtn.setAttribute('aria-label', String(t().view.refresh));
+		refreshBtn.setAttribute('title', String(t().view.refresh));
 
 		// Focus First works standalone, but the Tasks plugin makes creating dated
 		// and prioritised tasks much easier — nudge the user if it's missing,

@@ -447,15 +447,18 @@
 	align-items: center;
 	justify-content: center;
 	width: 28px;
-	height: 14px;
-	background: none;
+	height: 26px;
 	border: none;
 	box-shadow: none;
 	cursor: pointer;
 	padding: 0;
-	color: var(--text-faint);
+	border-radius: var(--radius-s);
+	/* Revealed only while the row is hovered, so the list stays calm; muted at
+	   rest and bumped to accent + a subtle button background on its own hover. */
+	background: none;
+	color: var(--text-muted);
 	opacity: 0;
-	transition: opacity 0.1s ease, color 0.1s ease;
+	transition: opacity 0.1s ease, color 0.1s ease, background 0.1s ease;
 }
 
 .focus-first-task-item:hover .focus-first-task-peek {
@@ -463,12 +466,13 @@
 }
 
 .focus-first-task-peek:hover {
-	color: var(--text-normal);
+	color: var(--text-accent);
+	background: var(--background-modifier-hover);
 }
 
 .focus-first-task-peek svg {
 	width: 20px;
-	height: 12px;
+	height: 20px;
 }
 
 /* ── Detail popover (floating panel opened from the peek button) ── */

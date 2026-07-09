@@ -25,11 +25,10 @@ No manual sorting needed — though you can still pin any task to a quadrant by 
 - **Manual quadrant tags** — add a tag like `#do` or `#eliminate` to any task to pin it to a quadrant, overriding the automatic logic.
 - **Focus Tasks** — tag a task with `#focus` to pin it in a dedicated section above the matrix, so your top priorities never get buried.
 - **Hide tasks** — tag a task with `#hide` (or use the hide button) to remove it from the matrix without completing it — useful for tasks you're not ready to act on yet.
-- **Inline actions** — postpone a task's due date or change its priority straight from the view, without opening the note.
+- **Clean list, details on demand** — the list shows just task titles (click a title to open its note). Hover the `⋯` button on a task to open a detail popover with its metadata (priority, dates, tags, source) and one-click actions: complete, focus, hide, postpone the due date, or change priority — without opening the note.
 - **Future tasks** — tasks with a start (`🛫`) or scheduled (`⏳`) date still in the future aren't actionable yet; choose to show, dim, or hide them until their date arrives.
 - **Quick add** — capture a task without leaving the view (the `+` button in the header, or the "Add task" command / hotkey). When the Tasks plugin is enabled, this opens its full create dialog (date, priority, and recurrence pickers); otherwise a simple input is used. The new task is appended to a configurable inbox note or the active note.
 - **Drag & drop** — drag a task between quadrants to instantly re-tag it.
-- **Keyboard navigation** — move the selection with the arrow keys and act on the selected task (complete, focus, hide, move to a quadrant, open) without the mouse; see the shortcuts below.
 - **Search & filters** — search across all visible tasks, or filter by due-date bucket (overdue, today, this week, upcoming, no date).
 - **Grouping & sorting** — group tasks within a quadrant by priority, due date, or alphabetically, with independently configurable primary/secondary sort order per quadrant.
 - **Folder scope** — scan your entire vault or limit Focus First to a single folder (including sub-folders).
@@ -51,20 +50,6 @@ No manual sorting needed — though you can still pin any task to a quadrant by 
    ```
 
 4. Open the Focus First view — your tasks will already be sorted into the four quadrants.
-
-## Keyboard shortcuts
-
-While the view is focused, navigate and act on tasks without the mouse:
-
-| Key | Action |
-| --- | --- |
-| `↑` / `↓` | Move the selection to the previous / next task |
-| `←` / `→` | Jump to the previous / next section (focus or a quadrant) |
-| `Enter` | Open the selected task in its source note |
-| `Space` / `C` | Complete the selected task |
-| `F` | Toggle the focus tag |
-| `H` | Hide the selected task |
-| `1` – `4` | Move the task to Do / Schedule / Delegate / Eliminate |
 
 ## How tasks are classified
 

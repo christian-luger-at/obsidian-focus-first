@@ -1,7 +1,7 @@
 import { App, TFile, MarkdownView, Menu, setIcon } from 'obsidian';
 import { MatrixTask, ClassificationReason, explainTask } from './matrixClassifier';
 import { TaskItem, isFutureTask } from './taskScanner';
-import { FocusFirstSettings } from './settings';
+import { FocusFirstSettings, Priority } from './settings';
 import { getTasksApi } from './tasksPlugin';
 import { setDueDate, shiftDueDate, setPriority, addDaysToIso } from './tasksFormat';
 import { t } from './i18n';
@@ -11,6 +11,18 @@ import { t } from './i18n';
  * buttons. Kept separate from FocusFirstView so the rendering only needs
  * `app` + `settings` rather than the view/leaf.
  */
+
+/** The five Tasks-plugin priorities with their localised labels, in order. */
+function priorityOptions(): { emoji: Priority; label: string }[] {
+	const a = t().view.actions;
+	return [
+		{ emoji: '🔺', label: String(a.priorityHighest) },
+		{ emoji: '⏫', label: String(a.priorityHigh) },
+		{ emoji: '🔼', label: String(a.priorityMedium) },
+		{ emoji: '🔽', label: String(a.priorityLow) },
+		{ emoji: '⏬', label: String(a.priorityLowest) },
+	];
+}
 
 export function makeTaskDraggable(li: HTMLElement, task: MatrixTask): void {
 	li.draggable = true;
@@ -227,13 +239,9 @@ export function renderTaskItem(
 
 	const meta = detail.createDiv({ cls: 'focus-first-task-meta' });
 	const labels = t().view.detail;
-	const priorityNames: Record<string, string> = {
-		'🔺': String(t().view.actions.priorityHighest),
-		'⏫': String(t().view.actions.priorityHigh),
-		'🔼': String(t().view.actions.priorityMedium),
-		'🔽': String(t().view.actions.priorityLow),
-		'⏬': String(t().view.actions.priorityLowest),
-	};
+	const priorityNames: Record<string, string> = Object.fromEntries(
+		priorityOptions().map((o) => [o.emoji, o.label]),
+	);
 	// Label + value are appended straight into the grid (grid-template-columns:
 	// auto 1fr places them in the two columns), so no row wrapper is needed.
 	const addRow = (label: string, build: (value: HTMLElement) => void): void => {
@@ -438,14 +446,9 @@ function buildPostponeMenu(menu: Menu, task: MatrixTask, app: App): void {
 
 /** Populates a menu with the priority options for a task. */
 function buildPriorityMenu(menu: Menu, task: MatrixTask, app: App): void {
-	const a = t().view.actions;
-	const options: { emoji: string | null; label: string }[] = [
-		{ emoji: '🔺', label: String(a.priorityHighest) },
-		{ emoji: '⏫', label: String(a.priorityHigh) },
-		{ emoji: '🔼', label: String(a.priorityMedium) },
-		{ emoji: '🔽', label: String(a.priorityLow) },
-		{ emoji: '⏬', label: String(a.priorityLowest) },
-		{ emoji: null, label: String(a.priorityNone) },
+	const options: { emoji: Priority | null; label: string }[] = [
+		...priorityOptions(),
+		{ emoji: null, label: String(t().view.actions.priorityNone) },
 	];
 	for (const opt of options) {
 		menu.addItem((item) => item

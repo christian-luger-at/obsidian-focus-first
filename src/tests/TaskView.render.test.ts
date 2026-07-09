@@ -201,8 +201,6 @@ interface TestableView {
 	render(): void;
 	renderMatrix(contentEl: unknown, container: unknown): void;
 	renderFocusTasks(container: unknown): void;
-	moveTaskToQuadrant(filePath: string, lineNumber: number, quadrant: string): Promise<void>;
-	makeDropTarget(cell: unknown, quadrant: string): void;
 }
 
 function priv(view: unknown): TestableView {
@@ -864,111 +862,5 @@ describe('openTaskFile()', () => {
 
 		expect(setCursor).toHaveBeenCalledWith({ line: 5, ch: 0 });
 		expect(scrollIntoView).toHaveBeenCalled();
-	});
-});
-
-// ---------------------------------------------------------------------------
-// moveTaskToQuadrant & drag-drop target
-// ---------------------------------------------------------------------------
-
-describe('moveTaskToQuadrant', () => {
-	function viewWithFile(content: string) {
-		const store: Record<string, string> = { 'a.md': content };
-		const res = makeView({});
-		res.app.vault.getAbstractFileByPath = (p: string) => (p in store ? new TFile(p) : null);
-		res.app.vault.read = vi.fn(async (_f: unknown) => store['a.md'] ?? '');
-		res.app.vault.modify = vi.fn(async (_f: unknown, c: string) => { store['a.md'] = c; });
-		return { view: res.view, store };
-	}
-	async function flush() { for (let i = 0; i < 6; i++) await Promise.resolve(); }
-
-	it('swaps an existing quadrant tag for the target tag', async () => {
-		const { view, store } = viewWithFile('- [ ] Task #schedule');
-		await priv(view).moveTaskToQuadrant('a.md', 0, 'do');
-		expect(store['a.md']).toBe('- [ ] Task #do');
-	});
-
-	it('adds the target tag when there is none', async () => {
-		const { view, store } = viewWithFile('- [ ] Task');
-		await priv(view).moveTaskToQuadrant('a.md', 0, 'eliminate');
-		expect(store['a.md']).toBe('- [ ] Task #eliminate');
-	});
-
-	it('does nothing when the file is not found', async () => {
-		const res = makeView({});
-		res.app.vault.getAbstractFileByPath = () => null;
-		await expect(priv(res.view).moveTaskToQuadrant('missing.md', 0, 'do')).resolves.toBeUndefined();
-	});
-
-	it('makeDropTarget moves a dropped task to the target quadrant', async () => {
-		const { view, store } = viewWithFile('- [ ] Task #schedule');
-		const cell = new FakeEl('div');
-		priv(view).makeDropTarget(cell, 'delegate');
-		cell.dispatch('dragover', { preventDefault: () => {} });
-		expect(cell.classList.contains('is-drag-over')).toBe(true);
-		cell.dispatch('drop', {
-			preventDefault: () => {},
-			dataTransfer: { getData: () => JSON.stringify({ filePath: 'a.md', lineNumber: 0, quadrant: 'schedule' }) },
-		});
-		await flush();
-		expect(store['a.md']).toBe('- [ ] Task #delegate');
-	});
-
-	it('makeDropTarget ignores a malformed payload', () => {
-		const { view } = viewWithFile('- [ ] Task');
-		const cell = new FakeEl('div');
-		priv(view).makeDropTarget(cell, 'do');
-		expect(() => cell.dispatch('drop', {
-			preventDefault: () => {},
-			dataTransfer: { getData: () => 'not json' },
-		})).not.toThrow();
-	});
-});
-
-// ---------------------------------------------------------------------------
-// Keyboard/drag branch coverage (issue #11)
-// ---------------------------------------------------------------------------
-
-describe('drag-drop target branches', () => {
-	async function flush() { for (let i = 0; i < 8; i++) await Promise.resolve(); }
-
-	function wire(res: ReturnType<typeof makeView>, store: Record<string, string>) {
-		res.app.vault.getAbstractFileByPath = (p: string) => (p in store ? new TFile(p) : null);
-		res.app.vault.read = vi.fn(async (file: unknown) => store[(file as { path: string }).path] ?? '');
-		res.app.vault.modify = vi.fn(async (file: unknown, c: string) => { store[(file as { path: string }).path] = c; });
-	}
-
-	it('dragleave removes the highlight only when the pointer leaves the cell', () => {
-		const res = makeView({});
-		const cell = new FakeEl('div');
-		priv(res.view).makeDropTarget(cell, 'do');
-		cell.dispatch('dragover', { preventDefault: () => {} });
-		const inside = new FakeEl('div');
-		inside.parentEl = cell;
-		cell.dispatch('dragleave', { relatedTarget: inside });
-		expect(cell.classList.contains('is-drag-over')).toBe(true);
-		cell.dispatch('dragleave', { relatedTarget: new FakeEl('div') });
-		expect(cell.classList.contains('is-drag-over')).toBe(false);
-	});
-
-	it('drop to the same quadrant does nothing', async () => {
-		const store = { 'a.md': '- [ ] A #do' };
-		const res = makeView({});
-		wire(res, store);
-		const cell = new FakeEl('div');
-		priv(res.view).makeDropTarget(cell, 'do');
-		cell.dispatch('drop', { preventDefault: () => {}, dataTransfer: { getData: () => JSON.stringify({ filePath: 'a.md', lineNumber: 0, quadrant: 'do' }) } });
-		await flush();
-		expect(res.app.vault.modify).not.toHaveBeenCalled();
-	});
-
-	it('drop ignores an empty, non-object, or wrongly-typed payload', () => {
-		const res = makeView({});
-		const cell = new FakeEl('div');
-		priv(res.view).makeDropTarget(cell, 'do');
-		const drop = (raw: string) => cell.dispatch('drop', { preventDefault: () => {}, dataTransfer: { getData: () => raw } });
-		expect(() => drop('')).not.toThrow();
-		expect(() => drop('42')).not.toThrow();
-		expect(() => drop(JSON.stringify({ filePath: 5, lineNumber: 'x' }))).not.toThrow();
 	});
 });

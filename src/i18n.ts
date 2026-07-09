@@ -38,6 +38,8 @@ interface Translations {
 		unhideTask: string;
 		actions: {
 			more: string;
+			details: string;
+			openNote: string;
 			postpone: string;
 			priority: string;
 			postponePlusDay: string;
@@ -50,6 +52,14 @@ interface Translations {
 			priorityMedium: string;
 			priorityLow: string;
 			priorityLowest: string;
+		};
+		detail: {
+			priority: string;
+			due: string;
+			start: string;
+			scheduled: string;
+			tags: string;
+			note: string;
 		};
 		quadrants: {
 			do: { title: string; subtitle: string; emptyState: string };
@@ -162,6 +172,8 @@ const translations: Record<Lang, Translations> = {
 			unhideTask: 'Unhide task',
 			actions: {
 				more: 'More actions',
+				details: 'Show details',
+				openNote: 'Open note',
 				postpone: 'Postpone',
 				priority: 'Set priority',
 				postponePlusDay: '+1 day',
@@ -174,6 +186,14 @@ const translations: Record<Lang, Translations> = {
 				priorityMedium: '🔼 Medium',
 				priorityLow: '🔽 Low',
 				priorityLowest: '⏬ Lowest',
+			},
+			detail: {
+				priority: 'Priority',
+				due: 'Due',
+				start: 'Start',
+				scheduled: 'Scheduled',
+				tags: 'Tags',
+				note: 'Note',
 			},
 			quadrants: {
 				do:       { title: 'Do',       subtitle: 'Urgent · Important',        emptyState: 'Nothing urgent right now' },
@@ -329,6 +349,8 @@ const translations: Record<Lang, Translations> = {
 			focusDone: 'Als erledigt markieren',
 			actions: {
 				more: 'Weitere Aktionen',
+				details: 'Details anzeigen',
+				openNote: 'Notiz öffnen',
 				postpone: 'Verschieben',
 				priority: 'Priorität setzen',
 				postponePlusDay: '+1 Tag',
@@ -341,6 +363,14 @@ const translations: Record<Lang, Translations> = {
 				priorityMedium: '🔼 Mittel',
 				priorityLow: '🔽 Niedrig',
 				priorityLowest: '⏬ Niedrigste',
+			},
+			detail: {
+				priority: 'Priorität',
+				due: 'Fällig',
+				start: 'Start',
+				scheduled: 'Geplant',
+				tags: 'Tags',
+				note: 'Notiz',
 			},
 			quadrants: {
 				do:       { title: 'Erledigen',  subtitle: 'Dringend · Wichtig',             emptyState: 'Aktuell nichts Dringendes' },

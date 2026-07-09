@@ -1,4 +1,4 @@
-import { App, TFile, MarkdownView, Menu, Platform, setIcon } from 'obsidian';
+import { App, TFile, MarkdownView, Menu, setIcon } from 'obsidian';
 import { MatrixTask } from './matrixClassifier';
 import { TaskItem, isFutureTask } from './taskScanner';
 import { FocusFirstSettings } from './settings';
@@ -180,9 +180,11 @@ export async function toggleHideTagLine(
 }
 
 /**
- * Renders one interactive task row (title, hover meta, and the top-right action
- * overlay with done / focus / hide buttons). Identical markup for the matrix,
- * the focus section, and the embedded code block.
+ * Renders one interactive task row. The list shows only titles (each a link that
+ * opens the note on a single click); hovering a row reveals a floating popover
+ * with its metadata and actions, which disappears when the pointer leaves — so
+ * the list stays clean and never reflows. Identical markup for the matrix, the
+ * focus section, and the embedded code block.
  */
 export function renderTaskItem(
 	parent: HTMLElement,
@@ -205,8 +207,11 @@ export function renderTaskItem(
 	const text = task.line
 		.replace(/^[\s\-*]*\[.\]\s*/, '')
 		.replace(/(🔺|⏫|🔼|🔽|⏬)\s*/g, '')
-		.replace(/📅\s*\d{4}-\d{2}-\d{2}/g, '')
+		// Strip all date signifiers (due, start, scheduled, created, cancelled,
+		// done) with their dates so the title stays clean — they show in the popover.
+		.replace(/[📅🛫⏳➕❌✅]\s*\d{4}-\d{2}-\d{2}/gu, '')
 		.replace(/#\S+/g, '')
+		.replace(/\s{2,}/g, ' ')
 		.trim();
 
 	// Keyboard navigation (issue #11): each item is a selectable option carrying
@@ -221,32 +226,61 @@ export function renderTaskItem(
 	li.setAttribute('data-file-path', task.file.path);
 	li.setAttribute('data-line', String(task.lineNumber));
 
-	// Title — always visible
+	// Title — a link: a single click opens the note, like any other link.
 	const titleEl = li.createEl('span', { text, cls: 'focus-first-task-text' });
 	titleEl.setAttribute('id', titleId);
 	titleEl.addEventListener('click', () => { void openTaskFile(app, task); });
 
-	// Hover panel — visible only on hover via CSS
-	const hover = li.createDiv({ cls: 'focus-first-task-hover' });
-	const hoverInner = hover.createDiv({ cls: 'focus-first-task-hover-inner' });
+	// Peek button on the right of every row — revealed on row hover (CSS), so the
+	// resting list stays quiet. Hovering it opens the detail popover.
+	const peekBtn = li.createEl('button', { cls: 'focus-first-task-peek' });
+	setIcon(peekBtn, 'more-horizontal');
+	peekBtn.setAttribute('aria-label', String(t().view.actions.details));
 
-	// Meta row inside hover panel
-	const meta = hoverInner.createDiv({ cls: 'focus-first-task-meta' });
-	if (task.priority) meta.createEl('span', { text: task.priority, cls: 'focus-first-task-priority' });
+	// Detail popover — the task title plus its metadata as aligned label/value
+	// rows (so it's calm and easy to scan), and the actions. Hidden until the peek
+	// button is hovered; showTaskDetail floats it next to the row.
+	const detail = li.createDiv({ cls: 'focus-first-task-detail' });
+	detail.createDiv({ cls: 'focus-first-detail-title', text });
+
+	const meta = detail.createDiv({ cls: 'focus-first-task-meta' });
+	const labels = t().view.detail;
+	const priorityNames: Record<string, string> = {
+		'🔺': String(t().view.actions.priorityHighest),
+		'⏫': String(t().view.actions.priorityHigh),
+		'🔼': String(t().view.actions.priorityMedium),
+		'🔽': String(t().view.actions.priorityLow),
+		'⏬': String(t().view.actions.priorityLowest),
+	};
+	const addRow = (label: string, build: (value: HTMLElement) => void): void => {
+		const row = meta.createDiv({ cls: 'focus-first-detail-row' });
+		row.createDiv({ cls: 'focus-first-detail-label', text: label });
+		build(row.createDiv({ cls: 'focus-first-detail-value' }));
+	};
+	const priority = task.priority;
+	if (priority) addRow(String(labels.priority), (v) => v.setText(priorityNames[priority] ?? priority));
 	if (task.dueDate) {
-		meta.createEl('span', {
-			text: `📅 ${task.dueDate.toLocaleDateString()}`,
-			cls: 'focus-first-task-due',
+		const due = task.dueDate;
+		addRow(String(labels.due), (v) => { v.setText(due.toLocaleDateString()); v.addClass('focus-first-task-due'); });
+	}
+	if (task.startDate) {
+		const start = task.startDate;
+		addRow(String(labels.start), (v) => v.setText(start.toLocaleDateString()));
+	}
+	if (task.scheduledDate) {
+		const scheduled = task.scheduledDate;
+		addRow(String(labels.scheduled), (v) => v.setText(scheduled.toLocaleDateString()));
+	}
+	if (task.tags.length > 0) {
+		addRow(String(labels.tags), (v) => {
+			v.addClass('focus-first-task-tags');
+			for (const tag of task.tags) v.createEl('span', { text: tag, cls: 'focus-first-task-tag' });
 		});
 	}
-	for (const tag of task.tags) {
-		meta.createEl('span', { text: tag, cls: 'focus-first-task-tag' });
-	}
-	meta.createEl('span', { text: task.file.basename, cls: 'focus-first-task-source' });
+	addRow(String(labels.note), (v) => { v.setText(task.file.basename); v.addClass('focus-first-task-source'); });
 
-	// Action toolbar — appended last so it sits below the whole row (title + meta),
-	// revealed on hover via CSS. Buttons are appended below.
-	const actions = li.createDiv({ cls: 'focus-first-task-actions' });
+	// Actions row inside the popover.
+	const actions = detail.createDiv({ cls: 'focus-first-task-actions' });
 
 	const focusRun = focusTag
 		? () => void toggleFocusTagLine(app, settings, task.file.path, task.lineNumber, focusTag, !isFocused)
@@ -255,52 +289,20 @@ export function renderTaskItem(
 		? () => void toggleHideTagLine(app, settings, task.file.path, task.lineNumber, hideTag)
 		: null;
 
-	// Done stays a single-tap button on every platform.
-	const doneBtn = actionButton(actions, 'check', String(t().view.focusDone));
+	const doneBtn = actionButton(actions, 'check', String(t().view.focusDone), 'focus-first-done-btn');
 	doneBtn.addEventListener('click', (e) => {
 		e.stopPropagation();
 		void completeTaskLine(app, task.file.path, task.lineNumber);
 	});
 
-	if (Platform.isMobile) {
-		// Mobile has no hover and little width: collapse everything except Done
-		// behind a single overflow (⋯) menu so the row stays at two finger-sized
-		// targets. Postpone/priority become submenus of that menu.
-		const moreBtn = actionButton(actions, 'more-horizontal', String(t().view.actions.more), 'focus-first-more-btn');
-		moreBtn.addEventListener('click', (e) => {
-			e.stopPropagation();
-			const va = t().view.actions;
-			const menu = new Menu();
-			if (focusRun) {
-				menu.addItem((item) => item
-					.setTitle(String(isFocused ? t().view.focusRemove : t().view.focusAdd))
-					.setIcon('star').onClick(focusRun));
-			}
-			if (hideRun) {
-				menu.addItem((item) => item.setTitle(String(t().view.hideTask)).setIcon('eye-off').onClick(hideRun));
-			}
-			// Submenus aren't in the typed public API, so flatten the two groups
-			// under non-clickable section labels instead.
-			menu.addSeparator();
-			menu.addItem((item) => item.setTitle(String(va.postpone)).setIsLabel(true));
-			buildPostponeMenu(menu, task, app);
-			menu.addSeparator();
-			menu.addItem((item) => item.setTitle(String(va.priority)).setIsLabel(true));
-			buildPriorityMenu(menu, task, app);
-			menu.showAtMouseEvent(e);
-		});
-		return;
-	}
-
-	// Desktop: the full icon row, revealed on hover.
 	if (focusRun) {
 		const focusBtn = actionButton(actions, 'star',
 			String(isFocused ? t().view.focusRemove : t().view.focusAdd),
-			isFocused ? 'is-active' : '');
+			`focus-first-focus-btn${isFocused ? ' is-active' : ''}`);
 		focusBtn.addEventListener('click', (e) => { e.stopPropagation(); focusRun(); });
 	}
 	if (hideRun) {
-		const hideBtn = actionButton(actions, 'eye-off', String(t().view.hideTask));
+		const hideBtn = actionButton(actions, 'eye-off', String(t().view.hideTask), 'focus-first-hide-btn');
 		hideBtn.addEventListener('click', (e) => { e.stopPropagation(); hideRun(); });
 	}
 
@@ -319,7 +321,62 @@ export function renderTaskItem(
 		buildPriorityMenu(menu, task, app);
 		menu.showAtMouseEvent(e);
 	});
+
+	// Reveal the popover when the peek button is hovered (or clicked, for touch).
+	// A short hide delay plus the popover's own hover form a bridge so you can move
+	// from the button into the popover to use its buttons.
+	let hideTimer = 0;
+	const scheduleHide = () => {
+		window.clearTimeout(hideTimer);
+		hideTimer = window.setTimeout(() => hideTaskDetail(detail), 150);
+	};
+	const reveal = () => { window.clearTimeout(hideTimer); showTaskDetail(li, peekBtn, detail); };
+	peekBtn.addEventListener('mouseenter', reveal);
+	peekBtn.addEventListener('mouseleave', scheduleHide);
+	peekBtn.addEventListener('click', (e) => { e.stopPropagation(); reveal(); });
+	detail.addEventListener('mouseenter', () => window.clearTimeout(hideTimer));
+	detail.addEventListener('mouseleave', scheduleHide);
 }
+
+/**
+ * Shows the detail popover for a row. It's appended to the view root
+ * (`.focus-first-view`) and positioned absolutely relative to it, so it floats
+ * over the list without pushing rows (no reflow) and — crucially — isn't clipped
+ * by the scrolling quadrant (unlike `position: fixed`, which Obsidian's
+ * transformed pane ancestors break).
+ *
+ * It sits just below the row (flipping above when there's no room) and is
+ * right-aligned to the anchor (the peek button), so the popover's right edge
+ * lines up with the button's — it opens leftwards and works even when the list is
+ * narrow. It's only opened by the peek button, so it never blocks scanning the
+ * titles. No-op in non-DOM tests.
+ */
+/* Placement is computed at hover time from on-screen rects, so these coordinates
+   are inherently dynamic and can't be a CSS class. */
+/* eslint-disable obsidianmd/no-static-styles-assignment */
+function showTaskDetail(li: HTMLElement, anchor: HTMLElement, detail: HTMLElement): void {
+	if (typeof li.getBoundingClientRect !== 'function') return;
+	const root = li.closest('.focus-first-view');
+	if (!root) return;
+	root.appendChild(detail);
+	// Show first (unclamped) so its size can be measured, then place it.
+	detail.setCssProps({ display: 'block', position: 'absolute', top: '0', left: '', right: '0', 'max-width': `${Math.max(root.getBoundingClientRect().width - 16, 160)}px` });
+	const liRect = li.getBoundingClientRect();
+	const anchorRect = anchor.getBoundingClientRect();
+	const rootRect = root.getBoundingClientRect();
+	const height = detail.offsetHeight;
+	const flipUp = liRect.bottom + height > rootRect.bottom && liRect.top - height > rootRect.top;
+	detail.setCssProps({
+		right: `${Math.max(0, rootRect.right - anchorRect.right)}px`,
+		top: `${flipUp ? liRect.top - rootRect.top - height : liRect.bottom - rootRect.top}px`,
+	});
+}
+
+function hideTaskDetail(detail: HTMLElement): void {
+	detail.setCssProps({ display: '', position: '', top: '', left: '', right: '', 'max-width': '' });
+	detail.remove();
+}
+/* eslint-enable obsidianmd/no-static-styles-assignment */
 
 /** Creates one action button (icon + aria-label) in the actions row. */
 function actionButton(parent: HTMLElement, icon: string, ariaLabel: string, extraCls = ''): HTMLElement {

@@ -14,7 +14,7 @@ vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 
 const { FocusFirstView } = await import('../TaskView');
 const { DEFAULT_SETTINGS } = await import('../settings');
-const { TFile, MarkdownView, createdMenus, clearCreatedMenus, Platform } = await import('./__mocks__/obsidian');
+const { TFile, MarkdownView, createdMenus, clearCreatedMenus } = await import('./__mocks__/obsidian');
 
 import type { TaskItem } from '../taskScanner';
 import type { FocusFirstSettings } from '../settings';
@@ -91,6 +91,7 @@ class FakeEl {
 
 	setAttribute(k: string, v: string) { this.attrs[k] = v; }
 	getAttribute(k: string) { return this.attrs[k]; }
+	addClass(...c: string[]) { for (const x of c) this.cls.add(x); }
 	setText(t: string) { this.text = t; }
 	setCssProps(props: Record<string, string>) { Object.assign(this.style, props); }
 
@@ -140,6 +141,11 @@ class FakeEl {
 	tabIndex = -1;
 	focus() {}
 	scrollIntoView() {}
+	offsetHeight = 10;
+	offsetWidth = 100;
+	rect = { left: 10, top: 500, right: 210, bottom: 520, width: 200, height: 20 };
+	getBoundingClientRect() { return this.rect; }
+	appendChild(el: FakeEl) { el.parentEl = this; this.children.push(el); return el; }
 }
 
 // ---------------------------------------------------------------------------
@@ -182,6 +188,7 @@ function makeView(settings: Partial<FocusFirstSettings> = {}, tasks: TaskItem[] 
 	// @ts-expect-error — stub leaf/plugin, not real Obsidian types
 	const view = new FocusFirstView(leaf, plugin);
 	const contentEl = new FakeEl('div');
+	contentEl.cls.add('focus-first-view'); // so the popover's closest('.focus-first-view') resolves
 	// @ts-expect-error — FakeEl stands in for the real HTMLElement contentEl
 	view.contentEl = contentEl;
 	// @ts-expect-error — assign tasks directly, bypassing scanTasks()
@@ -365,8 +372,7 @@ describe('renderFocusTasks()', () => {
 
 		// Focus tasks render through renderTask() — the same path/markup as the
 		// quadrant task items — so actions live under `focus-first-task-actions`.
-		const actions = container.findByClass('focus-first-task-actions');
-		const doneBtn = actions?.children[0];
+		const doneBtn = container.findByClass('focus-first-done-btn');
 		doneBtn?.dispatch('click', { stopPropagation: () => {} });
 		await Promise.resolve();
 		await Promise.resolve();
@@ -382,10 +388,8 @@ describe('renderFocusTasks()', () => {
 		const container = contentEl.createDiv();
 		priv(view).renderFocusTasks(container);
 
-		// Order matches renderTask(): [done, focus-star, hide]. The task is
-		// already focused, so clicking the star removes the focus tag.
-		const actions = container.findByClass('focus-first-task-actions');
-		const focusBtn = actions?.children[1];
+		// The task is already focused, so clicking the star removes the focus tag.
+		const focusBtn = container.findByClass('focus-first-focus-btn');
 		focusBtn?.dispatch('click', { stopPropagation: () => {} });
 		await Promise.resolve();
 		await Promise.resolve();
@@ -501,16 +505,13 @@ describe('task item actions in the matrix', () => {
 		return { ...result, container };
 	}
 
-	it('clicking the title opens the task', () => {
+	it('clicking the title opens the task note', () => {
 		const { container, app } = renderSingleTaskMatrix();
-		// renderTask() delegates to the shared renderTaskItem(), whose title
-		// handler calls openTaskFile() → app.workspace.getLeaf(). Assert on that
-		// observable effect rather than on a view method.
+		// The title is a link: a single click calls openTaskFile() → getLeaf().
 		const getLeaf = vi.fn(() => ({ openFile: vi.fn(async () => {}), view: undefined }));
 		app.workspace.getLeaf = getLeaf;
 
-		const titleEl = container.findByClass('focus-first-task-text');
-		titleEl?.dispatch('click');
+		container.findByClass('focus-first-task-text')?.dispatch('click');
 
 		expect(getLeaf).toHaveBeenCalled();
 	});
@@ -520,9 +521,7 @@ describe('task item actions in the matrix', () => {
 		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
 		app.vault.read = vi.fn(async () => '- [ ] Sample task');
 
-		const actions = container.findByClass('focus-first-task-actions');
-		const doneBtn = actions?.children[0];
-		doneBtn?.dispatch('click', { stopPropagation: () => {} });
+		container.findByClass('focus-first-done-btn')?.dispatch('click', { stopPropagation: () => {} });
 		await Promise.resolve();
 		await Promise.resolve();
 
@@ -534,9 +533,7 @@ describe('task item actions in the matrix', () => {
 		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
 		app.vault.read = vi.fn(async () => '- [ ] Sample task');
 
-		const actions = container.findByClass('focus-first-task-actions');
-		const focusBtn = actions?.children[1];
-		focusBtn?.dispatch('click', { stopPropagation: () => {} });
+		container.findByClass('focus-first-focus-btn')?.dispatch('click', { stopPropagation: () => {} });
 		await Promise.resolve();
 		await Promise.resolve();
 
@@ -544,14 +541,11 @@ describe('task item actions in the matrix', () => {
 	});
 
 	it('the hide button adds the hide tag', async () => {
-		// Disable the focus button so Done + Hide are the only two actions
 		const { container, app } = renderSingleTaskMatrix({}, { focusTag: '', hideTag: '#hide' });
 		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
 		app.vault.read = vi.fn(async () => '- [ ] Sample task');
 
-		const actions = container.findByClass('focus-first-task-actions');
-		const hideBtn = actions?.children[1];
-		hideBtn?.dispatch('click', { stopPropagation: () => {} });
+		container.findByClass('focus-first-hide-btn')?.dispatch('click', { stopPropagation: () => {} });
 		await Promise.resolve();
 		await Promise.resolve();
 
@@ -597,34 +591,58 @@ describe('task item actions in the matrix', () => {
 		expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), '- [ ] Sample task 📅 2026-07-08');
 	});
 
-	it('on mobile, collapses actions into a Done + overflow (⋯) menu', async () => {
-		Platform.isMobile = true;
+	it('opens the detail popover below the row on peek hover and hides it on leave', () => {
+		vi.stubGlobal('window', { setTimeout: (fn: () => void) => { fn(); return 0; }, clearTimeout: () => {} });
 		try {
-			const { container, app } = renderSingleTaskMatrix();
-			app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
-			app.vault.read = vi.fn(async () => '- [ ] Sample task 📅 2026-07-07');
-			clearCreatedMenus();
-
-			// The inline postpone/priority icon buttons are gone on mobile.
-			expect(container.findByClass('focus-first-postpone-btn')).toBeUndefined();
-			expect(container.findByClass('focus-first-priority-btn')).toBeUndefined();
-
-			const moreBtn = container.findByClass('focus-first-more-btn');
-			expect(moreBtn).toBeDefined();
-			moreBtn?.dispatch('click', { stopPropagation: () => {} });
-
-			// The overflow menu flattens the priority/postpone options; picking one writes back.
-			const menu = createdMenus[createdMenus.length - 1];
-			expect(menu?.items.map((i) => i.title)).toContain('⏫ High');
-			menu?.items.find((i) => i.title === '⏫ High')?.callback?.();
-			await Promise.resolve();
-			await Promise.resolve();
-
-			expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), '- [ ] Sample task ⏫ 📅 2026-07-07');
+			const { container, contentEl } = renderSingleTaskMatrix();
+			contentEl.rect = { left: 0, top: 0, right: 400, bottom: 1000, width: 400, height: 1000 };
+			const peek = container.findByClass('focus-first-task-peek');
+			const detail = container.findByClass('focus-first-task-detail');
+			peek?.dispatch('mouseenter');
+			expect(detail?.style.display).toBe('block');
+			expect(detail?.style.position).toBe('absolute');
+			expect(detail?.style.right).toBe('190px'); // right edge aligned to the button (rootRect.right - anchorRect.right)
+			expect(detail?.style.top).toBe('520px'); // just below the row, room below
+			peek?.dispatch('mouseleave'); // stubbed setTimeout fires synchronously
+			expect(detail?.style.display).toBe('');
+			expect(detail?.style.position).toBe('');
 		} finally {
-			Platform.isMobile = false;
+			vi.unstubAllGlobals();
 		}
 	});
+
+	it('flips the popover above the row when there is no room below', () => {
+		vi.stubGlobal('window', { setTimeout: (fn: () => void) => { fn(); return 0; }, clearTimeout: () => {} });
+		try {
+			const { container, contentEl } = renderSingleTaskMatrix();
+			contentEl.rect = { left: 0, top: 0, right: 400, bottom: 525, width: 400, height: 525 };
+			const peek = container.findByClass('focus-first-task-peek');
+			const detail = container.findByClass('focus-first-task-detail');
+			peek?.dispatch('mouseenter');
+			// liRect.bottom(520)+height(10) > rootRect.bottom(525), top(500)-10 > 0 → flip up.
+			expect(detail?.style.top).toBe('490px');
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
+
+	it('opens on peek click and stays open while the popover itself is hovered', () => {
+		vi.stubGlobal('window', { setTimeout: (fn: () => void) => { fn(); return 0; }, clearTimeout: () => {} });
+		try {
+			const { container, contentEl } = renderSingleTaskMatrix();
+			contentEl.rect = { left: 0, top: 0, right: 400, bottom: 1000, width: 400, height: 1000 };
+			const peek = container.findByClass('focus-first-task-peek');
+			const detail = container.findByClass('focus-first-task-detail');
+			peek?.dispatch('click', { stopPropagation: () => {} });
+			expect(detail?.style.display).toBe('block');
+			detail?.dispatch('mouseenter'); // hover bridge cancels the hide
+			detail?.dispatch('mouseleave'); // leaving hides it
+			expect(detail?.style.display).toBe('');
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
+
 });
 
 // ---------------------------------------------------------------------------

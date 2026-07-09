@@ -211,21 +211,19 @@ export function renderTaskItem(
 		.replace(/\s{2,}/g, ' ')
 		.trim();
 
-	// Title — a link: a single click opens the note, like any other link.
+	// Title — a link: a single click opens the note, like any other link. The list
+	// is just titles; the detail popover opens on row hover (see below).
 	const titleEl = li.createEl('span', { text, cls: 'focus-first-task-text' });
 	titleEl.addEventListener('click', () => { void openTaskFile(app, task); });
 
-	// Peek button on the right of every row — revealed on row hover (CSS), so the
-	// resting list stays quiet. Hovering it opens the detail popover.
-	const peekBtn = li.createEl('button', { cls: 'focus-first-task-peek' });
-	setIcon(peekBtn, 'more-horizontal');
-	peekBtn.setAttribute('aria-label', String(t().view.actions.details));
-
-	// Detail popover — the task title plus its metadata as aligned label/value
-	// rows (so it's calm and easy to scan), and the actions. Hidden until the peek
-	// button is hovered; showTaskDetail floats it next to the row.
+	// Detail popover — the task metadata as aligned label/value rows (so it's calm
+	// and easy to scan) plus the actions. The title isn't repeated here (it's right
+	// there in the list). Hidden until the row is hovered; showTaskDetail floats it
+	// next to the row.
 	const detail = li.createDiv({ cls: 'focus-first-task-detail' });
-	detail.createDiv({ cls: 'focus-first-detail-title', text });
+
+	// Actions come first (top row), the metadata grid below.
+	const actions = detail.createDiv({ cls: 'focus-first-task-actions' });
 
 	const meta = detail.createDiv({ cls: 'focus-first-task-meta' });
 	const labels = t().view.detail;
@@ -262,9 +260,6 @@ export function renderTaskItem(
 		});
 	}
 	addRow(String(labels.note), (v) => { v.setText(task.file.basename); v.addClass('focus-first-task-source'); });
-
-	// Actions row inside the popover.
-	const actions = detail.createDiv({ cls: 'focus-first-task-actions' });
 
 	const focusRun = focusTag
 		? () => void toggleFocusTagLine(app, settings, task.file.path, task.lineNumber, focusTag, !isFocused)
@@ -306,19 +301,30 @@ export function renderTaskItem(
 		menu.showAtMouseEvent(e);
 	});
 
-	// Reveal the popover when the peek button is hovered (or clicked, for touch).
-	// A short hide delay plus the popover's own hover form a bridge so you can move
-	// from the button into the popover to use its buttons.
+	// Reveal the popover when the row is hovered. An open delay means it only
+	// appears when you actually rest on a row (so it doesn't flicker while you scan
+	// the list). A short hide delay plus the popover's own hover form a bridge so
+	// you can move from the row into the popover to use its buttons.
 	let hideTimer = 0;
+	let showTimer = 0;
+	let mouseX = 0;
+	let mouseY = 0;
 	const scheduleHide = () => {
+		window.clearTimeout(showTimer);
 		window.clearTimeout(hideTimer);
 		hideTimer = window.setTimeout(() => hideTaskDetail(detail), 150);
 	};
-	const reveal = () => { window.clearTimeout(hideTimer); showTaskDetail(li, peekBtn, detail); };
-	peekBtn.addEventListener('mouseenter', reveal);
-	peekBtn.addEventListener('mouseleave', scheduleHide);
-	peekBtn.addEventListener('click', (e) => { e.stopPropagation(); reveal(); });
-	detail.addEventListener('mouseenter', () => window.clearTimeout(hideTimer));
+	const scheduleReveal = (e: MouseEvent) => {
+		mouseX = e.clientX;
+		mouseY = e.clientY;
+		window.clearTimeout(hideTimer);
+		window.clearTimeout(showTimer);
+		showTimer = window.setTimeout(() => showTaskDetail(li, detail, mouseX, mouseY), 400);
+	};
+	li.addEventListener('mouseenter', scheduleReveal);
+	li.addEventListener('mousemove', (e: MouseEvent) => { mouseX = e.clientX; mouseY = e.clientY; });
+	li.addEventListener('mouseleave', scheduleHide);
+	detail.addEventListener('mouseenter', () => { window.clearTimeout(hideTimer); });
 	detail.addEventListener('mouseleave', scheduleHide);
 }
 
@@ -329,31 +335,36 @@ export function renderTaskItem(
  * by the scrolling quadrant (unlike `position: fixed`, which Obsidian's
  * transformed pane ancestors break).
  *
- * It sits just below the row (flipping above when there's no room) and is
- * right-aligned to the anchor (the peek button), so the popover's right edge
- * lines up with the button's — it opens leftwards and works even when the list is
- * narrow. It's only opened by the peek button, so it never blocks scanning the
- * titles. No-op in non-DOM tests.
+ * It's placed next to the mouse cursor: to the right of it by default, flipping
+ * to the left when there's no room on the right; vertically it starts at the
+ * cursor and shifts up if it would overflow the bottom. Everything is clamped
+ * inside the view. An open delay on the row hover keeps it from flickering while
+ * scanning the list. No-op in non-DOM tests.
  */
 /* Placement is computed at hover time from on-screen rects, so these coordinates
    are inherently dynamic and can't be a CSS class. */
 /* eslint-disable obsidianmd/no-static-styles-assignment */
-function showTaskDetail(li: HTMLElement, anchor: HTMLElement, detail: HTMLElement): void {
+function showTaskDetail(li: HTMLElement, detail: HTMLElement, mouseX: number, mouseY: number): void {
 	if (typeof li.getBoundingClientRect !== 'function') return;
 	const root = li.closest('.focus-first-view');
 	if (!root) return;
 	root.appendChild(detail);
 	// Show first (unclamped) so its size can be measured, then place it.
-	detail.setCssProps({ display: 'block', position: 'absolute', top: '0', left: '', right: '0', 'max-width': `${Math.max(root.getBoundingClientRect().width - 16, 160)}px` });
-	const liRect = li.getBoundingClientRect();
-	const anchorRect = anchor.getBoundingClientRect();
+	detail.setCssProps({ display: 'block', position: 'absolute', top: '0', right: '', left: '0', 'max-width': `${Math.max(root.getBoundingClientRect().width - 16, 160)}px` });
 	const rootRect = root.getBoundingClientRect();
+	const width = detail.offsetWidth;
 	const height = detail.offsetHeight;
-	const flipUp = liRect.bottom + height > rootRect.bottom && liRect.top - height > rootRect.top;
-	detail.setCssProps({
-		right: `${Math.max(0, rootRect.right - anchorRect.right)}px`,
-		top: `${flipUp ? liRect.top - rootRect.top - height : liRect.bottom - rootRect.top}px`,
-	});
+	const gap = 12;
+	// Horizontal: right of the cursor, flipping left when it wouldn't fit; then
+	// clamp inside the view.
+	let left = mouseX + gap;
+	if (left + width > rootRect.right) left = mouseX - gap - width;
+	left = Math.max(rootRect.left, Math.min(left, rootRect.right - width)) - rootRect.left;
+	// Vertical: start at the cursor, shift up if it would overflow the bottom.
+	let top = mouseY;
+	if (top + height > rootRect.bottom) top = rootRect.bottom - height;
+	top = Math.max(rootRect.top, top) - rootRect.top;
+	detail.setCssProps({ left: `${left}px`, top: `${top}px` });
 }
 
 function hideTaskDetail(detail: HTMLElement): void {

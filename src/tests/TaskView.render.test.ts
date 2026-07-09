@@ -619,19 +619,19 @@ describe('task item actions in the matrix', () => {
 		expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), '- [ ] Sample task 📅 2026-07-08');
 	});
 
-	it('opens the detail popover below the row on peek hover and hides it on leave', () => {
+	it('opens the detail popover to the right of the cursor on row hover and hides it on leave', () => {
 		vi.stubGlobal('window', { setTimeout: (fn: () => void) => { fn(); return 0; }, clearTimeout: () => {} });
 		try {
 			const { container, contentEl } = renderSingleTaskMatrix();
 			contentEl.rect = { left: 0, top: 0, right: 400, bottom: 1000, width: 400, height: 1000 };
-			const peek = container.findByClass('focus-first-task-peek');
+			const item = container.findByClass('focus-first-task-item');
 			const detail = container.findByClass('focus-first-task-detail');
-			peek?.dispatch('mouseenter');
+			item?.dispatch('mouseenter', { clientX: 100, clientY: 500 }); // stub fires the open delay synchronously
 			expect(detail?.style.display).toBe('block');
 			expect(detail?.style.position).toBe('absolute');
-			expect(detail?.style.right).toBe('190px'); // right edge aligned to the button (rootRect.right - anchorRect.right)
-			expect(detail?.style.top).toBe('520px'); // just below the row, room below
-			peek?.dispatch('mouseleave'); // stubbed setTimeout fires synchronously
+			expect(detail?.style.left).toBe('112px'); // right of the cursor (100 + 12 gap), room on the right
+			expect(detail?.style.top).toBe('500px'); // at the cursor, room below
+			item?.dispatch('mouseleave'); // stubbed setTimeout fires synchronously
 			expect(detail?.style.display).toBe('');
 			expect(detail?.style.position).toBe('');
 		} finally {
@@ -639,29 +639,31 @@ describe('task item actions in the matrix', () => {
 		}
 	});
 
-	it('flips the popover above the row when there is no room below', () => {
+	it('flips the popover to the left of the cursor when there is no room on the right', () => {
 		vi.stubGlobal('window', { setTimeout: (fn: () => void) => { fn(); return 0; }, clearTimeout: () => {} });
 		try {
 			const { container, contentEl } = renderSingleTaskMatrix();
-			contentEl.rect = { left: 0, top: 0, right: 400, bottom: 525, width: 400, height: 525 };
-			const peek = container.findByClass('focus-first-task-peek');
+			contentEl.rect = { left: 0, top: 0, right: 400, bottom: 520, width: 400, height: 520 };
+			const item = container.findByClass('focus-first-task-item');
 			const detail = container.findByClass('focus-first-task-detail');
-			peek?.dispatch('mouseenter');
-			// liRect.bottom(520)+height(10) > rootRect.bottom(525), top(500)-10 > 0 → flip up.
-			expect(detail?.style.top).toBe('490px');
+			item?.dispatch('mouseenter', { clientX: 350, clientY: 515 });
+			// right of cursor (350+12=362, +width 100 = 462 > 400) → flip left: 350-12-100 = 238.
+			expect(detail?.style.left).toBe('238px');
+			// at cursor (515) + height 10 = 525 > bottom 520 → shift up to 520-10 = 510.
+			expect(detail?.style.top).toBe('510px');
 		} finally {
 			vi.unstubAllGlobals();
 		}
 	});
 
-	it('opens on peek click and stays open while the popover itself is hovered', () => {
+	it('stays open while the popover itself is hovered, then hides on leave', () => {
 		vi.stubGlobal('window', { setTimeout: (fn: () => void) => { fn(); return 0; }, clearTimeout: () => {} });
 		try {
 			const { container, contentEl } = renderSingleTaskMatrix();
 			contentEl.rect = { left: 0, top: 0, right: 400, bottom: 1000, width: 400, height: 1000 };
-			const peek = container.findByClass('focus-first-task-peek');
+			const item = container.findByClass('focus-first-task-item');
 			const detail = container.findByClass('focus-first-task-detail');
-			peek?.dispatch('click', { stopPropagation: () => {} });
+			item?.dispatch('mouseenter', { clientX: 100, clientY: 500 });
 			expect(detail?.style.display).toBe('block');
 			detail?.dispatch('mouseenter'); // hover bridge cancels the hide
 			detail?.dispatch('mouseleave'); // leaving hides it

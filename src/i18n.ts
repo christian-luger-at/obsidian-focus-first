@@ -40,7 +40,6 @@ interface Translations {
 		unhideTask: string;
 		actions: {
 			more: string;
-			details: string;
 			openNote: string;
 			postpone: string;
 			priority: string;
@@ -176,7 +175,6 @@ const translations: Record<Lang, Translations> = {
 			unhideTask: 'Unhide task',
 			actions: {
 				more: 'More actions',
-				details: 'Show details',
 				openNote: 'Open note',
 				postpone: 'Postpone',
 				priority: 'Set priority',
@@ -355,7 +353,6 @@ const translations: Record<Lang, Translations> = {
 			focusDone: 'Als erledigt markieren',
 			actions: {
 				more: 'Weitere Aktionen',
-				details: 'Details anzeigen',
 				openNote: 'Notiz öffnen',
 				postpone: 'Verschieben',
 				priority: 'Priorität setzen',

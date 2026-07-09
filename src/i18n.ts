@@ -21,6 +21,8 @@ interface Translations {
 		title: string;
 		refresh: string;
 		searchPlaceholder: string;
+		searchToggle: string;
+		add: string;
 		manualTag: string;
 		scope: string;
 		scopeAll: string;
@@ -155,6 +157,8 @@ const translations: Record<Lang, Translations> = {
 			title: 'Focus First',
 			refresh: 'Refresh',
 			searchPlaceholder: 'Search tasks…',
+			searchToggle: 'Search',
+			add: 'Add',
 			manualTag: 'Manually assigned via tag',
 			scope: 'Scope',
 			scopeAll: 'Entire vault',
@@ -332,6 +336,8 @@ const translations: Record<Lang, Translations> = {
 			title: 'Focus First',
 			refresh: 'Aktualisieren',
 			searchPlaceholder: 'Aufgaben suchen…',
+			searchToggle: 'Suchen',
+			add: 'Hinzufügen',
 			manualTag: 'Manuell per Tag zugewiesen',
 			scope: 'Bereich',
 			scopeAll: 'Gesamter Vault',

@@ -77,14 +77,17 @@
 	gap: var(--size-4-2);
 }
 
-/* The add ("+") button is the primary action (mod-cta gives it the accent
-   background/colour); we only centre the icon and size it. */
+/* Header action buttons pair an icon with a label. Search is the primary
+   action (mod-cta gives it the accent background/colour); Add is a plain
+   secondary button. Both just lay out the icon + text and size the glyph. */
+.focus-first-search-toggle,
 .focus-first-add-btn {
 	display: inline-flex;
 	align-items: center;
-	justify-content: center;
+	gap: var(--size-2-2);
 }
 
+.focus-first-search-toggle svg,
 .focus-first-add-btn svg {
 	width: var(--icon-s, 18px);
 	height: var(--icon-s, 18px);
@@ -125,8 +128,8 @@
 	justify-content: flex-end;
 }
 
-/* Refresh uses Obsidian's native primary/CTA button (.mod-cta) — the
-   focus-first-refresh-btn class is kept only as an identification hook. */
+/* Refresh is a plain secondary button — the focus-first-refresh-btn class is
+   kept only as an identification hook. */
 
 /* ── Search bar ──────────────────────────────────────────── */
 

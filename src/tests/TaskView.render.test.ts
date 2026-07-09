@@ -295,6 +295,36 @@ describe('render()', () => {
 		expect(filterPanel?.classList.contains('focus-first-hidden')).toBe(false);
 		expect(filterToggle?.classList.contains('is-open')).toBe(true);
 	});
+
+	it('collapses the search area by default and toggles it from the header', () => {
+		const { view, contentEl } = makeView();
+		priv(view).render();
+
+		const searchArea = contentEl.findByClass('focus-first-search-area');
+		const searchToggle = contentEl.findByClass('focus-first-search-toggle');
+		expect(searchArea?.classList.contains('focus-first-hidden')).toBe(true);
+		expect(searchToggle?.classList.contains('is-active')).toBe(false);
+
+		searchToggle?.dispatch('click');
+		expect(searchArea?.classList.contains('focus-first-hidden')).toBe(false);
+		expect(searchToggle?.classList.contains('is-active')).toBe(true);
+
+		searchToggle?.dispatch('click');
+		expect(searchArea?.classList.contains('focus-first-hidden')).toBe(true);
+		expect(searchToggle?.classList.contains('is-active')).toBe(false);
+	});
+
+	it('keeps the search area open when a search query is active', () => {
+		const { view, contentEl } = makeView();
+		// @ts-expect-error — set private searchQuery directly
+		view.searchQuery = 'banana';
+		priv(view).render();
+
+		const searchArea = contentEl.findByClass('focus-first-search-area');
+		const searchToggle = contentEl.findByClass('focus-first-search-toggle');
+		expect(searchArea?.classList.contains('focus-first-hidden')).toBe(false);
+		expect(searchToggle?.classList.contains('is-active')).toBe(true);
+	});
 });
 
 // ---------------------------------------------------------------------------

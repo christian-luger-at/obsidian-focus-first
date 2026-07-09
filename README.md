@@ -29,7 +29,7 @@ No manual sorting needed — though you can still pin any task to a quadrant by 
 - **Future tasks** — tasks with a start (`🛫`) or scheduled (`⏳`) date still in the future aren't actionable yet; choose to show, dim, or hide them until their date arrives.
 - **Quick add** — capture a task without leaving the view (the `+` button in the header, or the "Add task" command / hotkey). When the Tasks plugin is enabled, this opens its full create dialog (date, priority, and recurrence pickers); otherwise a simple input is used. The new task is appended to a configurable inbox note or the active note.
 - **Drag & drop** — drag a task between quadrants to instantly re-tag it.
-- **Search & filters** — search across all visible tasks, or filter by due-date bucket (overdue, today, this week, upcoming, no date).
+- **Search & filters** — the search bar is tucked behind a search icon in the header, so it only takes up space when you need it; open it to search across all visible tasks or filter by due-date bucket (overdue, today, this week, upcoming, no date).
 - **Grouping & sorting** — group tasks within a quadrant by priority, due date, or alphabetically, with independently configurable primary/secondary sort order per quadrant.
 - **Folder scope** — scan your entire vault or limit Focus First to a single folder (including sub-folders).
 - **Adjustable font size** — scale the text size of the Focus First view independently of Obsidian's global font size.

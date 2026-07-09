@@ -21,6 +21,7 @@ export class FocusFirstView extends ItemView {
 	private searchQuery = '';
 	private activeDateFilters = new Set<DateBucket>();
 	private filtersVisible = false;
+	private searchVisible = false;
 	private debouncedRefresh = debounce(() => this.refresh(), 500, true);
 
 	constructor(leaf: WorkspaceLeaf, plugin: FocusFirstPlugin) {
@@ -63,8 +64,15 @@ export class FocusFirstView extends ItemView {
 		const header = contentEl.createDiv({ cls: 'focus-first-header' });
 		header.createEl('h4', { text: t().view.title });
 		const headerActions = header.createDiv({ cls: 'focus-first-header-actions' });
-		const addBtn = headerActions.createEl('button', { cls: 'mod-cta focus-first-add-btn' });
+		const searchToggleBtn = headerActions.createEl('button', {
+			cls: 'mod-cta focus-first-search-toggle',
+		});
+		setIcon(searchToggleBtn, 'search');
+		searchToggleBtn.createSpan({ text: String(t().view.searchToggle) });
+		searchToggleBtn.setAttribute('aria-label', String(t().view.searchToggle));
+		const addBtn = headerActions.createEl('button', { cls: 'focus-first-add-btn' });
 		setIcon(addBtn, 'plus');
+		addBtn.createSpan({ text: String(t().view.add) });
 		addBtn.setAttribute('aria-label', String(t().quickAdd.addTaskButton));
 		addBtn.addEventListener('click', () => { this.plugin.openQuickAdd(); });
 		const refreshBtn = headerActions.createEl('button', { text: t().view.refresh, cls: 'focus-first-refresh-btn' });
@@ -93,8 +101,17 @@ export class FocusFirstView extends ItemView {
 		// sharing the same native card look (--background-secondary + border).
 		const cardsWrapper = contentEl.createDiv({ cls: 'focus-first-cards-wrapper' });
 
-		// Search area groups search input + filter panel visually
-		const searchArea = cardsWrapper.createDiv({ cls: 'focus-first-search-area' });
+		// Search area groups search input + filter panel visually. It stays
+		// collapsed by default (toggled from the header) so it doesn't take up
+		// permanent vertical space, but auto-opens when a search or filter is
+		// active so the current state is always visible.
+		this.searchVisible = this.searchVisible
+			|| this.searchQuery !== ''
+			|| this.activeDateFilters.size > 0;
+		const searchArea = cardsWrapper.createDiv({
+			cls: `focus-first-search-area${this.searchVisible ? '' : ' focus-first-hidden'}`,
+		});
+		searchToggleBtn.classList.toggle('is-active', this.searchVisible);
 		const searchBar = searchArea.createDiv({ cls: 'focus-first-search-bar' });
 		const searchInput = searchBar.createEl('input', {
 			cls: 'focus-first-search-input',
@@ -140,6 +157,13 @@ export class FocusFirstView extends ItemView {
 			this.filtersVisible = !this.filtersVisible;
 			filterPanel.classList.toggle('focus-first-hidden', !this.filtersVisible);
 			filterToggle.classList.toggle('is-open', this.filtersVisible);
+		});
+
+		searchToggleBtn.addEventListener('click', () => {
+			this.searchVisible = !this.searchVisible;
+			searchArea.classList.toggle('focus-first-hidden', !this.searchVisible);
+			searchToggleBtn.classList.toggle('is-active', this.searchVisible);
+			if (this.searchVisible) searchInput.focus();
 		});
 
 		searchInput.addEventListener('input', () => {

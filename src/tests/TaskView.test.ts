@@ -14,7 +14,7 @@ vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 const { FocusFirstView } = await import('../TaskView');
 const { DEFAULT_SETTINGS } = await import('../settings');
 const { TFile } = await import('./__mocks__/obsidian');
-const { removeTagFromLine } = await import('../taskRenderer');
+const { removeTagFromLine, toggleFocusTagLine, toggleHideTagLine, completeTaskLine } = await import('../taskRenderer');
 
 import type { MatrixTask, Quadrant } from '../matrixClassifier';
 import type { FocusFirstSettings, SortField } from '../settings';
@@ -76,9 +76,6 @@ interface TestableView {
 	groupOrder(field: SortField): (a: string, b: string) => number;
 	dueBucket(task: TaskItem): string;
 	passesDateFilter(task: TaskItem): boolean;
-	toggleFocusTag(filePath: string, lineNumber: number, focusTag: string, add: boolean): Promise<void>;
-	toggleHideTag(filePath: string, lineNumber: number, hideTag: string): Promise<void>;
-	completeTask(filePath: string, lineNumber: number): Promise<void>;
 	moveTaskToQuadrant(filePath: string, lineNumber: number, targetQuadrant: Quadrant): Promise<void>;
 }
 
@@ -380,57 +377,57 @@ describe('removeTagFromLine', () => {
 // toggleFocusTag / toggleHideTag / completeTask / moveTaskToQuadrant
 // ---------------------------------------------------------------------------
 
-describe('toggleFocusTag', () => {
+describe('toggleFocusTagLine', () => {
 	it('appends the focus tag to the task line', async () => {
 		const vault = makeFakeVault({ 'a.md': '- [ ] Task one\n- [ ] Task two' });
-		const { view } = makeView({ focusTag: '#focus' }, vault);
-		await priv(view).toggleFocusTag('a.md', 0, '#focus', true);
+		const { plugin, app } = makeView({ focusTag: '#focus' }, vault);
+		await toggleFocusTagLine(app as never, plugin.settings, 'a.md', 0, '#focus', true);
 		expect(vault._store['a.md']).toBe('- [ ] Task one #focus\n- [ ] Task two');
 	});
 
 	it('removes the focus tag from the task line', async () => {
 		const vault = makeFakeVault({ 'a.md': '- [ ] Task one #focus' });
-		const { view } = makeView({ focusTag: '#focus' }, vault);
-		await priv(view).toggleFocusTag('a.md', 0, '#focus', false);
+		const { plugin, app } = makeView({ focusTag: '#focus' }, vault);
+		await toggleFocusTagLine(app as never, plugin.settings, 'a.md', 0, '#focus', false);
 		expect(vault._store['a.md']).toBe('- [ ] Task one');
 	});
 
 	it('keeps indentation of a nested task when removing the tag', async () => {
 		const vault = makeFakeVault({ 'a.md': '\t- [ ] Nested #focus' });
-		const { view } = makeView({ focusTag: '#focus' }, vault);
-		await priv(view).toggleFocusTag('a.md', 0, '#focus', false);
+		const { plugin, app } = makeView({ focusTag: '#focus' }, vault);
+		await toggleFocusTagLine(app as never, plugin.settings, 'a.md', 0, '#focus', false);
 		expect(vault._store['a.md']).toBe('\t- [ ] Nested');
 	});
 
 	it('does nothing when the file does not exist', async () => {
 		const vault = makeFakeVault({});
-		const { view } = makeView({}, vault);
-		await priv(view).toggleFocusTag('missing.md', 0, '#focus', true);
+		const { plugin, app } = makeView({}, vault);
+		await toggleFocusTagLine(app as never, plugin.settings, 'missing.md', 0, '#focus', true);
 		expect(vault.modify).not.toHaveBeenCalled();
 	});
 });
 
-describe('toggleHideTag', () => {
+describe('toggleHideTagLine', () => {
 	it('adds the hide tag when not already present', async () => {
 		const vault = makeFakeVault({ 'a.md': '- [ ] Task one' });
-		const { view } = makeView({ hideTag: '#hide' }, vault);
-		await priv(view).toggleHideTag('a.md', 0, '#hide');
+		const { plugin, app } = makeView({ hideTag: '#hide' }, vault);
+		await toggleHideTagLine(app as never, plugin.settings, 'a.md', 0, '#hide');
 		expect(vault._store['a.md']).toBe('- [ ] Task one #hide');
 	});
 
 	it('removes the hide tag when already present', async () => {
 		const vault = makeFakeVault({ 'a.md': '- [ ] Task one #hide' });
-		const { view } = makeView({ hideTag: '#hide' }, vault);
-		await priv(view).toggleHideTag('a.md', 0, '#hide');
+		const { plugin, app } = makeView({ hideTag: '#hide' }, vault);
+		await toggleHideTagLine(app as never, plugin.settings, 'a.md', 0, '#hide');
 		expect(vault._store['a.md']).toBe('- [ ] Task one');
 	});
 });
 
-describe('completeTask', () => {
+describe('completeTaskLine', () => {
 	it('marks the task checkbox as done', async () => {
 		const vault = makeFakeVault({ 'a.md': '- [ ] Task one' });
-		const { view } = makeView({}, vault);
-		await priv(view).completeTask('a.md', 0);
+		const { app } = makeView({}, vault);
+		await completeTaskLine(app as never, 'a.md', 0);
 		expect(vault._store['a.md']).toBe('- [x] Task one');
 	});
 });

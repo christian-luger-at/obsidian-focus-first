@@ -13,6 +13,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 
 const { FocusFirstView } = await import('../TaskView');
+const { openTaskFile } = await import('../taskRenderer');
 const { DEFAULT_SETTINGS } = await import('../settings');
 const { TFile, MarkdownView, createdMenus, clearCreatedMenus } = await import('./__mocks__/obsidian');
 
@@ -200,11 +201,8 @@ interface TestableView {
 	render(): void;
 	renderMatrix(contentEl: unknown, container: unknown): void;
 	renderFocusTasks(container: unknown): void;
-	openTask(task: TaskItem): Promise<void>;
-	handleKeydown(e: unknown): void;
 	moveTaskToQuadrant(filePath: string, lineNumber: number, quadrant: string): Promise<void>;
 	makeDropTarget(cell: unknown, quadrant: string): void;
-	selectedKey: string | null;
 }
 
 function priv(view: unknown): TestableView {
@@ -643,6 +641,27 @@ describe('task item actions in the matrix', () => {
 		}
 	});
 
+	it('the detail popover lists start/scheduled dates and tags', () => {
+		const { container } = renderSingleTaskMatrix({
+			startDate: daysFromToday(1),
+			scheduledDate: daysFromToday(2),
+			tags: ['#focus', '#do'],
+		});
+		expect(container.findByClass('focus-first-task-tags')).toBeDefined();
+		expect(container.findByClass('focus-first-task-tag')).toBeDefined();
+		// title + priority + due + start + scheduled + tags + note → several value rows.
+		expect(container.findAllByClass('focus-first-detail-value').length).toBeGreaterThanOrEqual(5);
+	});
+
+	it('the postpone menu offers today/tomorrow for a task with no due date', () => {
+		const { container } = renderSingleTaskMatrix({ dueDate: undefined });
+		clearCreatedMenus();
+		container.findByClass('focus-first-postpone-btn')?.dispatch('click', { stopPropagation: () => {} });
+		const titles = createdMenus[createdMenus.length - 1]?.items.map((i) => i.title) ?? [];
+		expect(titles).toContain('Due today');
+		expect(titles).toContain('Due tomorrow');
+	});
+
 });
 
 // ---------------------------------------------------------------------------
@@ -737,102 +756,28 @@ describe('drag and drop', () => {
 // openTask()
 // ---------------------------------------------------------------------------
 
-describe('openTask()', () => {
+describe('openTaskFile()', () => {
 	it('opens the file in a leaf', async () => {
-		const { view, app } = makeView();
+		const { app } = makeView();
 		const openFile = vi.fn(async () => {});
 		app.workspace.getLeaf = vi.fn(() => ({ openFile, view: undefined }));
 
-		await priv(view).openTask(makeTask({ file: new TFile('Notes/x.md') as never }));
+		await openTaskFile(app as never, makeTask({ file: new TFile('Notes/x.md') as never }));
 
 		expect(openFile).toHaveBeenCalled();
 	});
 
 	it('positions the cursor when the opened leaf is a MarkdownView', async () => {
-		const { view, app } = makeView();
+		const { app } = makeView();
 		const setCursor = vi.fn();
 		const scrollIntoView = vi.fn();
 		const markdownView = Object.assign(new MarkdownView(), { editor: { setCursor, scrollIntoView } });
 		app.workspace.getLeaf = vi.fn(() => ({ openFile: vi.fn(async () => {}), view: markdownView }));
 
-		await priv(view).openTask(makeTask({ lineNumber: 5 }));
+		await openTaskFile(app as never, makeTask({ lineNumber: 5 }));
 
 		expect(setCursor).toHaveBeenCalledWith({ line: 5, ch: 0 });
 		expect(scrollIntoView).toHaveBeenCalled();
-	});
-});
-
-// ---------------------------------------------------------------------------
-// Keyboard navigation & actions (issue #11)
-// ---------------------------------------------------------------------------
-
-describe('keyboard navigation', () => {
-	function setup(store: Record<string, string>) {
-		const tasks = Object.keys(store).map((path) =>
-			makeTask({ line: store[path], priority: '🔺', dueDate: daysFromToday(0), file: new TFile(path) as never, lineNumber: 0 }),
-		);
-		const res = makeView({ importantPriorities: ['🔺'], focusTag: '#focus', hideTag: '#hide' }, tasks);
-		res.app.vault.getAbstractFileByPath = (p: string) => (p in store ? new TFile(p) : null);
-		res.app.vault.read = vi.fn(async (file: unknown) => store[(file as { path: string }).path] ?? '');
-		res.app.vault.modify = vi.fn(async (file: unknown, c: string) => { store[(file as { path: string }).path] = c; });
-		const container = res.contentEl.createDiv();
-		priv(res.view).renderMatrix(res.contentEl, container);
-		return { ...res, store };
-	}
-
-	const key = (k: string) => ({ key: k, preventDefault: () => {} });
-	async function flush() { for (let i = 0; i < 8; i++) await Promise.resolve(); }
-
-	it('ArrowDown/ArrowUp move the selection in order', () => {
-		const { view } = setup({ 'a.md': '- [ ] A', 'b.md': '- [ ] B' });
-		priv(view).handleKeydown(key('ArrowDown'));
-		expect(priv(view).selectedKey).toBe('b.md:0');
-		priv(view).handleKeydown(key('ArrowUp'));
-		expect(priv(view).selectedKey).toBe('a.md:0');
-	});
-
-	it('marks the selected item with the is-selected class', () => {
-		const { view, contentEl } = setup({ 'a.md': '- [ ] A', 'b.md': '- [ ] B' });
-		priv(view).handleKeydown(key('ArrowDown'));
-		const selected = contentEl.findAllByClass('focus-first-task-item').filter((el) => el.classList.contains('is-selected'));
-		expect(selected).toHaveLength(1);
-		expect(selected[0]?.getAttribute('data-file-path')).toBe('b.md');
-	});
-
-	it('ignores unknown keys', () => {
-		const { view } = setup({ 'a.md': '- [ ] A' });
-		expect(() => priv(view).handleKeydown(key('z'))).not.toThrow();
-		expect(priv(view).selectedKey).toBeNull();
-	});
-
-	it('does not hijack keystrokes while typing in an input (e.g. the search box)', () => {
-		const { view, store } = setup({ 'a.md': '- [ ] A' });
-		let prevented = false;
-		priv(view).handleKeydown({ key: 'c', target: { tagName: 'INPUT' }, preventDefault: () => { prevented = true; } });
-		expect(prevented).toBe(false); // the input keeps the character
-		expect(store['a.md']).toBe('- [ ] A'); // no completion happened
-	});
-
-	it('"c" completes the selected task', async () => {
-		const { view, store } = setup({ 'a.md': '- [ ] A' });
-		priv(view).handleKeydown(key('c'));
-		await flush();
-		expect(store['a.md']).toBe('- [x] A');
-	});
-
-	it('"1" moves the selected task to the Do quadrant', async () => {
-		const { view, store } = setup({ 'a.md': '- [ ] A #schedule' });
-		priv(view).handleKeydown(key('1'));
-		await flush();
-		expect(store['a.md']).toBe('- [ ] A #do');
-	});
-
-	it('Enter opens the selected task', () => {
-		const { view, app } = setup({ 'a.md': '- [ ] A' });
-		const getLeaf = vi.fn(() => ({ openFile: vi.fn(async () => {}), view: undefined }));
-		app.workspace.getLeaf = getLeaf;
-		priv(view).handleKeydown(key('Enter'));
-		expect(getLeaf).toHaveBeenCalled();
 	});
 });
 
@@ -898,8 +843,7 @@ describe('moveTaskToQuadrant', () => {
 // Keyboard/drag branch coverage (issue #11)
 // ---------------------------------------------------------------------------
 
-describe('keyboard & drag branches', () => {
-	const key = (k: string) => ({ key: k, preventDefault: () => {} });
+describe('drag-drop target branches', () => {
 	async function flush() { for (let i = 0; i < 8; i++) await Promise.resolve(); }
 
 	function wire(res: ReturnType<typeof makeView>, store: Record<string, string>) {
@@ -908,97 +852,6 @@ describe('keyboard & drag branches', () => {
 		res.app.vault.modify = vi.fn(async (file: unknown, c: string) => { store[(file as { path: string }).path] = c; });
 	}
 
-	function renderTasks(tasks: TaskItem[], settings = {}, store: Record<string, string> = {}) {
-		const res = makeView({ importantPriorities: ['🔺'], focusTag: '#focus', hideTag: '#hide', ...settings }, tasks);
-		wire(res, store);
-		const container = res.contentEl.createDiv();
-		priv(res.view).renderMatrix(res.contentEl, container);
-		return res;
-	}
-
-	it('is a no-op when there are no task items', () => {
-		const res = renderTasks([]);
-		expect(() => priv(res.view).handleKeydown(key('ArrowDown'))).not.toThrow();
-	});
-
-	it('ArrowRight/ArrowLeft jump between quadrants', () => {
-		const tasks = [
-			makeTask({ line: '- [ ] Do it', priority: '🔺', dueDate: daysFromToday(0), file: new TFile('do.md') as never }),
-			makeTask({ line: '- [ ] Plan it', priority: '🔺', file: new TFile('sch.md') as never }),
-		];
-		const res = renderTasks(tasks);
-		priv(res.view).handleKeydown(key('ArrowRight'));
-		expect(priv(res.view).selectedKey).toBe('sch.md:0');
-		priv(res.view).handleKeydown(key('ArrowLeft'));
-		expect(priv(res.view).selectedKey).toBe('do.md:0');
-	});
-
-	it('"f" toggles the focus tag off a focused task', async () => {
-		const store = { 'a.md': '- [ ] A #focus' };
-		const tasks = [makeTask({ line: '- [ ] A #focus', tags: ['#focus'], priority: '🔺', dueDate: daysFromToday(0), file: new TFile('a.md') as never })];
-		const res = renderTasks(tasks, { focusTag: '#focus' }, store);
-		priv(res.view).handleKeydown(key('f'));
-		await flush();
-		expect(store['a.md']).toBe('- [ ] A');
-	});
-
-	it('"f" does nothing when no focus tag is configured', async () => {
-		const store = { 'a.md': '- [ ] A' };
-		const tasks = [makeTask({ line: '- [ ] A', priority: '🔺', dueDate: daysFromToday(0), file: new TFile('a.md') as never })];
-		const res = renderTasks(tasks, { focusTag: '' }, store);
-		priv(res.view).handleKeydown(key('f'));
-		await flush();
-		expect(res.app.vault.modify).not.toHaveBeenCalled();
-	});
-
-	it('"h" adds the hide tag', async () => {
-		const store = { 'a.md': '- [ ] A' };
-		const tasks = [makeTask({ line: '- [ ] A', priority: '🔺', dueDate: daysFromToday(0), file: new TFile('a.md') as never })];
-		const res = renderTasks(tasks, { hideTag: '#hide' }, store);
-		priv(res.view).handleKeydown(key('h'));
-		await flush();
-		expect(store['a.md']).toBe('- [ ] A #hide');
-	});
-
-	it('"h" does nothing when no hide tag is configured', async () => {
-		const store = { 'a.md': '- [ ] A' };
-		const tasks = [makeTask({ line: '- [ ] A', priority: '🔺', dueDate: daysFromToday(0), file: new TFile('a.md') as never })];
-		const res = renderTasks(tasks, { hideTag: '' }, store);
-		priv(res.view).handleKeydown(key('h'));
-		await flush();
-		expect(res.app.vault.modify).not.toHaveBeenCalled();
-	});
-
-	it('section navigation runs with a focus section present', () => {
-		const tasks = [makeTask({ line: '- [ ] A #focus', tags: ['#focus'], priority: '🔺', dueDate: daysFromToday(0), file: new TFile('a.md') as never })];
-		const res = makeView({ importantPriorities: ['🔺'], focusTag: '#focus' }, tasks);
-		const fc = res.contentEl.createDiv({ cls: 'focus-first-focus-container' });
-		priv(res.view).renderFocusTasks(fc);
-		const mc = res.contentEl.createDiv();
-		priv(res.view).renderMatrix(res.contentEl, mc);
-		expect(() => priv(res.view).handleKeydown(key('ArrowRight'))).not.toThrow();
-	});
-
-	it('clears a selection whose task has disappeared on re-render', () => {
-		const store = { 'a.md': '- [ ] A', 'b.md': '- [ ] B' };
-		const tasks = [
-			makeTask({ line: '- [ ] A', priority: '🔺', dueDate: daysFromToday(0), file: new TFile('a.md') as never }),
-			makeTask({ line: '- [ ] B', priority: '🔺', dueDate: daysFromToday(0), file: new TFile('b.md') as never }),
-		];
-		const res = makeView({ importantPriorities: ['🔺'] }, tasks);
-		wire(res, store);
-		const container = res.contentEl.createDiv();
-		priv(res.view).renderMatrix(res.contentEl, container);
-		priv(res.view).handleKeydown(key('ArrowDown')); // select b.md
-		expect(priv(res.view).selectedKey).toBe('b.md:0');
-		// Drop the second task and re-render into the SAME container (which is emptied).
-		// @ts-expect-error — assign tasks directly, bypassing scanTasks()
-		res.view.tasks = [tasks[0]];
-		priv(res.view).renderMatrix(res.contentEl, container);
-		expect(priv(res.view).selectedKey).toBeNull();
-	});
-
-	// --- drag-drop target branches ---
 	it('dragleave removes the highlight only when the pointer leaves the cell', () => {
 		const res = makeView({});
 		const cell = new FakeEl('div');

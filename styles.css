@@ -295,15 +295,6 @@
 	padding-left: calc(var(--size-4-2) - 2px);
 }
 
-/* Keyboard selection highlight (issue #11) — a visible focus ring on the
-   selected/focused task item. */
-.focus-first-task-item.is-selected,
-.focus-first-task-item:focus-visible {
-	outline: 2px solid var(--interactive-accent);
-	outline-offset: -2px;
-	border-radius: var(--radius-s);
-}
-
 /* Future tasks (start/scheduled date ahead) in "dim" mode — de-emphasised but
    still readable and interactive on hover. */
 .focus-first-task-item.is-future .focus-first-task-text {

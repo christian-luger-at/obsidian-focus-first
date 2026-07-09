@@ -227,6 +227,60 @@
 	padding: var(--size-4-8);
 }
 
+/* Guiding empty states (onboarding / no matches) and the Eliminate hint banner
+   share the same building blocks: title, body, code example, action. */
+.focus-first-empty--onboarding,
+.focus-first-empty--no-matches {
+	max-width: 32rem;
+	margin: 0 auto;
+}
+
+.focus-first-info-title {
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+	margin: 0 0 var(--size-2-2);
+}
+
+.focus-first-info-body {
+	color: var(--text-muted);
+	line-height: 1.5;
+	margin: 0 0 var(--size-4-2);
+}
+
+.focus-first-info-example {
+	text-align: left;
+	background: var(--background-primary-alt);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: var(--size-2-3) var(--size-4-2);
+	margin: 0 0 var(--size-4-2);
+	overflow-x: auto;
+}
+
+.focus-first-info-example code {
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-normal);
+	white-space: pre;
+}
+
+.focus-first-info-clear {
+	cursor: pointer;
+}
+
+/* The Eliminate hint sits above the matrix as a calm, left-aligned banner. */
+.focus-first-eliminate-hint {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	padding: var(--size-4-3) var(--size-4-4);
+	margin-bottom: var(--size-4-3);
+}
+
+.focus-first-eliminate-hint .focus-first-info-body {
+	margin-bottom: var(--size-2-3);
+}
+
 /* ── View layout ─────────────────────────────────────────── */
 
 .focus-first-view {

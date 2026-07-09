@@ -281,6 +281,55 @@ export class FocusFirstView extends ItemView {
 		}
 	}
 
+	/** Shared info/empty panel: optional title, body, code example, clear button. */
+	private renderInfoPanel(
+		container: HTMLElement,
+		wrapperCls: string,
+		title: string,
+		body: string,
+		opts: { example?: boolean; clear?: boolean } = {},
+	): void {
+		const panel = container.createDiv({ cls: wrapperCls });
+		if (title) panel.createEl('p', { text: title, cls: 'focus-first-info-title' });
+		if (body) panel.createEl('p', { text: body, cls: 'focus-first-info-body' });
+		if (opts.example) {
+			const pre = panel.createEl('pre', { cls: 'focus-first-info-example' });
+			pre.createEl('code', { text: String(t().view.emptyStates.example) });
+		}
+		if (opts.clear) {
+			const btn = panel.createEl('button', {
+				text: t().view.emptyStates.clearFilters,
+				cls: 'focus-first-info-clear',
+			});
+			btn.addEventListener('click', () => {
+				this.searchQuery = '';
+				this.activeDateFilters.clear();
+				this.render();
+			});
+		}
+	}
+
+	/** Empty because search/filters exclude everything — offer to clear them. */
+	private renderNoMatches(container: HTMLElement): void {
+		const s = t().view.emptyStates;
+		this.renderInfoPanel(container, 'focus-first-empty focus-first-empty--no-matches',
+			String(s.noMatches), '', { clear: true });
+	}
+
+	/** Empty because there are no tasks at all — explain where tasks come from. */
+	private renderOnboarding(container: HTMLElement): void {
+		const s = t().view.emptyStates;
+		this.renderInfoPanel(container, 'focus-first-empty focus-first-empty--onboarding',
+			String(s.onboardingTitle), String(s.onboardingBody), { example: true });
+	}
+
+	/** Tasks exist but all fall into Eliminate — explain why (no dates/priorities). */
+	private renderEliminateHint(container: HTMLElement): void {
+		const s = t().view.emptyStates;
+		this.renderInfoPanel(container, 'focus-first-eliminate-hint',
+			String(s.eliminateHintTitle), String(s.eliminateHintBody), { example: true });
+	}
+
 	private renderMatrix(contentEl: HTMLElement, container: HTMLElement): void {
 		container.empty();
 
@@ -297,12 +346,24 @@ export class FocusFirstView extends ItemView {
 			.filter((task) => this.passesDateFilter(task))
 			.filter((task) => this.plugin.settings.futureTasks !== 'hide' || !isFutureTask(task));
 
+		const filtersActive = query !== '' || this.activeDateFilters.size > 0;
+
 		if (open.length === 0) {
-			container.createEl('p', { text: t().view.empty, cls: 'focus-first-empty' });
+			if (filtersActive) this.renderNoMatches(container);
+			else this.renderOnboarding(container);
 			return;
 		}
 
 		const quadrants = classifyTasks(open, this.plugin.settings);
+
+		// Degenerate case: tasks exist but none are urgent or important (no due
+		// dates / important priorities), so everything is in Eliminate. Explain why
+		// instead of leaving the user with a matrix that looks broken.
+		if (quadrants.do.length === 0 && quadrants.schedule.length === 0 && quadrants.delegate.length === 0
+			&& quadrants.eliminate.length > 0) {
+			this.renderEliminateHint(container);
+		}
+
 		const matrix = container.createDiv({ cls: 'focus-first-matrix' });
 
 		for (const key of QUADRANT_ORDER) {

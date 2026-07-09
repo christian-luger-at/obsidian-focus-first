@@ -438,6 +438,45 @@ describe('renderMatrix()', () => {
 		expect(container.findByClass('focus-first-empty')).toBeDefined();
 	});
 
+	it('shows the onboarding empty state (with example) when there are no tasks and no filters', () => {
+		const { view, contentEl } = makeView({}, []);
+		const container = contentEl.createDiv();
+		priv(view).renderMatrix(contentEl, container);
+		expect(container.findByClass('focus-first-empty--onboarding')).toBeDefined();
+		expect(container.findByClass('focus-first-info-example')).toBeDefined();
+	});
+
+	it('shows the no-matches empty state with a clear button when filters exclude everything', () => {
+		const { view, contentEl } = makeView({}, [makeTask({ line: '- [ ] Apple' })]);
+		// @ts-expect-error — set private searchQuery directly
+		view.searchQuery = 'zzz-no-match';
+		const container = contentEl.createDiv();
+		priv(view).renderMatrix(contentEl, container);
+		expect(container.findByClass('focus-first-empty--no-matches')).toBeDefined();
+
+		const clear = container.findByClass('focus-first-info-clear');
+		expect(clear).toBeDefined();
+		clear!.dispatch('click');
+		// @ts-expect-error — reading private searchQuery for assertion
+		expect(view.searchQuery).toBe('');
+	});
+
+	it('shows the Eliminate hint above the matrix when every task lands in Eliminate', () => {
+		const { view, contentEl } = makeView({}, [makeTask({ line: '- [ ] No date no priority' })]);
+		const container = contentEl.createDiv();
+		priv(view).renderMatrix(contentEl, container);
+		expect(container.findByClass('focus-first-eliminate-hint')).toBeDefined();
+		expect(container.findByClass('focus-first-matrix')).toBeDefined();
+	});
+
+	it('does not show the Eliminate hint when a task lands in another quadrant', () => {
+		const tasks = [makeTask({ dueDate: daysFromToday(0), priority: '🔺', line: '- [ ] Urgent important' })];
+		const { view, contentEl } = makeView({ urgencyDays: 3, importantPriorities: ['🔺'] }, tasks);
+		const container = contentEl.createDiv();
+		priv(view).renderMatrix(contentEl, container);
+		expect(container.findByClass('focus-first-eliminate-hint')).toBeUndefined();
+	});
+
 	it('excludes completed tasks and renders the rest into quadrants', () => {
 		const tasks = [
 			makeTask({ completed: true, line: '- [x] Done task' }),

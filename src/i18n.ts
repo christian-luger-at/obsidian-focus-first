@@ -29,6 +29,15 @@ interface Translations {
 		open: string;
 		done: string;
 		empty: string;
+		emptyStates: {
+			noMatches: string;
+			clearFilters: string;
+			onboardingTitle: string;
+			onboardingBody: string;
+			eliminateHintTitle: string;
+			eliminateHintBody: string;
+			example: string;
+		};
 		tasksPluginWarning: string;
 		tasksPluginWarningDismiss: string;
 		filterToggle: string;
@@ -164,6 +173,15 @@ const translations: Record<Lang, Translations> = {
 			open: 'open',
 			done: 'done',
 			empty: 'No open tasks found.',
+			emptyStates: {
+				noMatches: 'No tasks match your search or filters.',
+				clearFilters: 'Clear search & filters',
+				onboardingTitle: 'No tasks yet',
+				onboardingBody: 'Focus First reads standard checkbox tasks from your vault. Add a due date (📅) for urgency and a priority (🔺⏫) for importance, and each task is sorted into the matrix automatically. Tip: adjust which folder is scanned and what counts as urgent/important under Settings → Community plugins → Focus First.',
+				eliminateHintTitle: 'Everything landed in “Eliminate”',
+				eliminateHintBody: 'None of your tasks have a due date or an important priority, so nothing counts as urgent or important yet. Add a due date (📅) and/or a priority (🔺⏫) to see tasks move into the other quadrants. You can change the urgency threshold and which priorities count as important in the settings.',
+				example: '- [ ] Finish the quarterly report 📅 2026-07-02 🔺',
+			},
 			tasksPluginWarning: 'The Tasks plugin is not enabled. Focus First works with plain checkboxes, but the Tasks plugin makes adding due dates and priorities much easier.',
 			tasksPluginWarningDismiss: 'Dismiss',
 			filterToggle: 'More Filters',
@@ -342,6 +360,15 @@ const translations: Record<Lang, Translations> = {
 			open: 'offen',
 			done: 'erledigt',
 			empty: 'Keine offenen Aufgaben gefunden.',
+			emptyStates: {
+				noMatches: 'Keine Aufgaben passen zu deiner Suche oder deinen Filtern.',
+				clearFilters: 'Suche & Filter zurücksetzen',
+				onboardingTitle: 'Noch keine Aufgaben',
+				onboardingBody: 'Focus First liest normale Checkbox-Aufgaben aus deinem Vault. Ergänze ein Fälligkeitsdatum (📅) für Dringlichkeit und eine Priorität (🔺⏫) für Wichtigkeit, dann wird jede Aufgabe automatisch in die Matrix einsortiert. Tipp: Welcher Ordner durchsucht wird und was als dringend/wichtig zählt, stellst du unter Einstellungen → Community-Plugins → Focus First ein.',
+				eliminateHintTitle: 'Alles landet in „Eliminieren“',
+				eliminateHintBody: 'Keine deiner Aufgaben hat ein Fälligkeitsdatum oder eine wichtige Priorität, daher gilt noch nichts als dringend oder wichtig. Ergänze ein Fälligkeitsdatum (📅) und/oder eine Priorität (🔺⏫), damit Aufgaben in die anderen Quadranten wandern. Die Dringlichkeitsschwelle und welche Prioritäten als wichtig zählen, kannst du in den Einstellungen anpassen.',
+				example: '- [ ] Quartalsbericht fertigstellen 📅 2026-07-02 🔺',
+			},
 			tasksPluginWarning: 'Das Tasks-Plugin ist nicht aktiviert. Focus First funktioniert auch mit normalen Checkboxen, aber mit dem Tasks-Plugin lassen sich Fälligkeitsdaten und Prioritäten viel einfacher setzen.',
 			tasksPluginWarningDismiss: 'Ausblenden',
 			filterToggle: 'Mehr Filter',

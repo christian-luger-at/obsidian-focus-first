@@ -805,6 +805,14 @@ describe('keyboard navigation', () => {
 		expect(priv(view).selectedKey).toBeNull();
 	});
 
+	it('does not hijack keystrokes while typing in an input (e.g. the search box)', () => {
+		const { view, store } = setup({ 'a.md': '- [ ] A' });
+		let prevented = false;
+		priv(view).handleKeydown({ key: 'c', target: { tagName: 'INPUT' }, preventDefault: () => { prevented = true; } });
+		expect(prevented).toBe(false); // the input keeps the character
+		expect(store['a.md']).toBe('- [ ] A'); // no completion happened
+	});
+
 	it('"c" completes the selected task', async () => {
 		const { view, store } = setup({ 'a.md': '- [ ] A' });
 		priv(view).handleKeydown(key('c'));

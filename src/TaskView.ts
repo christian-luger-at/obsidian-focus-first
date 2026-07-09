@@ -432,6 +432,12 @@ export class FocusFirstView extends ItemView {
 	}
 
 	private handleKeydown(e: KeyboardEvent): void {
+		// Don't hijack typing in the search box (or any input): the keyboard
+		// shortcuts must only apply when focus is on the list, not a text field.
+		const target = e.target as HTMLElement | null;
+		if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+			return;
+		}
 		const action = resolveAction(e);
 		if (!action) return;
 		const items = this.taskItems();

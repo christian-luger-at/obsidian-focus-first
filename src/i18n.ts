@@ -70,6 +70,20 @@ interface Translations {
 			scheduled: string;
 			tags: string;
 			note: string;
+			why: string;
+			whyOverride: string;
+			whyUrgent: string;
+			whyNotUrgent: string;
+			whyImportant: string;
+			whyNotImportant: string;
+			causeOverdue: string;
+			causeToday: string;
+			causeWithin: string;
+			causeNoDue: string;
+			causeBeyond: string;
+			causePriority: string;
+			causeNoPriority: string;
+			causePriorityNotImportant: string;
 		};
 		quadrants: {
 			do: { title: string; subtitle: string; emptyState: string };
@@ -214,6 +228,20 @@ const translations: Record<Lang, Translations> = {
 				scheduled: 'Scheduled',
 				tags: 'Tags',
 				note: 'Note',
+				why: 'Why here',
+				whyOverride: 'Pinned by {tag} — overrides the automatic sort',
+				whyUrgent: 'Urgent',
+				whyNotUrgent: 'Not urgent',
+				whyImportant: 'Important',
+				whyNotImportant: 'Not important',
+				causeOverdue: 'overdue by {days} d',
+				causeToday: 'due today',
+				causeWithin: 'due in {days} d (≤ {threshold} d)',
+				causeNoDue: 'no due date',
+				causeBeyond: 'due in {days} d (> {threshold} d threshold)',
+				causePriority: 'priority {priority}',
+				causeNoPriority: 'no priority',
+				causePriorityNotImportant: 'priority {priority} not in important list',
 			},
 			quadrants: {
 				do:       { title: 'Do',       subtitle: 'Urgent · Important',        emptyState: 'Nothing urgent right now' },
@@ -401,6 +429,20 @@ const translations: Record<Lang, Translations> = {
 				scheduled: 'Geplant',
 				tags: 'Tags',
 				note: 'Notiz',
+				why: 'Warum hier',
+				whyOverride: 'Angeheftet durch {tag} — überschreibt die Automatik',
+				whyUrgent: 'Dringend',
+				whyNotUrgent: 'Nicht dringend',
+				whyImportant: 'Wichtig',
+				whyNotImportant: 'Nicht wichtig',
+				causeOverdue: '{days} d überfällig',
+				causeToday: 'heute fällig',
+				causeWithin: 'fällig in {days} d (≤ {threshold} d)',
+				causeNoDue: 'kein Fälligkeitsdatum',
+				causeBeyond: 'fällig in {days} d (> {threshold} d Schwelle)',
+				causePriority: 'Priorität {priority}',
+				causeNoPriority: 'keine Priorität',
+				causePriorityNotImportant: 'Priorität {priority} nicht in Wichtig-Liste',
 			},
 			quadrants: {
 				do:       { title: 'Erledigen',  subtitle: 'Dringend · Wichtig',             emptyState: 'Aktuell nichts Dringendes' },

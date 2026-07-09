@@ -724,6 +724,23 @@ describe('task item actions in the matrix', () => {
 		expect(container.findAllByClass('focus-first-detail-value').length).toBeGreaterThanOrEqual(5);
 	});
 
+	it('the detail popover explains why a task is urgent and important', () => {
+		const { container } = renderSingleTaskMatrix(); // due today + priority 🔺
+		const why = container.findByClass('focus-first-detail-why');
+		expect(why).toBeDefined();
+		expect(why!.text).toContain('Urgent');
+		expect(why!.text).toContain('due today');
+		expect(why!.text).toContain('Important');
+	});
+
+	it('the detail popover explains a manual override tag', () => {
+		const { container } = renderSingleTaskMatrix(
+			{ dueDate: undefined, priority: undefined, tags: ['#eliminate'] },
+		);
+		const why = container.findByClass('focus-first-detail-why');
+		expect(why!.text).toContain('#eliminate');
+	});
+
 	it('the postpone menu offers today/tomorrow for a task with no due date', () => {
 		const { container } = renderSingleTaskMatrix({ dueDate: undefined });
 		clearCreatedMenus();

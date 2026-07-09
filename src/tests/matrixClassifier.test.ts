@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { classifyTasks, Quadrant } from '../matrixClassifier';
+import { classifyTasks, explainTask, Quadrant } from '../matrixClassifier';
 import { FocusFirstSettings, DEFAULT_SETTINGS } from '../settings';
 import { TaskItem } from '../taskScanner';
 
@@ -345,5 +345,60 @@ describe('MatrixTask shape', () => {
 			const result = classifyTasks([task], settings);
 			expect(result[key][0]?.quadrant).toBe(key);
 		}
+	});
+});
+
+// ---------------------------------------------------------------------------
+// explainTask() — the "why here" reason
+// ---------------------------------------------------------------------------
+
+describe('explainTask()', () => {
+	const settings = makeSettings({ urgencyDays: 3, importantPriorities: ['🔺', '⏫'] });
+
+	it('reports no due date and no priority', () => {
+		const r = explainTask(makeTask(), settings);
+		expect(r.urgent).toBe(false);
+		expect(r.urgencyCause).toBe('no-due');
+		expect(r.important).toBe(false);
+		expect(r.priority).toBeUndefined();
+		expect(r.override).toBeUndefined();
+	});
+
+	it('reports overdue with a negative day count and an important priority', () => {
+		const r = explainTask(makeTask({ dueDate: daysFromToday(-5), priority: '🔺' }), settings);
+		expect(r.urgent).toBe(true);
+		expect(r.urgencyCause).toBe('overdue');
+		expect(r.daysUntilDue).toBe(-5);
+		expect(r.important).toBe(true);
+	});
+
+	it('reports due today', () => {
+		const r = explainTask(makeTask({ dueDate: daysFromToday(0) }), settings);
+		expect(r.urgencyCause).toBe('due-today');
+		expect(r.urgent).toBe(true);
+	});
+
+	it('reports within-threshold for a due date inside the urgency window', () => {
+		const r = explainTask(makeTask({ dueDate: daysFromToday(2) }), settings);
+		expect(r.urgencyCause).toBe('within-threshold');
+		expect(r.daysUntilDue).toBe(2);
+		expect(r.urgent).toBe(true);
+	});
+
+	it('reports beyond-threshold (not urgent) for a due date past the window', () => {
+		const r = explainTask(makeTask({ dueDate: daysFromToday(10) }), settings);
+		expect(r.urgencyCause).toBe('beyond-threshold');
+		expect(r.urgent).toBe(false);
+	});
+
+	it('reports a priority that is not in the important list', () => {
+		const r = explainTask(makeTask({ priority: '🔽' }), settings);
+		expect(r.important).toBe(false);
+		expect(r.priority).toBe('🔽');
+	});
+
+	it('reports a manual override tag', () => {
+		const r = explainTask(makeTask({ tags: ['#do'] }), settings);
+		expect(r.override).toBe('do');
 	});
 });

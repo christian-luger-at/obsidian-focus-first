@@ -547,6 +547,11 @@
 	color: var(--text-muted);
 }
 
+/* The "why here" reason reads as a quiet explanation, not hard data. */
+.focus-first-detail-why {
+	color: var(--text-muted);
+}
+
 .focus-first-task-actions {
 	display: flex;
 	gap: var(--size-4-2);

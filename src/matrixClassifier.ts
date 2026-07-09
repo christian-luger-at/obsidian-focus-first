@@ -15,19 +15,49 @@ export interface MatrixQuadrants {
 	eliminate: MatrixTask[]; // not urgent + not important
 }
 
-function isUrgent(task: TaskItem, urgencyDays: number): boolean {
-	if (!task.dueDate) return false;
+export type UrgencyCause = 'no-due' | 'overdue' | 'due-today' | 'within-threshold' | 'beyond-threshold';
+
+/** The reason a task lands where it does — derived from the same logic that classifies. */
+export interface ClassificationReason {
+	override?: Quadrant;          // set when a manual quadrant tag placed it
+	urgent: boolean;
+	urgencyCause: UrgencyCause;
+	daysUntilDue?: number;        // present when the task has a due date (negative = overdue)
+	important: boolean;
+	priority?: string;            // the task's priority signifier, if any
+}
+
+/** Urgency plus the reason for it, computed once and reused everywhere. */
+function urgency(task: TaskItem, urgencyDays: number): { urgent: boolean; cause: UrgencyCause; days?: number } {
+	if (!task.dueDate) return { urgent: false, cause: 'no-due' };
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
 	const due = new Date(task.dueDate);
 	due.setHours(0, 0, 0, 0);
-	const diffDays = Math.floor((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-	return diffDays <= urgencyDays;
+	const days = Math.floor((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+	if (days < 0)             return { urgent: true, cause: 'overdue', days };
+	if (days === 0)           return { urgent: true, cause: 'due-today', days };
+	if (days <= urgencyDays)  return { urgent: true, cause: 'within-threshold', days };
+	return { urgent: false, cause: 'beyond-threshold', days };
 }
 
 function isImportant(task: TaskItem, settings: FocusFirstSettings): boolean {
 	if (!task.priority) return false;
 	return settings.importantPriorities.includes(task.priority);
+}
+
+/** Explains why a task is (or would be) placed where it is. Reuses the classify logic. */
+export function explainTask(task: TaskItem, settings: FocusFirstSettings): ClassificationReason {
+	const override = tagOverride(task, settings.quadrants);
+	const u = urgency(task, settings.urgencyDays);
+	return {
+		override,
+		urgent: u.urgent,
+		urgencyCause: u.cause,
+		daysUntilDue: u.days,
+		important: isImportant(task, settings),
+		priority: task.priority,
+	};
 }
 
 function tagOverride(task: TaskItem, quadrants: QuadrantConfig): Quadrant | undefined {
@@ -53,7 +83,7 @@ export function classifyTasks(tasks: TaskItem[], settings: FocusFirstSettings): 
 		if (manual) {
 			quadrant = manual;
 		} else {
-			const urgent = isUrgent(task, settings.urgencyDays);
+			const urgent = urgency(task, settings.urgencyDays).urgent;
 			const important = isImportant(task, settings);
 			if (urgent && important)       quadrant = 'do';
 			else if (!urgent && important) quadrant = 'schedule';

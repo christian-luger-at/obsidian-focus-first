@@ -1,5 +1,5 @@
 import { App, TFile, MarkdownView, Menu, setIcon } from 'obsidian';
-import { MatrixTask } from './matrixClassifier';
+import { MatrixTask, ClassificationReason, explainTask } from './matrixClassifier';
 import { TaskItem, isFutureTask } from './taskScanner';
 import { FocusFirstSettings } from './settings';
 import { getTasksApi } from './tasksPlugin';
@@ -239,6 +239,11 @@ export function renderTaskItem(
 		row.createDiv({ cls: 'focus-first-detail-label', text: label });
 		build(row.createDiv({ cls: 'focus-first-detail-value' }));
 	};
+	// Why-here reason first, so the automatic classification is transparent.
+	addRow(String(labels.why), (v) => {
+		v.setText(classificationReasonText(task, settings));
+		v.addClass('focus-first-detail-why');
+	});
 	const priority = task.priority;
 	if (priority) addRow(String(labels.priority), (v) => v.setText(priorityNames[priority] ?? priority));
 	if (task.dueDate) {
@@ -326,6 +331,37 @@ export function renderTaskItem(
 	li.addEventListener('mouseleave', scheduleHide);
 	detail.addEventListener('mouseenter', () => { window.clearTimeout(hideTimer); });
 	detail.addEventListener('mouseleave', scheduleHide);
+}
+
+/**
+ * One-line, localised reason a task sits in its quadrant, built from the same
+ * classification logic (explainTask) so the explanation never drifts from the
+ * placement. A manual quadrant tag short-circuits to an override message.
+ */
+function classificationReasonText(task: MatrixTask, settings: FocusFirstSettings): string {
+	const d = t().view.detail;
+	const r: ClassificationReason = explainTask(task, settings);
+	if (r.override) {
+		const tag = settings.quadrants[r.override].tag.trim();
+		return String(d.whyOverride).replace('{tag}', tag);
+	}
+	const threshold = String(settings.urgencyDays);
+	const days = r.daysUntilDue ?? 0;
+	let urgencyText: string;
+	switch (r.urgencyCause) {
+		case 'overdue':          urgencyText = String(d.causeOverdue).replace('{days}', String(Math.abs(days))); break;
+		case 'due-today':        urgencyText = String(d.causeToday); break;
+		case 'within-threshold': urgencyText = String(d.causeWithin).replace('{days}', String(days)).replace('{threshold}', threshold); break;
+		case 'beyond-threshold': urgencyText = String(d.causeBeyond).replace('{days}', String(days)).replace('{threshold}', threshold); break;
+		default:                 urgencyText = String(d.causeNoDue); break;
+	}
+	let importanceText: string;
+	if (r.important) importanceText = String(d.causePriority).replace('{priority}', r.priority ?? '');
+	else if (r.priority) importanceText = String(d.causePriorityNotImportant).replace('{priority}', r.priority);
+	else importanceText = String(d.causeNoPriority);
+	const urgentPrefix = String(r.urgent ? d.whyUrgent : d.whyNotUrgent);
+	const importantPrefix = String(r.important ? d.whyImportant : d.whyNotImportant);
+	return `${urgentPrefix}: ${urgencyText} · ${importantPrefix}: ${importanceText}`;
 }
 
 /**

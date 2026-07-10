@@ -775,6 +775,11 @@ describe('task item actions in the matrix', () => {
 		expect(why!.text).toContain('#eliminate');
 	});
 
+	it('omits the why-here row when the setting is turned off', () => {
+		const { container } = renderSingleTaskMatrix({}, { showWhyHere: false });
+		expect(container.findByClass('focus-first-detail-why')).toBeUndefined();
+	});
+
 	it('the postpone menu offers today/tomorrow for a task with no due date', () => {
 		const { container } = renderSingleTaskMatrix({ dueDate: undefined });
 		clearCreatedMenus();

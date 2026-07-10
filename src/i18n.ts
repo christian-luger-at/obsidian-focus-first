@@ -106,6 +106,7 @@ interface Translations {
 		setting1: { name: string; desc: string; placeholder: string };
 		appearanceHeading: string;
 		fontSize: { name: string; desc: string };
+		showWhyHere: { name: string; desc: string };
 		taskSourcesHeading: string;
 		taskScope: {
 			name: string;
@@ -284,6 +285,10 @@ const translations: Record<Lang, Translations> = {
 			fontSize: {
 				name: 'Font size',
 				desc: 'Adjust the text size used throughout the Focus First view.',
+			},
+			showWhyHere: {
+				name: 'Show "why here" reason',
+				desc: 'Show a line in the task detail popover explaining why a task landed in its quadrant (urgency/importance or a manual tag).',
 			},
 			taskSourcesHeading: 'Task Sources',
 			taskScope: {
@@ -499,6 +504,10 @@ const translations: Record<Lang, Translations> = {
 			fontSize: {
 				name: 'Schriftgröße',
 				desc: 'Passt die Textgröße in der gesamten Focus-First-Ansicht an.',
+			},
+			showWhyHere: {
+				name: '„Warum hier"-Begründung anzeigen',
+				desc: 'Zeigt im Detail-Popover eine Zeile, die erklärt, warum eine Aufgabe in ihrem Quadranten gelandet ist (Dringlichkeit/Wichtigkeit oder ein manuelles Tag).',
 			},
 			taskSourcesHeading: 'Aufgabenquellen',
 			taskScope: {

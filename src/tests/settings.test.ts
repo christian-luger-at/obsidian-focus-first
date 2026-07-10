@@ -319,6 +319,7 @@ describe('loadSettings — merges persisted data with defaults', () => {
 			futureTasks: 'hide',
 			quickAddTarget: 'active',
 			quickAddInbox: 'Tasks/Inbox.md',
+			showWhyHere: false,
 			fontSize: 120,
 			tasksPluginWarningDismissed: true,
 		};

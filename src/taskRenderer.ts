@@ -238,11 +238,14 @@ export function renderTaskItem(
 		meta.createDiv({ cls: 'focus-first-detail-label', text: label });
 		build(meta.createDiv({ cls: 'focus-first-detail-value' }));
 	};
-	// Why-here reason first, so the automatic classification is transparent.
-	addRow(String(labels.why), (v) => {
-		v.setText(classificationReasonText(task, settings));
-		v.addClass('focus-first-detail-why');
-	});
+	// Why-here reason first, so the automatic classification is transparent
+	// (unless the user has turned it off in settings).
+	if (settings.showWhyHere) {
+		addRow(String(labels.why), (v) => {
+			v.setText(classificationReasonText(task, settings));
+			v.addClass('focus-first-detail-why');
+		});
+	}
 	const priority = task.priority;
 	if (priority) addRow(String(labels.priority), (v) => v.setText(priorityNames[priority] ?? priority));
 	if (task.dueDate) {

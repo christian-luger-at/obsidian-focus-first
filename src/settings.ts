@@ -55,6 +55,8 @@ export interface FocusFirstSettings {
 	futureTasks: FutureTasksMode;
 	quickAddTarget: QuickAddTarget;
 	quickAddInbox: string;
+	/** Whether the detail popover shows the "why here" classification reason. */
+	showWhyHere: boolean;
 	fontSize: number;
 	/** Set once the user dismisses the "Tasks plugin not enabled" notice. */
 	tasksPluginWarningDismissed: boolean;
@@ -78,6 +80,7 @@ export const DEFAULT_SETTINGS: FocusFirstSettings = {
 	futureTasks: 'show',
 	quickAddTarget: 'inbox',
 	quickAddInbox: '',
+	showWhyHere: true,
 	fontSize: 100,
 	tasksPluginWarningDismissed: false,
 };
@@ -235,6 +238,19 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 							this.plugin.settings.fontSize = value;
 							await this.plugin.saveSettings();
 							this.plugin.applyFontSize();
+						}),
+				);
+
+			new Setting(body)
+				.setName(t().settings.showWhyHere.name)
+				.setDesc(t().settings.showWhyHere.desc)
+				.addToggle((toggle) =>
+					toggle
+						.setValue(this.plugin.settings.showWhyHere)
+						.onChange(async (value) => {
+							this.plugin.settings.showWhyHere = value;
+							await this.plugin.saveSettings();
+							this.plugin.refreshViews();
 						}),
 				);
 		});

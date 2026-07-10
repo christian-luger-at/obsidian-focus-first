@@ -141,8 +141,19 @@
 	margin: 0 0 var(--size-4-3);
 }
 
-/* Refresh is a plain secondary button — the focus-first-refresh-btn class is
-   kept only as an identification hook. */
+/* Refresh is a plain secondary button (native button chrome, so it stays
+   clearly visible) with just a centred icon. */
+.focus-first-refresh-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+}
+
+.focus-first-refresh-btn svg {
+	width: var(--icon-s, 18px);
+	height: var(--icon-s, 18px);
+}
 
 /* ── Search bar ──────────────────────────────────────────── */
 

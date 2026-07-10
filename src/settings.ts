@@ -77,7 +77,7 @@ export const DEFAULT_SETTINGS: FocusFirstSettings = {
 	hideTag: '#hide',
 	futureTasks: 'show',
 	quickAddTarget: 'inbox',
-	quickAddInbox: 'Inbox.md',
+	quickAddInbox: '',
 	fontSize: 100,
 	tasksPluginWarningDismissed: false,
 };

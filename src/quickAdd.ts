@@ -24,6 +24,15 @@ export function buildTaskLine(input: string, tags: string[] = []): string {
 	return `- [ ] ${[body, ...extra].join(' ').trim()}`;
 }
 
+/**
+ * Whether a quick-added task has a place to go without asking: the `active` mode
+ * needs no file, while the `inbox` mode needs a configured inbox note. Used to
+ * decide if the first-use inbox-setup dialog should appear (issue #24).
+ */
+export function isInboxConfigured(settings: FocusFirstSettings): boolean {
+	return settings.quickAddTarget !== 'inbox' || settings.quickAddInbox.trim() !== '';
+}
+
 /** Normalizes an inbox path: falls back to `Inbox.md` and ensures a `.md` suffix. */
 export function normalizeInboxPath(path: string): string {
 	const trimmed = path.trim() || 'Inbox.md';

@@ -16,6 +16,13 @@ interface Translations {
 		focus: string;
 		addedNotice: string;
 		noActiveNote: string;
+		inboxSetup: {
+			title: string;
+			description: string;
+			placeholder: string;
+			save: string;
+			cancel: string;
+		};
 	};
 	view: {
 		title: string;
@@ -178,6 +185,13 @@ const translations: Record<Lang, Translations> = {
 			focus: 'Focus',
 			addedNotice: 'Task added',
 			noActiveNote: 'No active note — add one to the inbox instead, or open a note.',
+			inboxSetup: {
+				title: 'Where should new tasks go?',
+				description: 'Focus First saves quick-added tasks to an inbox note. Choose the note to use — it will be created if it doesn\'t exist yet. You can change this any time under the plugin settings.',
+				placeholder: 'e.g. Inbox.md',
+				save: 'Save',
+				cancel: 'Cancel',
+			},
 		},
 		view: {
 			title: 'Focus First',
@@ -383,6 +397,13 @@ const translations: Record<Lang, Translations> = {
 			focus: 'Fokus',
 			addedNotice: 'Aufgabe hinzugefügt',
 			noActiveNote: 'Keine aktive Notiz — stattdessen in die Inbox einfügen oder eine Notiz öffnen.',
+			inboxSetup: {
+				title: 'Wohin sollen neue Aufgaben?',
+				description: 'Focus First speichert schnell erfasste Aufgaben in einer Inbox-Notiz. Wähle die zu verwendende Notiz — sie wird angelegt, falls sie noch nicht existiert. Du kannst das jederzeit in den Plugin-Einstellungen ändern.',
+				placeholder: 'z. B. Inbox.md',
+				save: 'Speichern',
+				cancel: 'Abbrechen',
+			},
 		},
 		view: {
 			title: 'Focus First',

@@ -126,6 +126,14 @@
 .focus-first-quickadd-controls {
 	display: flex;
 	justify-content: flex-end;
+	gap: var(--size-2-3);
+}
+
+/* Explanatory text in the first-use inbox setup dialog. */
+.focus-first-inbox-setup-desc {
+	color: var(--text-muted);
+	line-height: 1.5;
+	margin: 0 0 var(--size-4-3);
 }
 
 /* Refresh is a plain secondary button — the focus-first-refresh-btn class is

@@ -9,7 +9,8 @@ import { FocusFirstView, FOCUS_FIRST_VIEW_TYPE } from './TaskView';
 import { WrappedTasksBlock, parseTasksBlock } from './wrappedTasksBlock';
 import { FocusDataBlock, isFocusSection } from './focusDataBlock';
 import { QuickAddModal } from './quickAddModal';
-import { commitTask } from './quickAdd';
+import { InboxSetupModal } from './inboxSetupModal';
+import { commitTask, isInboxConfigured } from './quickAdd';
 import { getTasksCreateApi, TasksCreateApi } from './tasksPlugin';
 
 export default class FocusFirstPlugin extends Plugin {
@@ -66,6 +67,16 @@ export default class FocusFirstPlugin extends Plugin {
 	 * configured target. Otherwise falls back to a simple built-in dialog.
 	 */
 	openQuickAdd() {
+		// On the first quick-add with no inbox configured, ask where tasks should
+		// go (issue #24), then continue once the target is saved.
+		if (!isInboxConfigured(this.settings)) {
+			new InboxSetupModal(this, () => this.startQuickAdd()).open();
+			return;
+		}
+		this.startQuickAdd();
+	}
+
+	private startQuickAdd() {
 		const createApi = getTasksCreateApi(this.app);
 		if (createApi) {
 			void this.quickAddViaTasks(createApi);

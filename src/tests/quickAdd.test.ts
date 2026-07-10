@@ -9,7 +9,7 @@ vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 
 const { TFile } = await import('./__mocks__/obsidian');
 const { DEFAULT_SETTINGS } = await import('../settings');
-const { buildTaskLine, normalizeInboxPath, resolveTargetPath, appendTaskLine, commitTask } = await import('../quickAdd');
+const { buildTaskLine, normalizeInboxPath, resolveTargetPath, appendTaskLine, commitTask, isInboxConfigured } = await import('../quickAdd');
 
 import type { FocusFirstSettings } from '../settings';
 
@@ -51,6 +51,21 @@ describe('normalizeInboxPath', () => {
 
 	it('falls back to Inbox.md for an empty path', () => {
 		expect(normalizeInboxPath('   ')).toBe('Inbox.md');
+	});
+});
+
+describe('isInboxConfigured', () => {
+	it('is false in inbox mode when no inbox note is set', () => {
+		expect(isInboxConfigured(settings({ quickAddTarget: 'inbox', quickAddInbox: '' }))).toBe(false);
+		expect(isInboxConfigured(settings({ quickAddTarget: 'inbox', quickAddInbox: '   ' }))).toBe(false);
+	});
+
+	it('is true in inbox mode once an inbox note is set', () => {
+		expect(isInboxConfigured(settings({ quickAddTarget: 'inbox', quickAddInbox: 'Inbox.md' }))).toBe(true);
+	});
+
+	it('is true in active mode regardless of the inbox note (no file needed)', () => {
+		expect(isInboxConfigured(settings({ quickAddTarget: 'active', quickAddInbox: '' }))).toBe(true);
 	});
 });
 

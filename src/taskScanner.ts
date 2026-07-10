@@ -92,6 +92,20 @@ export async function scanTasks(app: App, settings: FocusFirstSettings): Promise
 }
 
 /**
+ * Whether a task is currently hidden from the matrix. The hide tag is the single
+ * switch: with no return date the hide is indefinite; with a future start (🛫) or
+ * scheduled (⏳) date it is "hidden until" that date and reappears automatically
+ * once it passes (issue #23). Independent of the global Future Tasks setting.
+ */
+export function isHiddenTask(task: TaskItem, settings: FocusFirstSettings, now: Date = new Date()): boolean {
+	const hideTag = settings.hideTag.trim().toLowerCase();
+	if (!hideTag) return false;
+	if (!task.tags.some((tag) => tag.toLowerCase() === hideTag)) return false;
+	if (!task.startDate && !task.scheduledDate) return true;
+	return isFutureTask(task, now);
+}
+
+/**
  * Whether a task is not actionable yet: its start (🛫) or scheduled (⏳) date is
  * after today. The due date is deliberately ignored here — it drives urgency and
  * classification, not "is this ready to work on".

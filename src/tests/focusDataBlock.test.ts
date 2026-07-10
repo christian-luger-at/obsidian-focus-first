@@ -7,7 +7,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('obsidian', () => import('./__mocks__/obsidian'));
-vi.mock('../taskScanner', () => ({ scanTasks: vi.fn(async () => []) }));
+vi.mock('../taskScanner', async (importActual) => {
+	const actual = await importActual<typeof import('../taskScanner')>();
+	return { ...actual, scanTasks: vi.fn(async () => []) };
+});
 
 const { FocusDataBlock, isFocusSection } = await import('../focusDataBlock');
 const { DEFAULT_SETTINGS } = await import('../settings');

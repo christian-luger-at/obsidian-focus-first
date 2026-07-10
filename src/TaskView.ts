@@ -1,6 +1,6 @@
 import { ItemView, WorkspaceLeaf, TFile, setIcon, debounce } from 'obsidian';
 import FocusFirstPlugin from './main';
-import { scanTasks, TaskItem, isFutureTask } from './taskScanner';
+import { scanTasks, TaskItem, isFutureTask, isHiddenTask } from './taskScanner';
 import { classifyTasks, MatrixTask, Quadrant } from './matrixClassifier';
 import { isTasksPluginEnabled } from './tasksPlugin';
 import { t } from './i18n';
@@ -237,11 +237,10 @@ export class FocusFirstView extends ItemView {
 		const focusTag = this.plugin.settings.focusTag.trim().toLowerCase();
 		if (!focusTag) { container.classList.add('focus-first-hidden'); return; }
 
-		const hideTag = this.plugin.settings.hideTag.trim().toLowerCase();
 		const focusTasks = this.tasks.filter(
 			(t) => !t.completed
 				&& t.tags.some((tag) => tag.toLowerCase() === focusTag)
-				&& (!hideTag || !t.tags.some((tag) => tag.toLowerCase() === hideTag))
+				&& !isHiddenTask(t, this.plugin.settings)
 				&& (this.plugin.settings.futureTasks !== 'hide' || !isFutureTask(t)),
 		);
 
@@ -273,10 +272,9 @@ export class FocusFirstView extends ItemView {
 		container.empty();
 
 		const query = this.searchQuery.toLowerCase();
-		const hideTag = this.plugin.settings.hideTag.trim().toLowerCase();
 		const open = this.tasks
 			.filter((task) => !task.completed)
-			.filter((task) => !hideTag || !task.tags.some((tag) => tag.toLowerCase() === hideTag))
+			.filter((task) => !isHiddenTask(task, this.plugin.settings))
 			.filter((task) => {
 				if (!query) return true;
 				const text = task.line.replace(/^[\s\-*]*\[.\]\s*/, '').toLowerCase();

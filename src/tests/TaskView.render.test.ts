@@ -605,16 +605,54 @@ describe('task item actions in the matrix', () => {
 		expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), '- [ ] Sample task #focus');
 	});
 
-	it('the hide button adds the hide tag', async () => {
+	it('the hide menu hides indefinitely with the plain Hide option', async () => {
 		const { container, app } = renderSingleTaskMatrix({}, { focusTag: '', hideTag: '#hide' });
 		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
 		app.vault.read = vi.fn(async () => '- [ ] Sample task');
+		clearCreatedMenus();
 
 		container.findByClass('focus-first-hide-btn')?.dispatch('click', { stopPropagation: () => {} });
+		const menu = createdMenus[createdMenus.length - 1];
+		menu?.items.find((i) => i.title === 'Hide task')?.callback?.();
 		await Promise.resolve();
 		await Promise.resolve();
 
 		expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), '- [ ] Sample task #hide');
+	});
+
+	it('the hide menu "hide until next week" adds the hide tag and a start date', async () => {
+		const { container, app } = renderSingleTaskMatrix({}, { focusTag: '', hideTag: '#hide' });
+		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
+		app.vault.read = vi.fn(async () => '- [ ] Sample task');
+		clearCreatedMenus();
+
+		container.findByClass('focus-first-hide-btn')?.dispatch('click', { stopPropagation: () => {} });
+		const menu = createdMenus[createdMenus.length - 1];
+		expect(menu?.items.map((i) => i.title)).toContain('Hide until next week');
+		menu?.items.find((i) => i.title === 'Hide until next week')?.callback?.();
+		await Promise.resolve();
+		await Promise.resolve();
+
+		const iso = new Date(); iso.setDate(iso.getDate() + 7);
+		const y = iso.getFullYear();
+		const m = String(iso.getMonth() + 1).padStart(2, '0');
+		const d = String(iso.getDate()).padStart(2, '0');
+		expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), `- [ ] Sample task 🛫 ${y}-${m}-${d} #hide`);
+	});
+
+	it('the hide menu offers tomorrow and Monday snooze options that write a start date', async () => {
+		for (const title of ['Hide until tomorrow', 'Hide until Monday']) {
+			const { container, app } = renderSingleTaskMatrix({}, { focusTag: '', hideTag: '#hide' });
+			app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
+			app.vault.read = vi.fn(async () => '- [ ] Sample task');
+			clearCreatedMenus();
+			container.findByClass('focus-first-hide-btn')?.dispatch('click', { stopPropagation: () => {} });
+			const menu = createdMenus[createdMenus.length - 1];
+			menu?.items.find((i) => i.title === title)?.callback?.();
+			await Promise.resolve();
+			await Promise.resolve();
+			expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), expect.stringMatching(/🛫 \d{4}-\d{2}-\d{2} #hide$/));
+		}
 	});
 
 	it('marks focused tasks with the is-focused class', () => {

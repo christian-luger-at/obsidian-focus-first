@@ -4,6 +4,7 @@ import {
 	addDaysToIso,
 	setDueDate,
 	shiftDueDate,
+	setStartDate,
 	setPriority,
 } from '../tasksFormat';
 
@@ -87,6 +88,23 @@ describe('setDueDate', () => {
 
 	it('leaves non-task lines unchanged', () => {
 		expect(setDueDate('Just text', '2026-07-10')).toBe('Just text');
+	});
+});
+
+describe('setStartDate', () => {
+	it('appends a start date when there is none', () => {
+		expect(setStartDate('- [ ] Task #do', '2026-07-10')).toBe('- [ ] Task #do 🛫 2026-07-10');
+	});
+
+	it('replaces an existing start date, preserving other tokens', () => {
+		expect(setStartDate('- [ ] Task 🛫 2026-07-05 📅 2026-07-20', '2026-07-10')).toBe(
+			'- [ ] Task 🛫 2026-07-10 📅 2026-07-20',
+		);
+	});
+
+	it('preserves indentation and leaves non-task lines unchanged', () => {
+		expect(setStartDate('\t- [ ] Sub', '2026-07-10')).toBe('\t- [ ] Sub 🛫 2026-07-10');
+		expect(setStartDate('Just text', '2026-07-10')).toBe('Just text');
 	});
 });
 

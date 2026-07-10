@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { scanTasks, isFutureTask, TaskItem } from '../taskScanner';
+import { scanTasks, isFutureTask, isHiddenTask, TaskItem } from '../taskScanner';
 import { DEFAULT_SETTINGS, FocusFirstSettings } from '../settings';
 import { TFile } from './__mocks__/obsidian';
 
@@ -162,6 +162,43 @@ describe('isFutureTask', () => {
 	it('is false when start/scheduled dates are today or past', () => {
 		expect(isFutureTask(make({ startDate: new Date('2026-07-07') }), NOW)).toBe(false);
 		expect(isFutureTask(make({ scheduledDate: new Date('2026-06-01') }), NOW)).toBe(false);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// isHiddenTask (issue #23) — hide, and hide-until via a return date
+// ---------------------------------------------------------------------------
+
+describe('isHiddenTask', () => {
+	const NOW = new Date('2026-07-07T12:00:00');
+	const settings = makeSettings({ hideTag: '#hide' });
+	function make(overrides: Partial<TaskItem>): TaskItem {
+		return { file: new TFile('a.md') as never, line: '- [ ] Task', lineNumber: 0, completed: false, tags: [], ...overrides };
+	}
+
+	it('is false when the task has no hide tag', () => {
+		expect(isHiddenTask(make({ tags: [] }), settings, NOW)).toBe(false);
+	});
+
+	it('hides indefinitely when the hide tag has no return date', () => {
+		expect(isHiddenTask(make({ tags: ['#hide'] }), settings, NOW)).toBe(true);
+	});
+
+	it('stays hidden while the return date (🛫) is still in the future', () => {
+		expect(isHiddenTask(make({ tags: ['#hide'], startDate: new Date('2026-08-01') }), settings, NOW)).toBe(true);
+	});
+
+	it('reappears once the return date has passed', () => {
+		expect(isHiddenTask(make({ tags: ['#hide'], startDate: new Date('2026-07-01') }), settings, NOW)).toBe(false);
+		expect(isHiddenTask(make({ tags: ['#hide'], startDate: new Date('2026-07-07') }), settings, NOW)).toBe(false);
+	});
+
+	it('honours a future scheduled date (⏳) as the return date too', () => {
+		expect(isHiddenTask(make({ tags: ['#hide'], scheduledDate: new Date('2026-08-01') }), settings, NOW)).toBe(true);
+	});
+
+	it('is false when no hide tag is configured', () => {
+		expect(isHiddenTask(make({ tags: ['#hide'] }), makeSettings({ hideTag: '' }), NOW)).toBe(false);
 	});
 });
 

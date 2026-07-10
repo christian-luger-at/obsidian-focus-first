@@ -63,6 +63,9 @@ interface Translations {
 			postponePlusWeek: string;
 			dueToday: string;
 			dueTomorrow: string;
+			hideUntilTomorrow: string;
+			hideUntilNextWeek: string;
+			hideUntilMonday: string;
 			priorityNone: string;
 			priorityHighest: string;
 			priorityHigh: string;
@@ -232,6 +235,9 @@ const translations: Record<Lang, Translations> = {
 				postponePlusWeek: '+1 week',
 				dueToday: 'Due today',
 				dueTomorrow: 'Due tomorrow',
+				hideUntilTomorrow: 'Hide until tomorrow',
+				hideUntilNextWeek: 'Hide until next week',
+				hideUntilMonday: 'Hide until Monday',
 				priorityNone: 'No priority',
 				priorityHighest: '🔺 Highest',
 				priorityHigh: '⏫ High',
@@ -444,6 +450,9 @@ const translations: Record<Lang, Translations> = {
 				postponePlusWeek: '+1 Woche',
 				dueToday: 'Fällig heute',
 				dueTomorrow: 'Fällig morgen',
+				hideUntilTomorrow: 'Ausblenden bis morgen',
+				hideUntilNextWeek: 'Ausblenden bis nächste Woche',
+				hideUntilMonday: 'Ausblenden bis Montag',
 				priorityNone: 'Keine Priorität',
 				priorityHighest: '🔺 Höchste',
 				priorityHigh: '⏫ Hoch',

@@ -66,6 +66,7 @@ export function canonicalizeTaskLine(line: string): string {
 const TASK_LINE_RE = /^(\s*[-*+]\s+\[.\]\s*)(.*)$/u;
 // A due date token and its ISO value.
 const DUE_RE = /📅\s*(\d{4}-\d{2}-\d{2})/u;
+const START_RE = /🛫\s*(\d{4}-\d{2}-\d{2})/u;
 // The first metadata signifier a priority sorts before (recurrence or any date).
 const FIRST_META_RE = /🔁|[➕🛫⏳📅❌✅]/u;
 
@@ -91,6 +92,19 @@ export function setDueDate(line: string, iso: string): string {
 		return line.replace(DUE_RE, `📅 ${iso}`);
 	}
 	return `${line.replace(/[ \t]+$/, '')} 📅 ${iso}`;
+}
+
+/**
+ * Sets the start date (🛫) on a task line to `iso`, replacing an existing start
+ * date or appending one. Used by "hide until" to give a hidden task a return
+ * date. Indentation and other tokens are preserved; non-task lines are unchanged.
+ */
+export function setStartDate(line: string, iso: string): string {
+	if (!TASK_LINE_RE.test(line)) return line;
+	if (START_RE.test(line)) {
+		return line.replace(START_RE, `🛫 ${iso}`);
+	}
+	return `${line.replace(/[ \t]+$/, '')} 🛫 ${iso}`;
 }
 
 /**

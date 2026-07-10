@@ -12,7 +12,7 @@ vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 const { FocusFirstView } = await import('../TaskView');
 const { DEFAULT_SETTINGS } = await import('../settings');
 const { TFile } = await import('./__mocks__/obsidian');
-const { removeTagFromLine, toggleFocusTagLine, toggleHideTagLine, completeTaskLine } = await import('../taskRenderer');
+const { removeTagFromLine, toggleFocusTagLine, completeTaskLine } = await import('../taskRenderer');
 
 import type { MatrixTask } from '../matrixClassifier';
 import type { FocusFirstSettings } from '../settings';
@@ -171,22 +171,6 @@ describe('toggleFocusTagLine', () => {
 		const { plugin, app } = makeView({}, vault);
 		await toggleFocusTagLine(app as never, plugin.settings, 'missing.md', 0, '#focus', true);
 		expect(vault.modify).not.toHaveBeenCalled();
-	});
-});
-
-describe('toggleHideTagLine', () => {
-	it('adds the hide tag when not already present', async () => {
-		const vault = makeFakeVault({ 'a.md': '- [ ] Task one' });
-		const { plugin, app } = makeView({ hideTag: '#hide' }, vault);
-		await toggleHideTagLine(app as never, plugin.settings, 'a.md', 0, '#hide');
-		expect(vault._store['a.md']).toBe('- [ ] Task one #hide');
-	});
-
-	it('removes the hide tag when already present', async () => {
-		const vault = makeFakeVault({ 'a.md': '- [ ] Task one #hide' });
-		const { plugin, app } = makeView({ hideTag: '#hide' }, vault);
-		await toggleHideTagLine(app as never, plugin.settings, 'a.md', 0, '#hide');
-		expect(vault._store['a.md']).toBe('- [ ] Task one');
 	});
 });
 

@@ -3,7 +3,7 @@ import { MatrixTask, ClassificationReason, explainTask } from './matrixClassifie
 import { TaskItem, isFutureTask } from './taskScanner';
 import { FocusFirstSettings, Priority } from './settings';
 import { getTasksApi } from './tasksPlugin';
-import { setDueDate, shiftDueDate, setPriority, addDaysToIso } from './tasksFormat';
+import { setDueDate, shiftDueDate, setPriority, setStartDate, addDaysToIso } from './tasksFormat';
 import { t } from './i18n';
 
 /**
@@ -71,6 +71,18 @@ function formatDate(date: Date): string {
 	const m = String(date.getMonth() + 1).padStart(2, '0');
 	const d = String(date.getDate()).padStart(2, '0');
 	return `${y}-${m}-${d}`;
+}
+
+/** Appends `tag` to a line unless it's already present (case-insensitive). */
+function addTagToLine(line: string, tag: string): string {
+	const has = line.split(/\s+/).some((token) => token.toLowerCase() === tag.toLowerCase());
+	return has ? line : `${line.replace(/[ \t]+$/, '')} ${tag}`;
+}
+
+/** ISO date of the next Monday after `from` (a week away when `from` is Monday). */
+function nextMondayIso(from: Date): string {
+	const daysUntilMonday = ((8 - from.getDay()) % 7) || 7;
+	return addDaysToIso(formatDate(from), daysUntilMonday);
 }
 
 /**
@@ -166,28 +178,6 @@ export async function toggleFocusTagLine(
 	await app.vault.modify(file, lines.join('\n'));
 }
 
-export async function toggleHideTagLine(
-	app: App,
-	settings: FocusFirstSettings,
-	filePath: string,
-	lineNumber: number,
-	hideTag: string,
-): Promise<void> {
-	const file = app.vault.getAbstractFileByPath(filePath);
-	if (!(file instanceof TFile)) return;
-	const content = await app.vault.read(file);
-	const lines = content.split('\n');
-	const line = lines[lineNumber];
-	if (line === undefined) return;
-	const already = line.split(/\s+/).some((token) => token.toLowerCase() === hideTag);
-	if (already) {
-		lines[lineNumber] = removeTagFromLine(line, hideTag);
-	} else {
-		lines[lineNumber] = line.trimEnd() + ' ' + settings.hideTag;
-	}
-	await app.vault.modify(file, lines.join('\n'));
-}
-
 /**
  * Renders one interactive task row. The list shows only titles (each a link that
  * opens the note on a single click); hovering a row reveals a floating popover
@@ -278,9 +268,6 @@ export function renderTaskItem(
 	const focusRun = focusTag
 		? () => void toggleFocusTagLine(app, settings, task.file.path, task.lineNumber, focusTag, !isFocused)
 		: null;
-	const hideRun = hideTag
-		? () => void toggleHideTagLine(app, settings, task.file.path, task.lineNumber, hideTag)
-		: null;
 
 	const doneBtn = actionButton(actions, 'check', String(t().view.focusDone), 'focus-first-done-btn');
 	doneBtn.addEventListener('click', (e) => {
@@ -294,9 +281,14 @@ export function renderTaskItem(
 			`focus-first-focus-btn${isFocused ? ' is-active' : ''}`);
 		focusBtn.addEventListener('click', (e) => { e.stopPropagation(); focusRun(); });
 	}
-	if (hideRun) {
+	if (hideTag) {
 		const hideBtn = actionButton(actions, 'eye-off', String(t().view.hideTask), 'focus-first-hide-btn');
-		hideBtn.addEventListener('click', (e) => { e.stopPropagation(); hideRun(); });
+		hideBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			const menu = new Menu();
+			buildHideMenu(menu, task, app, settings);
+			menu.showAtMouseEvent(e);
+		});
 	}
 
 	const postponeBtn = actionButton(actions, 'calendar-clock', String(t().view.actions.postpone), 'focus-first-postpone-btn');
@@ -423,6 +415,28 @@ function actionButton(parent: HTMLElement, icon: string, ariaLabel: string, extr
 	setIcon(btn, icon);
 	btn.setAttribute('aria-label', ariaLabel);
 	return btn;
+}
+
+/**
+ * Populates a menu with the hide options: hide indefinitely, or "hide until" a
+ * date (adds the hide tag plus a future start date 🛫 so the task reappears on
+ * its own — issue #23).
+ */
+function buildHideMenu(menu: Menu, task: MatrixTask, app: App, settings: FocusFirstSettings): void {
+	const a = t().view.actions;
+	const tag = settings.hideTag.trim();
+	const today = formatDate(new Date());
+	const edit = (transform: (line: string) => string) =>
+		void updateTaskLine(app, task.file.path, task.lineNumber, transform);
+	const hideUntil = (iso: string) => (l: string) => addTagToLine(setStartDate(l, iso), tag);
+	menu.addItem((item) => item.setTitle(String(t().view.hideTask)).setIcon('eye-off')
+		.onClick(() => edit((l) => addTagToLine(l, tag))));
+	menu.addItem((item) => item.setTitle(String(a.hideUntilTomorrow)).setIcon('chevron-right')
+		.onClick(() => edit(hideUntil(addDaysToIso(today, 1)))));
+	menu.addItem((item) => item.setTitle(String(a.hideUntilNextWeek)).setIcon('chevrons-right')
+		.onClick(() => edit(hideUntil(addDaysToIso(today, 7)))));
+	menu.addItem((item) => item.setTitle(String(a.hideUntilMonday)).setIcon('calendar')
+		.onClick(() => edit(hideUntil(nextMondayIso(new Date())))));
 }
 
 /** Populates a menu with the postpone (reschedule) options for a task. */

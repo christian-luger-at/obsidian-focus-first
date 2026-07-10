@@ -99,16 +99,26 @@ Note: You can start the dev server before opening the vault; however, it is reco
 
 ```bash
 src/
-  main.ts          # plugin entry point and lifecycle management
-  settings.ts      # settings interface, defaults, and SettingTab UI
-  TaskView.ts      # custom Leaf View — task list panel
-  taskScanner.ts   # vault/folder task discovery via metadataCache
-  i18n.ts          # EN/DE translations
-  matrixClassifier.ts          # Eisenhower matrix classification logic
-  tests/
-    settings.test.ts           # unit & integration tests for settings
-    matrixClassifier.test.ts   # unit & integration tests for matrix classifier
-    __mocks__/obsidian.ts      # minimal Obsidian API stubs for testing
+  main.ts            # plugin entry point and lifecycle management
+  settings.ts        # settings interface, defaults, SettingTab UI, path suggesters
+  TaskView.ts        # custom Leaf View — the matrix panel (render orchestration)
+  taskScanner.ts     # vault/folder task discovery via metadataCache; hide/future rules
+  matrixClassifier.ts # Eisenhower matrix classification + "why here" reason
+  taskSorting.ts     # pure sort/group/date-bucket logic
+  taskRenderer.ts    # task row rendering + detail popover + row actions
+  taskEmptyStates.ts # onboarding / no-matches / eliminate-hint panels
+  taskDragDrop.ts    # quadrant drop target + re-tagging
+  tasksFormat.ts     # Tasks-plugin line formatting (dates, priority, canonicalize)
+  quickAdd.ts        # quick-add helpers + vault append
+  quickAddModal.ts   # fallback quick-add dialog
+  inboxSetupModal.ts # first-use inbox target dialog
+  tasksPlugin.ts     # Tasks-plugin detection / create API bridge
+  focusSection.ts    # focus-section selection shared by view + embed block
+  focusDataBlock.ts  # `focus-first-tasks` code block (show-focus mode)
+  wrappedTasksBlock.ts # `focus-first-tasks` code block (Tasks-query mode)
+  i18n.ts            # EN/DE translations
+  tests/             # one *.test.ts per module (Vitest)
+    __mocks__/obsidian.ts   # minimal Obsidian API stubs for testing
 ```
 
 ## Build commands

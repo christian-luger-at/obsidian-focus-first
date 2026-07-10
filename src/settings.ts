@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, TFolder, AbstractInputSuggest, setIcon } from 'obsidian';
+import { App, PluginSettingTab, Setting, TFolder, TFile, AbstractInputSuggest, setIcon } from 'obsidian';
 import FocusFirstPlugin from './main';
 import { t } from './i18n';
 
@@ -104,6 +104,34 @@ export class FolderSuggest extends AbstractInputSuggest<TFolder> {
 
 	selectSuggestion(folder: TFolder): void {
 		this.inputEl.value = folder.path;
+		this.inputEl.trigger('input');
+		this.close();
+	}
+}
+
+/** Autocomplete for a Markdown note path (used by the inbox target fields). */
+export class FileSuggest extends AbstractInputSuggest<TFile> {
+	private inputEl: HTMLInputElement;
+
+	constructor(app: App, inputEl: HTMLInputElement) {
+		super(app, inputEl);
+		this.inputEl = inputEl;
+	}
+
+	getSuggestions(query: string): TFile[] {
+		const lower = query.toLowerCase();
+		return this.app.vault
+			.getMarkdownFiles()
+			.filter((f) => f.path.toLowerCase().contains(lower))
+			.slice(0, 20);
+	}
+
+	renderSuggestion(file: TFile, el: HTMLElement): void {
+		el.setText(file.path);
+	}
+
+	selectSuggestion(file: TFile): void {
+		this.inputEl.value = file.path;
 		this.inputEl.trigger('input');
 		this.close();
 	}
@@ -347,15 +375,16 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 			const inboxSetting = new Setting(body)
 				.setName(t().settings.quickAddInbox.name)
 				.setDesc(t().settings.quickAddInbox.desc)
-				.addText((text) =>
+				.addText((text) => {
 					text
 						.setPlaceholder(t().settings.quickAddInbox.placeholder)
 						.setValue(this.plugin.settings.quickAddInbox)
 						.onChange(async (value) => {
 							this.plugin.settings.quickAddInbox = value.trim();
 							await this.plugin.saveSettings();
-						}),
-				);
+						});
+					new FileSuggest(this.app, text.inputEl);
+				});
 
 			updateInboxVisibility = () => {
 				const isInbox = this.plugin.settings.quickAddTarget === 'inbox';

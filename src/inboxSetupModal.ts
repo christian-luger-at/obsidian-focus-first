@@ -2,6 +2,7 @@ import { Modal } from 'obsidian';
 import FocusFirstPlugin from './main';
 import { t } from './i18n';
 import { normalizeInboxPath } from './quickAdd';
+import { FileSuggest } from './settings';
 
 /**
  * First-use inbox setup (issue #24): shown before the first quick-add when no
@@ -32,6 +33,7 @@ export class InboxSetupModal extends Modal {
 			cls: 'focus-first-quickadd-input',
 			attr: { type: 'text', placeholder: String(s.placeholder) },
 		});
+		new FileSuggest(this.plugin.app, this.input);
 		this.input.addEventListener('keydown', (e) => {
 			if (e.key === 'Enter') {
 				e.preventDefault();

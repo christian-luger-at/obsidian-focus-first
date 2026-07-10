@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DEFAULT_SETTINGS, FocusFirstSettings, TaskScope, Priority, FolderSuggest } from '../settings';
+import { DEFAULT_SETTINGS, FocusFirstSettings, TaskScope, Priority, FolderSuggest, FileSuggest } from '../settings';
 import type { FocusFirstSettingTab as FocusFirstSettingTabType } from '../settings';
 import { createdSettings, clearCreatedSettings, TFolder, TFile } from './__mocks__/obsidian';
 import type { DropdownComponent, TextComponent, ToggleComponent } from './__mocks__/obsidian';
@@ -927,6 +927,45 @@ describe('FolderSuggest', () => {
 		);
 		fs.selectSuggestion(new TFolder('Work/Tasks') as never);
 		expect(input.value).toBe('Work/Tasks');
+		expect(input.trigger).toHaveBeenCalledWith('input');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// FileSuggest
+// ---------------------------------------------------------------------------
+
+describe('FileSuggest', () => {
+	const inputStub = () => ({ value: '', trigger: vi.fn() });
+
+	it('getSuggestions returns Markdown files matching the query', () => {
+		const app = {
+			vault: {
+				getMarkdownFiles: () => [new TFile('Inbox.md'), new TFile('Notes/Inbox.md'), new TFile('Other.md')],
+			},
+		};
+		const fs = new FileSuggest(app as never, inputStub() as unknown as HTMLInputElement);
+		expect(fs.getSuggestions('inbox').map((f) => f.path)).toEqual(['Inbox.md', 'Notes/Inbox.md']);
+	});
+
+	it('renderSuggestion writes the file path into the element', () => {
+		const fs = new FileSuggest(
+			{ vault: { getMarkdownFiles: () => [] } } as never,
+			inputStub() as unknown as HTMLInputElement,
+		);
+		const el = { setText: vi.fn() };
+		fs.renderSuggestion(new TFile('Inbox.md') as never, el as unknown as HTMLElement);
+		expect(el.setText).toHaveBeenCalledWith('Inbox.md');
+	});
+
+	it('selectSuggestion fills the input and triggers an input event', () => {
+		const input = inputStub();
+		const fs = new FileSuggest(
+			{ vault: { getMarkdownFiles: () => [] } } as never,
+			input as unknown as HTMLInputElement,
+		);
+		fs.selectSuggestion(new TFile('Notes/Inbox.md') as never);
+		expect(input.value).toBe('Notes/Inbox.md');
 		expect(input.trigger).toHaveBeenCalledWith('input');
 	});
 });

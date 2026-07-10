@@ -85,6 +85,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: var(--size-2-2);
+	cursor: pointer;
 }
 
 .focus-first-search-toggle svg,
@@ -127,6 +128,10 @@
 	display: flex;
 	justify-content: flex-end;
 	gap: var(--size-2-3);
+}
+
+.focus-first-quickadd-controls button {
+	cursor: pointer;
 }
 
 /* Explanatory text in the first-use inbox setup dialog. */

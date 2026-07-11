@@ -1,6 +1,6 @@
 # Focus First Development Guide
 
-This document explains how to activate code changes automatically in the plugin inside [[Obsidian]].
+This document explains how to activate code changes automatically in the plugin inside [Obsidian](https://obsidian.md).
 
 ## Prerequisites
 

@@ -152,6 +152,8 @@ When the query matches no tasks, the `empty-text` message is shown instead. (The
 
 Found a bug or have a feature request? Please [open an issue](../../issues).
 
+If Focus First helps you, a ⭐ on the repo makes it easier for others to discover — thank you!
+
 ## Contributing
 
 Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report issues, set up the project, and open a pull request.

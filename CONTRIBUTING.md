@@ -12,7 +12,7 @@ issues, propose changes, and get a pull request merged.
 
 - **Report a bug** — open an [issue](https://github.com/christian-luger-at/obsidian-focus-first/issues).
 - **Request a feature** — open an issue describing the problem you want solved.
-- **Improve the docs** — fixes to the README, DEV.md, or in-code docs are welcome.
+- **Improve the docs** — fixes to the README, DEVELOPMENT.md, or in-code docs are welcome.
 - **Send code** — bug fixes and small, well-scoped features via pull request.
 
 For anything larger than a small fix, please **open an issue first** so we can
@@ -33,7 +33,7 @@ A good bug report includes:
 ## Development setup
 
 The full setup (test vault, symlink, watch mode, reloading the plugin) is
-documented in **[DEV.md](DEV.md)**. In short:
+documented in **[DEVELOPMENT.md](DEVELOPMENT.md)**. In short:
 
 ```bash
 nvm use          # activate the Node version from .nvmrc
@@ -103,7 +103,7 @@ area.
 ## Releases
 
 Releases are cut by the author with `release.sh` (see the
-[release section in DEV.md](DEV.md#build-production-release)). Contributors do not
+[release section in DEVELOPMENT.md](DEVELOPMENT.md#build-production-release)). Contributors do not
 need to bump versions or create tags — please leave `manifest.json`,
 `package.json`, and `versions.json` version numbers unchanged in your PR.
 

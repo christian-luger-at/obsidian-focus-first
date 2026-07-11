@@ -120,14 +120,12 @@ When the query matches no tasks, the `empty-text` message is shown instead. (The
 
 | Section | What it controls |
 | --- | --- |
-| **Appearance** | Font size used throughout the Focus First view; toggle the "why here" reason in the detail popover |
 | **Task Sources** | Scan the entire vault, or limit to one folder (with sub-folders); optionally exclude indented subtasks |
-| **Focus Task** | The tag used to pin tasks to the Focus Tasks section (default `#focus`) |
-| **Hide Task** | The tag used to hide tasks from the matrix (default `#hide`) |
-| **Future Tasks** | How to treat tasks whose start (`🛫`) or scheduled (`⏳`) date is still in the future: show, dim, or hide (default: show) |
-| **Quick Add** | Where quick-added tasks go: a configurable inbox note (created if missing) or the active note. On first use, if no inbox note is set, a dialog asks for one. |
-| **Eisenhower Matrix** | Urgency threshold (days) and which priorities count as "important" |
+| **Classification** | Urgency threshold (days), which priorities count as "important", and how to treat not-yet-started tasks whose start (`🛫`) or scheduled (`⏳`) date is still in the future (show, dim, or hide) |
 | **Quadrants** | Per-quadrant accent color, manual override tag, sort order, and grouping |
+| **Tags** | The special tags: Focus (default `#focus`) and Hide (default `#hide`) |
+| **Quick Add** | Where quick-added tasks go: a configurable inbox note (created if missing) or the active note. On first use, if no inbox note is set, a dialog asks for one. |
+| **Appearance** | Font size used throughout the Focus First view; toggle the "why here" reason in the detail popover |
 | **Reset** | Restore every setting to its default value |
 
 ## Installing the plugin

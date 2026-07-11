@@ -124,14 +124,12 @@ interface Translations {
 			name: string;
 			desc: string;
 		};
-		matrixHeading: string;
+		classificationHeading: string;
+		tagsHeading: string;
 		urgencyDays: { name: string; desc: string; error: string };
 		importantPriorities: { name: string; desc: string; error: string };
-		focusHeading: string;
 		focusTag: { name: string; desc: string };
-		hideHeading: string;
 		hideTag: { name: string; desc: string };
-		futureTasksHeading: string;
 		futureTasks: {
 			name: string;
 			desc: string;
@@ -307,7 +305,8 @@ const translations: Record<Lang, Translations> = {
 				name: 'Include subtasks',
 				desc: 'When off, indented subtasks are ignored and only top-level tasks appear in the matrix. Keeps dateless subtasks from piling up in Eliminate.',
 			},
-			matrixHeading: 'Eisenhower Matrix',
+			classificationHeading: 'Classification',
+			tagsHeading: 'Tags',
 			urgencyDays: {
 				name: 'Urgency threshold (days)',
 				desc: 'A task is considered urgent when its due date is within this many days — or already past. Set to 0 to mark only overdue tasks as urgent.',
@@ -318,17 +317,14 @@ const translations: Record<Lang, Translations> = {
 				desc: 'Tasks carrying any of the selected priority levels are placed in the "Important" axis of the matrix. Select at least one.',
 				error: 'At least one priority must be selected.',
 			},
-			focusHeading: 'Focus Task',
 			focusTag: {
 				name: 'Focus tag',
 				desc: 'Add this tag to any task to highlight it as a Focus Task. Focus Tasks are displayed prominently above the matrix.',
 			},
-			hideHeading: 'Hide Task',
 			hideTag: {
 				name: 'Hide tag',
 				desc: 'Tasks carrying this tag are hidden from the matrix. Use the hide button on any task to toggle this tag.',
 			},
-			futureTasksHeading: 'Future Tasks',
 			futureTasks: {
 				name: 'Not-yet-started tasks',
 				desc: 'How to treat tasks whose start (🛫) or scheduled (⏳) date is still in the future — they are not actionable yet. The due date still drives urgency and classification.',
@@ -526,7 +522,8 @@ const translations: Record<Lang, Translations> = {
 				name: 'Unteraufgaben einbeziehen',
 				desc: 'Wenn aus, werden eingerückte Unteraufgaben ignoriert und nur Top-Level-Aufgaben erscheinen in der Matrix. Verhindert, dass datenlose Unteraufgaben sich in Eliminieren stapeln.',
 			},
-			matrixHeading: 'Eisenhower-Matrix',
+			classificationHeading: 'Klassifizierung',
+			tagsHeading: 'Tags',
 			urgencyDays: {
 				name: 'Dringlichkeitsschwelle (Tage)',
 				desc: 'Eine Aufgabe gilt als dringend, wenn das Fälligkeitsdatum innerhalb dieser Anzahl von Tagen liegt oder bereits überschritten wurde. Wert 0 markiert nur überfällige Aufgaben als dringend.',
@@ -537,17 +534,14 @@ const translations: Record<Lang, Translations> = {
 				desc: 'Aufgaben mit einer der gewählten Prioritätsstufen werden auf der „Wichtig"-Achse der Matrix eingeordnet. Mindestens eine Priorität muss ausgewählt sein.',
 				error: 'Es muss mindestens eine Priorität ausgewählt sein.',
 			},
-			focusHeading: 'Fokus-Aufgabe',
 			focusTag: {
 				name: 'Fokus-Tag',
 				desc: 'Füge diesen Tag einer Aufgabe hinzu, um sie als Fokus-Aufgabe hervorzuheben. Fokus-Aufgaben werden prominent über der Matrix angezeigt.',
 			},
-			hideHeading: 'Aufgabe ausblenden',
 			hideTag: {
 				name: 'Ausblenden-Tag',
 				desc: 'Aufgaben mit diesem Tag werden in der Matrix nicht angezeigt. Über den Ausblenden-Button an jeder Aufgabe kann der Tag gesetzt oder entfernt werden.',
 			},
-			futureTasksHeading: 'Zukünftige Aufgaben',
 			futureTasks: {
 				name: 'Noch nicht gestartete Aufgaben',
 				desc: 'Wie mit Aufgaben umgegangen wird, deren Startdatum (🛫) oder geplantes Datum (⏳) noch in der Zukunft liegt — sie sind noch nicht bearbeitbar. Das Fälligkeitsdatum bestimmt weiterhin Dringlichkeit und Einordnung.',

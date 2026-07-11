@@ -226,35 +226,6 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		this.createSection(containerEl, t().settings.appearanceHeading, (body) => {
-			new Setting(body)
-				.setName(t().settings.fontSize.name)
-				.setDesc(t().settings.fontSize.desc)
-				.addSlider((slider) =>
-					slider
-						.setLimits(70, 150, 10)
-						.setValue(this.plugin.settings.fontSize)
-						.onChange(async (value) => {
-							this.plugin.settings.fontSize = value;
-							await this.plugin.saveSettings();
-							this.plugin.applyFontSize();
-						}),
-				);
-
-			new Setting(body)
-				.setName(t().settings.showWhyHere.name)
-				.setDesc(t().settings.showWhyHere.desc)
-				.addToggle((toggle) =>
-					toggle
-						.setValue(this.plugin.settings.showWhyHere)
-						.onChange(async (value) => {
-							this.plugin.settings.showWhyHere = value;
-							await this.plugin.saveSettings();
-							this.plugin.refreshViews();
-						}),
-				);
-		});
-
 		this.createSection(containerEl, t().settings.taskSourcesHeading, (body) => {
 			// The folder field is always rendered and just shown/hidden based on the
 			// scope, so switching the scope doesn't require re-rendering the tab.
@@ -320,96 +291,7 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 				);
 		});
 
-		this.createSection(containerEl, t().settings.focusHeading, (body) => {
-			new Setting(body)
-				.setName(t().settings.focusTag.name)
-				.setDesc(t().settings.focusTag.desc)
-				.addText((text) =>
-					text
-						.setPlaceholder(DEFAULT_SETTINGS.focusTag)
-						.setValue(this.plugin.settings.focusTag)
-						.onChange(async (value) => {
-							this.plugin.settings.focusTag = value.trim();
-							await this.plugin.saveSettings();
-						}),
-				);
-		});
-
-		this.createSection(containerEl, t().settings.hideHeading, (body) => {
-			new Setting(body)
-				.setName(t().settings.hideTag.name)
-				.setDesc(t().settings.hideTag.desc)
-				.addText((text) =>
-					text
-						.setPlaceholder(DEFAULT_SETTINGS.hideTag)
-						.setValue(this.plugin.settings.hideTag)
-						.onChange(async (value) => {
-							this.plugin.settings.hideTag = value.trim();
-							await this.plugin.saveSettings();
-						}),
-				);
-		});
-
-		this.createSection(containerEl, t().settings.futureTasksHeading, (body) => {
-			new Setting(body)
-				.setName(t().settings.futureTasks.name)
-				.setDesc(t().settings.futureTasks.desc)
-				.addDropdown((drop) =>
-					drop
-						.addOption('show', t().settings.futureTasks.optionShow)
-						.addOption('dim', t().settings.futureTasks.optionDim)
-						.addOption('hide', t().settings.futureTasks.optionHide)
-						.setValue(this.plugin.settings.futureTasks)
-						.onChange(async (value: string) => {
-							this.plugin.settings.futureTasks = value as FutureTasksMode;
-							await this.plugin.saveSettings();
-							this.plugin.refreshViews();
-						}),
-				);
-		});
-
-		this.createSection(containerEl, t().settings.quickAddHeading, (body) => {
-			// The inbox path field is always rendered and shown/hidden by target, so
-			// switching the target doesn't require re-rendering the whole tab.
-			let updateInboxVisibility: () => void = () => {};
-
-			new Setting(body)
-				.setName(t().settings.quickAddTarget.name)
-				.setDesc(t().settings.quickAddTarget.desc)
-				.addDropdown((drop) =>
-					drop
-						.addOption('inbox', t().settings.quickAddTarget.optionInbox)
-						.addOption('active', t().settings.quickAddTarget.optionActive)
-						.setValue(this.plugin.settings.quickAddTarget)
-						.onChange(async (value: string) => {
-							this.plugin.settings.quickAddTarget = value as QuickAddTarget;
-							await this.plugin.saveSettings();
-							updateInboxVisibility();
-						}),
-				);
-
-			const inboxSetting = new Setting(body)
-				.setName(t().settings.quickAddInbox.name)
-				.setDesc(t().settings.quickAddInbox.desc)
-				.addText((text) => {
-					text
-						.setPlaceholder(t().settings.quickAddInbox.placeholder)
-						.setValue(this.plugin.settings.quickAddInbox)
-						.onChange(async (value) => {
-							this.plugin.settings.quickAddInbox = value.trim();
-							await this.plugin.saveSettings();
-						});
-					new FileSuggest(this.app, text.inputEl);
-				});
-
-			updateInboxVisibility = () => {
-				const isInbox = this.plugin.settings.quickAddTarget === 'inbox';
-				inboxSetting.settingEl.classList.toggle('focus-first-hidden', !isInbox);
-			};
-			updateInboxVisibility();
-		});
-
-		this.createSection(containerEl, t().settings.matrixHeading, (body) => {
+		this.createSection(containerEl, t().settings.classificationHeading, (body) => {
 			body.createEl('p', { text: t().settings.matrixDesc, cls: 'focus-first-setting-hint' });
 
 			const urgencySetting = new Setting(body)
@@ -480,6 +362,22 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 			}
 
 			updatePills();
+
+			new Setting(body)
+				.setName(t().settings.futureTasks.name)
+				.setDesc(t().settings.futureTasks.desc)
+				.addDropdown((drop) =>
+					drop
+						.addOption('show', t().settings.futureTasks.optionShow)
+						.addOption('dim', t().settings.futureTasks.optionDim)
+						.addOption('hide', t().settings.futureTasks.optionHide)
+						.setValue(this.plugin.settings.futureTasks)
+						.onChange(async (value: string) => {
+							this.plugin.settings.futureTasks = value as FutureTasksMode;
+							await this.plugin.saveSettings();
+							this.plugin.refreshViews();
+						}),
+				);
 		});
 
 		this.createSection(containerEl, t().settings.quadrantsHeading, (body) => {
@@ -588,6 +486,104 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 					},
 				);
 			}
+		});
+
+		this.createSection(containerEl, t().settings.tagsHeading, (body) => {
+			new Setting(body)
+				.setName(t().settings.focusTag.name)
+				.setDesc(t().settings.focusTag.desc)
+				.addText((text) =>
+					text
+						.setPlaceholder(DEFAULT_SETTINGS.focusTag)
+						.setValue(this.plugin.settings.focusTag)
+						.onChange(async (value) => {
+							this.plugin.settings.focusTag = value.trim();
+							await this.plugin.saveSettings();
+						}),
+				);
+
+			new Setting(body)
+				.setName(t().settings.hideTag.name)
+				.setDesc(t().settings.hideTag.desc)
+				.addText((text) =>
+					text
+						.setPlaceholder(DEFAULT_SETTINGS.hideTag)
+						.setValue(this.plugin.settings.hideTag)
+						.onChange(async (value) => {
+							this.plugin.settings.hideTag = value.trim();
+							await this.plugin.saveSettings();
+						}),
+				);
+		});
+
+		this.createSection(containerEl, t().settings.quickAddHeading, (body) => {
+			// The inbox path field is always rendered and shown/hidden by target, so
+			// switching the target doesn't require re-rendering the whole tab.
+			let updateInboxVisibility: () => void = () => {};
+
+			new Setting(body)
+				.setName(t().settings.quickAddTarget.name)
+				.setDesc(t().settings.quickAddTarget.desc)
+				.addDropdown((drop) =>
+					drop
+						.addOption('inbox', t().settings.quickAddTarget.optionInbox)
+						.addOption('active', t().settings.quickAddTarget.optionActive)
+						.setValue(this.plugin.settings.quickAddTarget)
+						.onChange(async (value: string) => {
+							this.plugin.settings.quickAddTarget = value as QuickAddTarget;
+							await this.plugin.saveSettings();
+							updateInboxVisibility();
+						}),
+				);
+
+			const inboxSetting = new Setting(body)
+				.setName(t().settings.quickAddInbox.name)
+				.setDesc(t().settings.quickAddInbox.desc)
+				.addText((text) => {
+					text
+						.setPlaceholder(t().settings.quickAddInbox.placeholder)
+						.setValue(this.plugin.settings.quickAddInbox)
+						.onChange(async (value) => {
+							this.plugin.settings.quickAddInbox = value.trim();
+							await this.plugin.saveSettings();
+						});
+					new FileSuggest(this.app, text.inputEl);
+				});
+
+			updateInboxVisibility = () => {
+				const isInbox = this.plugin.settings.quickAddTarget === 'inbox';
+				inboxSetting.settingEl.classList.toggle('focus-first-hidden', !isInbox);
+			};
+			updateInboxVisibility();
+		});
+
+		this.createSection(containerEl, t().settings.appearanceHeading, (body) => {
+			new Setting(body)
+				.setName(t().settings.fontSize.name)
+				.setDesc(t().settings.fontSize.desc)
+				.addSlider((slider) =>
+					slider
+						.setLimits(70, 150, 10)
+						.setValue(this.plugin.settings.fontSize)
+						.onChange(async (value) => {
+							this.plugin.settings.fontSize = value;
+							await this.plugin.saveSettings();
+							this.plugin.applyFontSize();
+						}),
+				);
+
+			new Setting(body)
+				.setName(t().settings.showWhyHere.name)
+				.setDesc(t().settings.showWhyHere.desc)
+				.addToggle((toggle) =>
+					toggle
+						.setValue(this.plugin.settings.showWhyHere)
+						.onChange(async (value) => {
+							this.plugin.settings.showWhyHere = value;
+							await this.plugin.saveSettings();
+							this.plugin.refreshViews();
+						}),
+				);
 		});
 
 		this.createSection(containerEl, t().settings.resetHeading, (body) => {

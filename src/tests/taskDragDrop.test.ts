@@ -91,6 +91,18 @@ describe('moveTaskToQuadrant', () => {
 		await moveTaskToQuadrant(app, settings, 'a.md', 99, 'do');
 		expect(vault.modify).not.toHaveBeenCalled();
 	});
+
+	it('does nothing when the line no longer matches the expected task (#27)', async () => {
+		const { app, vault } = makeApp({ 'a.md': '- [ ] A different task now' });
+		await moveTaskToQuadrant(app, settings, 'a.md', 0, 'do', '- [ ] The task I dragged');
+		expect(vault.modify).not.toHaveBeenCalled();
+	});
+
+	it('moves when the expected line still matches', async () => {
+		const { app, store } = makeApp({ 'a.md': '- [ ] Task #schedule' });
+		await moveTaskToQuadrant(app, settings, 'a.md', 0, 'do', '- [ ] Task #schedule');
+		expect(store['a.md']).toBe('- [ ] Task #do');
+	});
 });
 
 // ---------------------------------------------------------------------------

@@ -15,6 +15,7 @@ export async function moveTaskToQuadrant(
 	filePath: string,
 	lineNumber: number,
 	targetQuadrant: Quadrant,
+	expectedLine?: string,
 ): Promise<void> {
 	const file = app.vault.getAbstractFileByPath(filePath);
 	if (!(file instanceof TFile)) return;
@@ -23,6 +24,8 @@ export async function moveTaskToQuadrant(
 	const lines = content.split('\n');
 	const line = lines[lineNumber];
 	if (line === undefined) return;
+	// Stale-line guard (#27): the note may have shifted since the drag started.
+	if (expectedLine !== undefined && line !== expectedLine) return;
 
 	const quadrantTags = QUADRANT_KEYS
 		.map((key) => settings.quadrants[key].tag.trim())
@@ -72,13 +75,15 @@ export function makeDropTarget(
 			return;
 		}
 		if (typeof data !== 'object' || data === null) return;
-		const { filePath, lineNumber, quadrant: sourceQuadrant } = data as {
+		const { filePath, lineNumber, quadrant: sourceQuadrant, line } = data as {
 			filePath?: unknown;
 			lineNumber?: unknown;
 			quadrant?: unknown;
+			line?: unknown;
 		};
 		if (typeof filePath !== 'string' || typeof lineNumber !== 'number') return;
 		if (sourceQuadrant === targetQuadrant) return;
-		void moveTaskToQuadrant(app, settings, filePath, lineNumber, targetQuadrant);
+		const expectedLine = typeof line === 'string' ? line : undefined;
+		void moveTaskToQuadrant(app, settings, filePath, lineNumber, targetQuadrant, expectedLine);
 	});
 }

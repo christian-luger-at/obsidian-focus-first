@@ -133,7 +133,7 @@ export class FocusDataBlock extends MarkdownRenderChild {
 			checkbox.addEventListener('click', (e) => {
 				e.preventDefault();
 				e.stopImmediatePropagation();
-				void completeTaskLine(this.plugin.app, task.file.path, task.lineNumber);
+				void completeTaskLine(this.plugin.app, task.file.path, task.lineNumber, undefined, task.line);
 			}, { capture: true });
 		});
 	}

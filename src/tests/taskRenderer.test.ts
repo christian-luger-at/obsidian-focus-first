@@ -125,4 +125,34 @@ describe('completeTaskLine — with the Tasks plugin', () => {
 		// Falls back to the plain checkbox flip.
 		expect(vault._store['Notes/a.md']).toBe('- [x] Plain task');
 	});
+
+	it('falls back to a checkbox flip when the Tasks API returns empty (#28)', async () => {
+		const vault = makeFakeVault({ 'Notes/a.md': '- [ ] Ghost task' });
+		const app = appWithTasksApi(vault, () => '');
+
+		await completeTaskLine(app, 'Notes/a.md', 0, NOW);
+
+		// Not blanked out — a proper completion instead.
+		expect(vault._store['Notes/a.md']).toBe('- [x] Ghost task');
+	});
+});
+
+describe('completeTaskLine — stale-line guard (#27)', () => {
+	it('does not write when the line no longer matches the expected task', async () => {
+		const vault = makeFakeVault({ 'Notes/a.md': '- [ ] Something else entirely' });
+		const app = { vault } as never;
+
+		await completeTaskLine(app, 'Notes/a.md', 0, undefined, '- [ ] The task I clicked');
+
+		expect(vault.modify).not.toHaveBeenCalled();
+	});
+
+	it('writes when the expected line still matches', async () => {
+		const vault = makeFakeVault({ 'Notes/a.md': '- [ ] Buy milk' });
+		const app = { vault } as never;
+
+		await completeTaskLine(app, 'Notes/a.md', 0, undefined, '- [ ] Buy milk');
+
+		expect(vault._store['Notes/a.md']).toBe('- [x] Buy milk');
+	});
 });

@@ -389,7 +389,7 @@ describe('renderFocusTasks()', () => {
 	});
 
 	it('the done button calls completeTask', async () => {
-		const tasks = [makeTask({ tags: ['#focus'], lineNumber: 0 })];
+		const tasks = [makeTask({ tags: ['#focus'], lineNumber: 0, line: '- [ ] Sample task #focus' })];
 		const { view, contentEl, app } = makeView({ focusTag: '#focus' }, tasks);
 		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
 		app.vault.read = vi.fn(async () => '- [ ] Sample task #focus');
@@ -662,7 +662,7 @@ describe('task item actions in the matrix', () => {
 	});
 
 	it('the priority button opens a menu and writes the chosen priority', async () => {
-		const { container, app } = renderSingleTaskMatrix();
+		const { container, app } = renderSingleTaskMatrix({ line: '- [ ] Sample task 📅 2026-07-07' });
 		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
 		app.vault.read = vi.fn(async () => '- [ ] Sample task 📅 2026-07-07');
 		clearCreatedMenus();
@@ -679,7 +679,7 @@ describe('task item actions in the matrix', () => {
 	});
 
 	it('the postpone button shifts an existing due date by one day', async () => {
-		const { container, app } = renderSingleTaskMatrix({ dueDate: daysFromToday(0) });
+		const { container, app } = renderSingleTaskMatrix({ dueDate: daysFromToday(0), line: '- [ ] Sample task 📅 2026-07-07' });
 		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
 		app.vault.read = vi.fn(async () => '- [ ] Sample task 📅 2026-07-07');
 		clearCreatedMenus();

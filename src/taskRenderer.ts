@@ -31,6 +31,7 @@ export function makeTaskDraggable(li: HTMLElement, task: MatrixTask): void {
 			filePath: task.file.path,
 			lineNumber: task.lineNumber,
 			quadrant: task.quadrant,
+			line: task.line,
 		}));
 		li.classList.add('is-dragging');
 	});
@@ -106,6 +107,7 @@ export async function completeTaskLine(
 	filePath: string,
 	lineNumber: number,
 	now: Date = new Date(),
+	expectedLine?: string,
 ): Promise<void> {
 	const file = app.vault.getAbstractFileByPath(filePath);
 	if (!(file instanceof TFile)) return;
@@ -113,22 +115,33 @@ export async function completeTaskLine(
 	const lines = content.split('\n');
 	const line = lines[lineNumber];
 	if (line === undefined) return;
+	// Guard against a stale line number: if the note shifted since the view was
+	// scanned, this line no longer matches the task the user acted on (#27).
+	if (expectedLine !== undefined && line !== expectedLine) return;
 
 	// Delegate to the Tasks plugin when it's available: it applies the user's
 	// done-date/status settings and, for recurring (🔁) tasks, generates the next
 	// occurrence. The result can be multiple lines, so splice it in. Without the
 	// plugin, 🔁 has no engine anyway — just flip the checkbox as before.
 	const api = getTasksApi(app);
+	const done = () => { lines[lineNumber] = line.replace(/\[\s\]/, '[x]'); };
 	if (api) {
-		const today = formatDate(now);
-		// The newly generated next occurrence is the still-open `[ ]` line; give it
-		// a created date like the Tasks plugin does. The completed line is left as-is.
-		const replacement = api.executeToggleTaskDoneCommand(line, filePath)
-			.split('\n')
-			.map((l) => (/^\s*[-*+] \[ \]/.test(l) ? withCreatedDate(l, today) : l));
-		lines.splice(lineNumber, 1, ...replacement);
+		const raw = api.executeToggleTaskDoneCommand(line, filePath);
+		// A blank result would splice an empty line in place of the task (#28);
+		// fall back to a plain checkbox flip instead.
+		if (raw.trim() === '') {
+			done();
+		} else {
+			const today = formatDate(now);
+			// The newly generated next occurrence is the still-open `[ ]` line; give
+			// it a created date like the Tasks plugin does. The completed line stays.
+			const replacement = raw
+				.split('\n')
+				.map((l) => (/^\s*[-*+] \[ \]/.test(l) ? withCreatedDate(l, today) : l));
+			lines.splice(lineNumber, 1, ...replacement);
+		}
 	} else {
-		lines[lineNumber] = line.replace(/\[\s\]/, '[x]');
+		done();
 	}
 	await app.vault.modify(file, lines.join('\n'));
 }
@@ -143,6 +156,7 @@ export async function updateTaskLine(
 	filePath: string,
 	lineNumber: number,
 	transform: (line: string) => string,
+	expectedLine?: string,
 ): Promise<void> {
 	const file = app.vault.getAbstractFileByPath(filePath);
 	if (!(file instanceof TFile)) return;
@@ -150,6 +164,8 @@ export async function updateTaskLine(
 	const lines = content.split('\n');
 	const line = lines[lineNumber];
 	if (line === undefined) return;
+	// Stale-line guard (#27): bail if the line no longer matches the acted-on task.
+	if (expectedLine !== undefined && line !== expectedLine) return;
 	const next = transform(line);
 	if (next === line) return;
 	lines[lineNumber] = next;
@@ -275,7 +291,7 @@ export function renderTaskItem(
 	const doneBtn = actionButton(actions, 'check', String(t().view.focusDone), 'focus-first-done-btn');
 	doneBtn.addEventListener('click', (e) => {
 		e.stopPropagation();
-		void completeTaskLine(app, task.file.path, task.lineNumber);
+		void completeTaskLine(app, task.file.path, task.lineNumber, undefined, task.line);
 	});
 
 	if (focusRun) {
@@ -430,7 +446,7 @@ function buildHideMenu(menu: Menu, task: MatrixTask, app: App, settings: FocusFi
 	const tag = settings.hideTag.trim();
 	const today = formatDate(new Date());
 	const edit = (transform: (line: string) => string) =>
-		void updateTaskLine(app, task.file.path, task.lineNumber, transform);
+		void updateTaskLine(app, task.file.path, task.lineNumber, transform, task.line);
 	const hideUntil = (iso: string) => (l: string) => addTagToLine(setStartDate(l, iso), tag);
 	menu.addItem((item) => item.setTitle(String(t().view.hideTask)).setIcon('eye-off')
 		.onClick(() => edit((l) => addTagToLine(l, tag))));
@@ -446,7 +462,7 @@ function buildHideMenu(menu: Menu, task: MatrixTask, app: App, settings: FocusFi
 function buildPostponeMenu(menu: Menu, task: MatrixTask, app: App): void {
 	const a = t().view.actions;
 	const edit = (transform: (line: string) => string) =>
-		void updateTaskLine(app, task.file.path, task.lineNumber, transform);
+		void updateTaskLine(app, task.file.path, task.lineNumber, transform, task.line);
 	if (task.dueDate) {
 		menu.addItem((item) => item.setTitle(String(a.postponePlusDay)).setIcon('chevron-right')
 			.onClick(() => edit((l) => shiftDueDate(l, 1))));
@@ -472,7 +488,7 @@ function buildPriorityMenu(menu: Menu, task: MatrixTask, app: App): void {
 			.setTitle(opt.label)
 			.setChecked(task.priority === (opt.emoji ?? undefined))
 			.onClick(() => void updateTaskLine(
-				app, task.file.path, task.lineNumber, (l) => setPriority(l, opt.emoji),
+				app, task.file.path, task.lineNumber, (l) => setPriority(l, opt.emoji), task.line,
 			)));
 	}
 }

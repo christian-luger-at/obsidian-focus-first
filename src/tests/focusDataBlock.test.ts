@@ -190,7 +190,7 @@ describe('FocusDataBlock — focus section', () => {
 	});
 
 	it('re-wires a rendered checkbox to complete the correct task line', async () => {
-		const tasks = [makeTask({ tags: ['#focus'], line: '- [ ] Focused', lineNumber: 0 })];
+		const tasks = [makeTask({ tags: ['#focus'], line: '- [ ] Focused #focus', lineNumber: 0 })];
 		const { block, app } = makeBlock('focus', '', { focusTag: '#focus' }, tasks);
 		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
 		app.vault.read = vi.fn(async () => '- [ ] Focused #focus');

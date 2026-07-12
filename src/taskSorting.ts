@@ -1,6 +1,7 @@
 import { MatrixTask } from './matrixClassifier';
 import { TaskItem } from './taskScanner';
 import { QuadrantSort, SortField } from './settings';
+import { daysBetween } from './dateUtils';
 import { t } from './i18n';
 
 /** Priority signifiers from most to least important; anything else sorts last. */
@@ -50,9 +51,8 @@ export function sortTasks(tasks: MatrixTask[], sort: QuadrantSort): MatrixTask[]
  */
 export function dueBucket(task: TaskItem): string {
 	if (!task.dueDate) return '__nodate__';
-	const today = new Date(); today.setHours(0, 0, 0, 0);
-	const due = new Date(task.dueDate); due.setHours(0, 0, 0, 0);
-	const diff = Math.floor((due.getTime() - today.getTime()) / 86_400_000);
+	const today = new Date();
+	const diff = daysBetween(today, task.dueDate);
 	const dow = today.getDay();
 	const daysToSunday = dow === 0 ? 0 : 7 - dow;
 	if (diff < 0) return '__overdue__';

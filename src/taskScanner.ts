@@ -1,5 +1,6 @@
 import { App, TFile } from 'obsidian';
 import { FocusFirstSettings, Priority } from './settings';
+import { parseIsoDate, daysBetween } from './dateUtils';
 
 export interface TaskItem {
 	file: TFile;
@@ -56,13 +57,13 @@ export async function scanTasks(app: App, settings: FocusFirstSettings): Promise
 			const line = lines[lineNumber] ?? '';
 
 			const dueDateMatch = DUE_DATE_RE.exec(line);
-			const dueDate = dueDateMatch?.[1] ? new Date(dueDateMatch[1]) : undefined;
+			const dueDate = dueDateMatch?.[1] ? parseIsoDate(dueDateMatch[1]) : undefined;
 
 			const startDateMatch = START_DATE_RE.exec(line);
-			const startDate = startDateMatch?.[1] ? new Date(startDateMatch[1]) : undefined;
+			const startDate = startDateMatch?.[1] ? parseIsoDate(startDateMatch[1]) : undefined;
 
 			const scheduledDateMatch = SCHEDULED_DATE_RE.exec(line);
-			const scheduledDate = scheduledDateMatch?.[1] ? new Date(scheduledDateMatch[1]) : undefined;
+			const scheduledDate = scheduledDateMatch?.[1] ? parseIsoDate(scheduledDateMatch[1]) : undefined;
 
 			const priorityMatch = PRIORITY_RE.exec(line);
 			const priority = priorityMatch?.[1] as Priority | undefined;
@@ -111,13 +112,6 @@ export function isHiddenTask(task: TaskItem, settings: FocusFirstSettings, now: 
  * classification, not "is this ready to work on".
  */
 export function isFutureTask(task: TaskItem, now: Date = new Date()): boolean {
-	const today = new Date(now);
-	today.setHours(0, 0, 0, 0);
-	const isAfterToday = (date?: Date): boolean => {
-		if (!date) return false;
-		const day = new Date(date);
-		day.setHours(0, 0, 0, 0);
-		return day.getTime() > today.getTime();
-	};
+	const isAfterToday = (date?: Date): boolean => !!date && daysBetween(now, date) > 0;
 	return isAfterToday(task.startDate) || isAfterToday(task.scheduledDate);
 }

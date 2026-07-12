@@ -1,5 +1,6 @@
 import { FocusFirstSettings, QuadrantConfig } from './settings';
 import { TaskItem } from './taskScanner';
+import { daysBetween } from './dateUtils';
 
 export type Quadrant = 'do' | 'schedule' | 'delegate' | 'eliminate';
 
@@ -30,11 +31,7 @@ export interface ClassificationReason {
 /** Urgency plus the reason for it, computed once and reused everywhere. */
 function urgency(task: TaskItem, urgencyDays: number): { urgent: boolean; cause: UrgencyCause; days?: number } {
 	if (!task.dueDate) return { urgent: false, cause: 'no-due' };
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
-	const due = new Date(task.dueDate);
-	due.setHours(0, 0, 0, 0);
-	const days = Math.floor((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+	const days = daysBetween(new Date(), task.dueDate);
 	if (days < 0)             return { urgent: true, cause: 'overdue', days };
 	if (days === 0)           return { urgent: true, cause: 'due-today', days };
 	if (days <= urgencyDays)  return { urgent: true, cause: 'within-threshold', days };

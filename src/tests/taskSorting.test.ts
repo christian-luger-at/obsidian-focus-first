@@ -10,6 +10,7 @@ import {
 
 import type { MatrixTask } from '../matrixClassifier';
 import type { QuadrantSort } from '../settings';
+import { parseIsoDate } from '../dateUtils';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -218,5 +219,22 @@ describe('dueBucket', () => {
 
 	it('returns "__later__" for a date more than 14 days out', () => {
 		expect(dueBucket(makeMatrixTask({ dueDate: daysFromToday(30) }))).toBe('__later__');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Timezone regression (issue #25) — a date parsed from a string is bucketed by
+// its calendar day, not shifted by the UTC/local mismatch.
+// ---------------------------------------------------------------------------
+
+describe('dueBucket — timezone regression (#25)', () => {
+	const localToday = (): string => {
+		const d = new Date();
+		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+	};
+
+	it("buckets a task due today (parsed from its string date) as '__today__'", () => {
+		const task = makeMatrixTask({ dueDate: parseIsoDate(localToday()) });
+		expect(dueBucket(task)).toBe('__today__');
 	});
 });

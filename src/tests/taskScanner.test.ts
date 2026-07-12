@@ -19,6 +19,12 @@ function makeSettings(overrides: Partial<FocusFirstSettings> = {}): FocusFirstSe
 	return { ...DEFAULT_SETTINGS, ...overrides };
 }
 
+/** Local calendar date as YYYY-MM-DD — timezone-independent (unlike toISOString). */
+function ymd(d?: Date): string | undefined {
+	if (!d) return undefined;
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 /**
  * Build a minimal App mock where every markdown file maps to a list of
  * task-line strings. Each string becomes one list item at its line index.
@@ -70,7 +76,7 @@ describe('due-date parsing', () => {
 		const app = makeApp([{ path: 'a.md', lines: ['- [ ] Task 📅 2025-01-15'] }]);
 		const [task] = await scanTasks(app, makeSettings());
 		expect(task?.dueDate).toBeInstanceOf(Date);
-		expect(task?.dueDate?.toISOString().startsWith('2025-01-15')).toBe(true);
+		expect(ymd(task?.dueDate)).toBe('2025-01-15');
 	});
 
 	it('parses due date with space between emoji and date', async () => {
@@ -95,7 +101,7 @@ describe('due-date parsing', () => {
 		// Edge case: two date emojis — regex picks first match
 		const app = makeApp([{ path: 'a.md', lines: ['- [ ] Task 📅 2025-01-01 📅 2025-06-30'] }]);
 		const [task] = await scanTasks(app, makeSettings());
-		expect(task?.dueDate?.toISOString().startsWith('2025-01-01')).toBe(true);
+		expect(ymd(task?.dueDate)).toBe('2025-01-01');
 	});
 });
 
@@ -107,14 +113,14 @@ describe('start/scheduled date parsing', () => {
 	it('parses the 🛫 start date', async () => {
 		const app = makeApp([{ path: 'a.md', lines: ['- [ ] Task 🛫 2026-08-01'] }]);
 		const [task] = await scanTasks(app, makeSettings());
-		expect(task?.startDate?.toISOString().startsWith('2026-08-01')).toBe(true);
+		expect(ymd(task?.startDate)).toBe('2026-08-01');
 		expect(task?.scheduledDate).toBeUndefined();
 	});
 
 	it('parses the ⏳ scheduled date', async () => {
 		const app = makeApp([{ path: 'a.md', lines: ['- [ ] Task ⏳ 2026-08-02'] }]);
 		const [task] = await scanTasks(app, makeSettings());
-		expect(task?.scheduledDate?.toISOString().startsWith('2026-08-02')).toBe(true);
+		expect(ymd(task?.scheduledDate)).toBe('2026-08-02');
 		expect(task?.startDate).toBeUndefined();
 	});
 
@@ -124,9 +130,9 @@ describe('start/scheduled date parsing', () => {
 			lines: ['- [ ] Task 🛫 2026-08-01 ⏳ 2026-08-02 📅 2026-08-03'],
 		}]);
 		const [task] = await scanTasks(app, makeSettings());
-		expect(task?.startDate?.toISOString().startsWith('2026-08-01')).toBe(true);
-		expect(task?.scheduledDate?.toISOString().startsWith('2026-08-02')).toBe(true);
-		expect(task?.dueDate?.toISOString().startsWith('2026-08-03')).toBe(true);
+		expect(ymd(task?.startDate)).toBe('2026-08-01');
+		expect(ymd(task?.scheduledDate)).toBe('2026-08-02');
+		expect(ymd(task?.dueDate)).toBe('2026-08-03');
 	});
 });
 
@@ -470,7 +476,7 @@ describe('rich task lines', () => {
 			lines: ['- [ ] Important meeting 📅 2025-12-31 🔺 #work #urgent'],
 		}]);
 		const [task] = await scanTasks(app, makeSettings());
-		expect(task?.dueDate?.toISOString().startsWith('2025-12-31')).toBe(true);
+		expect(ymd(task?.dueDate)).toBe('2025-12-31');
 		expect(task?.priority).toBe('🔺');
 		expect(task?.tags).toContain('#work');
 		expect(task?.tags).toContain('#urgent');

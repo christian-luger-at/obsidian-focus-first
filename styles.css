@@ -94,13 +94,16 @@
 	height: var(--icon-s, 18px);
 }
 
-/* Axis selector (#36): a segmented control. Both presets are shown as flush
-   segments inside one bordered pill; the active one carries the accent. */
+/* Axis selector (#36): a segmented control with an inset track. The active
+   preset is a raised neutral chip — deliberately NOT an accent fill, so it
+   reads as a toggle and is never mistaken for the accent "Search" CTA button. */
 .focus-first-axis-switch {
 	display: inline-flex;
+	gap: 2px;
+	padding: 2px;
+	background: var(--background-modifier-form-field);
 	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-s);
-	overflow: hidden;
+	border-radius: var(--radius-m);
 }
 
 .focus-first-axis-segment {
@@ -109,7 +112,7 @@
 	gap: var(--size-2-2);
 	padding: var(--size-2-1) var(--size-4-2);
 	border: none;
-	border-radius: 0;
+	border-radius: var(--radius-s);
 	box-shadow: none;
 	background: transparent;
 	color: var(--text-muted);
@@ -117,8 +120,8 @@
 	cursor: pointer;
 }
 
-.focus-first-axis-segment:not(:last-child) {
-	border-right: 1px solid var(--background-modifier-border);
+.focus-first-axis-segment:hover:not(.is-active) {
+	color: var(--text-normal);
 }
 
 .focus-first-axis-segment svg {
@@ -127,8 +130,9 @@
 }
 
 .focus-first-axis-segment.is-active {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	box-shadow: var(--shadow-s);
 	cursor: default;
 }
 

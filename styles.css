@@ -191,6 +191,26 @@
 	padding: 0 var(--size-4-4) var(--size-4-2);
 }
 
+.focus-first-filter-group {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+/* The size filter sits after the date filters, set off by a subtle divider. */
+.focus-first-size-filter-group {
+	padding-left: var(--size-4-2);
+	border-left: 1px solid var(--background-modifier-border);
+}
+
+.focus-first-filter-group-label {
+	font-size: calc(var(--font-ui-smaller) * var(--focus-first-font-scale));
+	color: var(--text-faint);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
 .focus-first-filter-option {
 	display: flex;
 	align-items: center;

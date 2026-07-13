@@ -357,6 +357,61 @@ describe('filter panel checkboxes', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Size filter (#30/#35)
+// ---------------------------------------------------------------------------
+
+describe('size filter', () => {
+	it('renders a size filter with the configured sizes', () => {
+		const { view, contentEl } = makeView();
+		priv(view).render();
+
+		const optionTexts = contentEl.findAllByClass('focus-first-filter-option')
+			.map((label) => label.children.find((c) => c.tagName === 'span')?.text);
+		expect(optionTexts).toEqual(expect.arrayContaining(['Small', 'Medium', 'Large']));
+		expect(contentEl.findByClass('focus-first-size-filter-group')).toBeDefined();
+	});
+
+	it('omits the size filter when no size tags are configured', () => {
+		const { view, contentEl } = makeView({ sizeTags: { small: '', medium: '', large: '' } });
+		priv(view).render();
+		expect(contentEl.findByClass('focus-first-size-filter-group')).toBeUndefined();
+	});
+
+	it('checking a size narrows the matrix to tasks of that size', () => {
+		const tasks = [
+			makeTask({ line: '- [ ] Small one #s', tags: ['#s'], size: 'small', dueDate: daysFromToday(0), priority: '🔺' }),
+			makeTask({ line: '- [ ] Big one #l', tags: ['#l'], size: 'large', dueDate: daysFromToday(0), priority: '🔺' }),
+		];
+		const { view, contentEl } = makeView({ importantPriorities: ['🔺'] }, tasks);
+		priv(view).render();
+
+		// The three size checkboxes follow the five date-bucket checkboxes.
+		const checkboxes = contentEl.findAllByClass('focus-first-filter-option')
+			.map((label) => label.children.find((c) => c.tagName === 'input'))
+			.filter((el): el is FakeEl => !!el);
+		const smallCheckbox = checkboxes[5]!;
+		smallCheckbox.checked = true;
+		smallCheckbox.dispatch('change');
+
+		// @ts-expect-error — reading private activeSizeFilters for assertion
+		expect(view.activeSizeFilters.has('small')).toBe(true);
+		const texts = contentEl.findAllByClass('focus-first-task-text').map((el) => el.text);
+		expect(texts).toContain('Small one');
+		expect(texts).not.toContain('Big one');
+	});
+
+	it('an un-sized task is excluded while a size filter is active', () => {
+		const { view } = makeView();
+		// @ts-expect-error — seed private state
+		view.activeSizeFilters = new Set(['small']);
+		// @ts-expect-error — call private predicate directly
+		expect(view.passesSizeFilter(makeTask({ size: 'small' }))).toBe(true);
+		// @ts-expect-error — call private predicate directly
+		expect(view.passesSizeFilter(makeTask({}))).toBe(false);
+	});
+});
+
+// ---------------------------------------------------------------------------
 // renderFocusTasks()
 // ---------------------------------------------------------------------------
 

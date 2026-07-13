@@ -2,6 +2,7 @@ import { ItemView, WorkspaceLeaf, TFile, setIcon, debounce } from 'obsidian';
 import FocusFirstPlugin from './main';
 import { scanTasks, TaskItem, isFutureTask, isHiddenTask } from './taskScanner';
 import { classifyTasks, MatrixTask, Quadrant } from './matrixClassifier';
+import { TaskSize, sizeTagList } from './settings';
 import { isTasksPluginEnabled } from './tasksPlugin';
 import { t } from './i18n';
 import { renderTaskItem, taskTitle } from './taskRenderer';
@@ -17,11 +18,14 @@ type DateBucket = '__overdue__' | '__today__' | '__thisweek__' | '__upcoming__' 
 
 const DATE_FILTER_OPTIONS: DateBucket[] = ['__overdue__', '__today__', '__thisweek__', '__upcoming__', '__nodate__'];
 
+const SIZE_FILTER_OPTIONS: TaskSize[] = ['small', 'medium', 'large'];
+
 export class FocusFirstView extends ItemView {
 	private plugin: FocusFirstPlugin;
 	private tasks: TaskItem[] = [];
 	private searchQuery = '';
 	private activeDateFilters = new Set<DateBucket>();
+	private activeSizeFilters = new Set<TaskSize>();
 	private searchVisible = false;
 	private debouncedRefresh = debounce(() => this.refresh(), 500, true);
 
@@ -112,7 +116,8 @@ export class FocusFirstView extends ItemView {
 		// the current state stays visible.
 		this.searchVisible = this.searchVisible
 			|| this.searchQuery !== ''
-			|| this.activeDateFilters.size > 0;
+			|| this.activeDateFilters.size > 0
+			|| this.activeSizeFilters.size > 0;
 		const searchArea = cardsWrapper.createDiv({
 			cls: `focus-first-search-area${this.searchVisible ? '' : ' focus-first-hidden'}`,
 		});
@@ -165,8 +170,9 @@ export class FocusFirstView extends ItemView {
 			__upcoming__: g.upcoming,
 			__nodate__:   g.noDate,
 		};
+		const dateGroup = panel.createDiv({ cls: 'focus-first-filter-group' });
 		for (const bucket of DATE_FILTER_OPTIONS) {
-			const label = panel.createEl('label', { cls: 'focus-first-filter-option' });
+			const label = dateGroup.createEl('label', { cls: 'focus-first-filter-option' });
 			const cb = label.createEl('input');
 			cb.type = 'checkbox';
 			cb.checked = this.activeDateFilters.has(bucket);
@@ -177,11 +183,41 @@ export class FocusFirstView extends ItemView {
 				onChange();
 			});
 		}
+
+		// Size filter (#30/#35): narrows to tasks of the chosen size(s), reusing the
+		// #s/#m/#l tags. Only shown when the user has size tags configured. Checking
+		// only "small" is the "quick wins" lens.
+		if (sizeTagList(this.plugin.settings).length > 0) {
+			const sizeGroup = panel.createDiv({ cls: 'focus-first-filter-group focus-first-size-filter-group' });
+			sizeGroup.createEl('span', { cls: 'focus-first-filter-group-label', text: t().view.sizeFilterLabel });
+			const sizeLabels: Record<TaskSize, string> = {
+				small: String(t().view.actions.sizeSmall),
+				medium: String(t().view.actions.sizeMedium),
+				large: String(t().view.actions.sizeLarge),
+			};
+			for (const size of SIZE_FILTER_OPTIONS) {
+				const label = sizeGroup.createEl('label', { cls: 'focus-first-filter-option' });
+				const cb = label.createEl('input');
+				cb.type = 'checkbox';
+				cb.checked = this.activeSizeFilters.has(size);
+				label.createEl('span', { text: sizeLabels[size] });
+				cb.addEventListener('change', () => {
+					if (cb.checked) this.activeSizeFilters.add(size);
+					else this.activeSizeFilters.delete(size);
+					onChange();
+				});
+			}
+		}
 	}
 
 	private passesDateFilter(task: TaskItem): boolean {
 		if (this.activeDateFilters.size === 0) return true;
 		return this.activeDateFilters.has(dueBucket(task) as DateBucket);
+	}
+
+	private passesSizeFilter(task: TaskItem): boolean {
+		if (this.activeSizeFilters.size === 0) return true;
+		return task.size !== undefined && this.activeSizeFilters.has(task.size);
 	}
 
 	/**
@@ -333,15 +369,17 @@ export class FocusFirstView extends ItemView {
 				return text.includes(query) || task.file.basename.toLowerCase().includes(query);
 			})
 			.filter((task) => this.passesDateFilter(task))
+			.filter((task) => this.passesSizeFilter(task))
 			.filter((task) => this.plugin.settings.futureTasks !== 'hide' || !isFutureTask(task));
 
-		const filtersActive = query !== '' || this.activeDateFilters.size > 0;
+		const filtersActive = query !== '' || this.activeDateFilters.size > 0 || this.activeSizeFilters.size > 0;
 
 		if (open.length === 0) {
 			if (filtersActive) {
 				renderNoMatches(container, () => {
 					this.searchQuery = '';
 					this.activeDateFilters.clear();
+					this.activeSizeFilters.clear();
 					this.render();
 				});
 			} else {

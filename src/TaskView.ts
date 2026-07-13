@@ -69,35 +69,6 @@ export class FocusFirstView extends ItemView {
 		const header = contentEl.createDiv({ cls: 'focus-first-header' });
 		header.createEl('h4', { text: t().view.title });
 		const headerActions = header.createDiv({ cls: 'focus-first-header-actions' });
-
-		// Axis selector (#36): a segmented control that flips the whole matrix
-		// between the Eisenhower and Value/Effort presets. Both options are shown so
-		// it reads as a switch (not a bare label), with the active one highlighted.
-		const axisSwitch = headerActions.createDiv({ cls: 'focus-first-axis-switch' });
-		axisSwitch.setAttribute('role', 'group');
-		axisSwitch.setAttribute('aria-label', String(t().view.axes.label));
-		const axisPresets: { mode: AxisMode; label: string; icon: string }[] = [
-			{ mode: 'eisenhower', label: String(t().view.axes.eisenhower), icon: 'layout-grid' },
-			{ mode: 'valueEffort', label: String(t().view.axes.valueEffort), icon: 'scale' },
-		];
-		for (const preset of axisPresets) {
-			const isActive = this.plugin.settings.axisMode === preset.mode;
-			const seg = axisSwitch.createEl('button', {
-				cls: `focus-first-axis-segment${isActive ? ' is-active' : ''}`,
-			});
-			setIcon(seg, preset.icon);
-			seg.createSpan({ text: preset.label });
-			seg.setAttribute('aria-pressed', String(isActive));
-			seg.setAttribute('title', preset.label);
-			if (!isActive) {
-				seg.addEventListener('click', () => {
-					this.plugin.settings.axisMode = preset.mode;
-					void this.plugin.saveSettings();
-					this.render();
-				});
-			}
-		}
-
 		const searchToggleBtn = headerActions.createEl('button', {
 			cls: 'mod-cta focus-first-search-toggle',
 		});
@@ -384,8 +355,40 @@ export class FocusFirstView extends ItemView {
 		this.render();
 	}
 
+	/** The Eisenhower ⇄ Value/Effort tab strip shown above the matrix grid (#36). */
+	private renderAxisTabs(container: HTMLElement): void {
+		const tabs = container.createDiv({ cls: 'focus-first-axis-tabs' });
+		tabs.setAttribute('role', 'tablist');
+		tabs.setAttribute('aria-label', String(t().view.axes.label));
+		const presets: { mode: AxisMode; label: string }[] = [
+			{ mode: 'eisenhower', label: String(t().view.axes.eisenhower) },
+			{ mode: 'valueEffort', label: String(t().view.axes.valueEffort) },
+		];
+		for (const preset of presets) {
+			const isActive = this.plugin.settings.axisMode === preset.mode;
+			const tab = tabs.createEl('button', {
+				cls: `focus-first-axis-tab${isActive ? ' is-active' : ''}`,
+				text: preset.label,
+			});
+			tab.setAttribute('role', 'tab');
+			tab.setAttribute('aria-selected', String(isActive));
+			if (!isActive) {
+				tab.addEventListener('click', () => {
+					this.plugin.settings.axisMode = preset.mode;
+					void this.plugin.saveSettings();
+					this.render();
+				});
+			}
+		}
+	}
+
 	private renderMatrix(contentEl: HTMLElement, container: HTMLElement): void {
 		container.empty();
+
+		// Axis selector (#36): a tab strip above the grid. Placing it with the matrix
+		// (rather than among the header action buttons) frames it as "which view of
+		// the matrix" and keeps it from being mistaken for a global action button.
+		this.renderAxisTabs(container);
 
 		const query = this.searchQuery.toLowerCase();
 		const open = this.tasks

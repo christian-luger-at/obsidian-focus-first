@@ -94,25 +94,22 @@
 	height: var(--icon-s, 18px);
 }
 
-/* Axis selector (#36): a segmented control with an inset track. The active
-   preset is a raised neutral chip — deliberately NOT an accent fill, so it
-   reads as a toggle and is never mistaken for the accent "Search" CTA button. */
-.focus-first-axis-switch {
-	display: inline-flex;
-	gap: 2px;
-	padding: 2px;
-	background: var(--background-modifier-form-field);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
+/* Axis selector (#36): a tab strip above the matrix grid. Text-only tabs with
+   an underline on the active one — a plain "switch view" affordance, clearly
+   distinct from the header's action buttons. */
+.focus-first-axis-tabs {
+	display: flex;
+	gap: var(--size-4-3);
+	margin-bottom: var(--size-4-2);
+	border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.focus-first-axis-segment {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--size-2-2);
-	padding: var(--size-2-1) var(--size-4-2);
+.focus-first-axis-tab {
+	padding: var(--size-2-2) var(--size-2-1);
+	margin-bottom: -1px; /* let the active underline sit on the container border */
 	border: none;
-	border-radius: var(--radius-s);
+	border-bottom: 2px solid transparent;
+	border-radius: 0;
 	box-shadow: none;
 	background: transparent;
 	color: var(--text-muted);
@@ -120,19 +117,14 @@
 	cursor: pointer;
 }
 
-.focus-first-axis-segment:hover:not(.is-active) {
+.focus-first-axis-tab:hover:not(.is-active) {
 	color: var(--text-normal);
 }
 
-.focus-first-axis-segment svg {
-	width: var(--icon-s, 18px);
-	height: var(--icon-s, 18px);
-}
-
-.focus-first-axis-segment.is-active {
-	background: var(--background-primary);
+.focus-first-axis-tab.is-active {
 	color: var(--text-normal);
-	box-shadow: var(--shadow-s);
+	border-bottom-color: var(--interactive-accent);
+	font-weight: var(--font-medium, 500);
 	cursor: default;
 }
 

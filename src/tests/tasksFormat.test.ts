@@ -6,7 +6,10 @@ import {
 	shiftDueDate,
 	setStartDate,
 	setPriority,
+	setSize,
 } from '../tasksFormat';
+
+const SIZE_TAGS = ['#s', '#m', '#l'];
 
 describe('canonicalizeTaskLine', () => {
 	it('moves priority and due date after the description and tags', () => {
@@ -144,5 +147,35 @@ describe('setPriority', () => {
 
 	it('leaves non-task lines unchanged', () => {
 		expect(setPriority('Just text', '🔺')).toBe('Just text');
+	});
+});
+
+describe('setSize', () => {
+	it('appends the chosen size tag', () => {
+		expect(setSize('- [ ] Task', '#s', SIZE_TAGS)).toBe('- [ ] Task #s');
+	});
+
+	it('replaces an existing size with the chosen one (never two sizes)', () => {
+		expect(setSize('- [ ] Task #m 📅 2026-07-07', '#l', SIZE_TAGS)).toBe('- [ ] Task 📅 2026-07-07 #l');
+	});
+
+	it('clears every size tag when passed null', () => {
+		expect(setSize('- [ ] Task #s more', null, SIZE_TAGS)).toBe('- [ ] Task more');
+	});
+
+	it('matches size tags case-insensitively when clearing', () => {
+		expect(setSize('- [ ] Task #M', '#s', SIZE_TAGS)).toBe('- [ ] Task #s');
+	});
+
+	it('does not duplicate a size tag that is already present', () => {
+		expect(setSize('- [ ] Task #s', '#s', SIZE_TAGS)).toBe('- [ ] Task #s');
+	});
+
+	it('preserves indentation', () => {
+		expect(setSize('    - [ ] Nested', '#m', SIZE_TAGS)).toBe('    - [ ] Nested #m');
+	});
+
+	it('leaves non-task lines unchanged', () => {
+		expect(setSize('Just #m text', '#s', SIZE_TAGS)).toBe('Just #m text');
 	});
 });

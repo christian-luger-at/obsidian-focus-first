@@ -1,5 +1,5 @@
 import { App, TFile } from 'obsidian';
-import { FocusFirstSettings, Priority } from './settings';
+import { FocusFirstSettings, Priority, TaskSize } from './settings';
 import { parseIsoDate, daysBetween } from './dateUtils';
 
 export interface TaskItem {
@@ -11,7 +11,24 @@ export interface TaskItem {
 	startDate?: Date;
 	scheduledDate?: Date;
 	priority?: Priority;
+	/** Coarse size / effort, derived from the configured size tags (#35). */
+	size?: TaskSize;
 	tags: string[];
+}
+
+/**
+ * Derives a task's size from its tags and the configured size tags. Matching is
+ * case-insensitive; small wins over medium over large if several are present
+ * (they shouldn't be — setting a size clears the others). Returns undefined when
+ * the task carries no size tag ("un-sized" — honest, no defaulting).
+ */
+export function detectSize(tags: string[], settings: FocusFirstSettings): TaskSize | undefined {
+	const lower = tags.map((tag) => tag.toLowerCase());
+	const has = (tag: string) => { const t = tag.trim().toLowerCase(); return t !== '' && lower.includes(t); };
+	if (has(settings.sizeTags.small)) return 'small';
+	if (has(settings.sizeTags.medium)) return 'medium';
+	if (has(settings.sizeTags.large)) return 'large';
+	return undefined;
 }
 
 // Matches Tasks-plugin due date: 📅 YYYY-MM-DD
@@ -84,6 +101,7 @@ export async function scanTasks(app: App, settings: FocusFirstSettings): Promise
 				startDate,
 				scheduledDate,
 				priority,
+				size: detectSize(tags, settings),
 				tags,
 			});
 		}

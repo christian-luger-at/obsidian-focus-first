@@ -118,6 +118,27 @@ export function shiftDueDate(line: string, days: number): string {
 }
 
 /**
+ * Sets (or clears, when `tag` is null) a task's size tag on a line: every
+ * configured size tag is removed first, then the chosen one is appended — so a
+ * task never carries more than one size. Matching is case-insensitive;
+ * indentation and other tokens are preserved. Non-task lines pass through.
+ */
+export function setSize(line: string, tag: string | null, allSizeTags: string[]): string {
+	if (!TASK_LINE_RE.test(line)) return line;
+	let out = line;
+	for (const existing of allSizeTags) {
+		if (!existing) continue;
+		const escaped = existing.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		out = out.replace(new RegExp(`\\s*${escaped}(?=\\s|$)`, 'gi'), '');
+	}
+	if (tag) {
+		const has = out.split(/\s+/).some((token) => token.toLowerCase() === tag.toLowerCase());
+		if (!has) out = `${out.replace(/[ \t]+$/, '')} ${tag}`;
+	}
+	return out;
+}
+
+/**
  * Sets (or clears, when `priority` is null) the priority signifier on a task
  * line. Any existing priority is removed first; a new one is inserted in
  * canonical position (before recurrence and dates). Indentation and other tokens

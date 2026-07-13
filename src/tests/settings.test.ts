@@ -319,6 +319,7 @@ describe('loadSettings — merges persisted data with defaults', () => {
 			focusTargetCount: 3,
 			focusOrder: ['Work/a.md::Pitch schreiben'],
 			hideTag: '#hide',
+			sizeTags: { small: '#s', medium: '#m', large: '#l' },
 			futureTasks: 'hide',
 			quickAddTarget: 'active',
 			quickAddInbox: 'Tasks/Inbox.md',

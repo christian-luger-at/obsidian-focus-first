@@ -1,9 +1,9 @@
 import { App, TFile, MarkdownView, Menu, setIcon } from 'obsidian';
 import { MatrixTask, ClassificationReason, explainTask } from './matrixClassifier';
 import { TaskItem, isFutureTask } from './taskScanner';
-import { FocusFirstSettings, Priority } from './settings';
+import { FocusFirstSettings, Priority, TaskSize, sizeTagList } from './settings';
 import { getTasksApi } from './tasksPlugin';
-import { setDueDate, shiftDueDate, setPriority, setStartDate, addDaysToIso } from './tasksFormat';
+import { setDueDate, shiftDueDate, setPriority, setStartDate, addDaysToIso, setSize } from './tasksFormat';
 import { EditSnapshot, showUndoNotice } from './undo';
 import { t } from './i18n';
 
@@ -289,6 +289,7 @@ export function renderTaskItem(
 	}
 	const priority = task.priority;
 	if (priority) addRow(String(labels.priority), (v) => v.setText(priorityNames[priority] ?? priority));
+	if (task.size) addRow(String(labels.size), (v) => v.setText(sizeLabel(task.size!)));
 	if (task.dueDate) {
 		const due = task.dueDate;
 		addRow(String(labels.due), (v) => { v.setText(due.toLocaleDateString()); v.addClass('focus-first-task-due'); });
@@ -351,6 +352,18 @@ export function renderTaskItem(
 		buildPriorityMenu(menu, task, app);
 		menu.showAtMouseEvent(e);
 	});
+
+	// Size is only offered when the user has configured size tags (they can be
+	// blanked out to opt out entirely).
+	if (sizeTagList(settings).length > 0) {
+		const sizeBtn = actionButton(actions, 'ruler', String(t().view.actions.size), 'focus-first-size-btn');
+		sizeBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			const menu = new Menu();
+			buildSizeMenu(menu, task, app, settings);
+			menu.showAtMouseEvent(e);
+		});
+	}
 
 	// Reveal the popover when the row is hovered. An open delay means it only
 	// appears when you actually rest on a row (so it doesn't flicker while you scan
@@ -519,5 +532,31 @@ function buildPriorityMenu(menu: Menu, task: MatrixTask, app: App): void {
 			.setChecked(task.priority === (opt.emoji ?? undefined))
 			.onClick(() => undoable(app, String(t().view.undoLabels.updated),
 				updateTaskLine(app, task.file.path, task.lineNumber, (l) => setPriority(l, opt.emoji), task.line))));
+	}
+}
+
+/** Localised label for a task size. */
+function sizeLabel(size: TaskSize): string {
+	const a = t().view.actions;
+	return String(size === 'small' ? a.sizeSmall : size === 'medium' ? a.sizeMedium : a.sizeLarge);
+}
+
+/** Populates a menu with the size options, writing the matching configured tag. */
+function buildSizeMenu(menu: Menu, task: MatrixTask, app: App, settings: FocusFirstSettings): void {
+	const allTags = sizeTagList(settings);
+	const options: { size: TaskSize | null; tag: string | null; label: string }[] = [
+		{ size: 'small', tag: settings.sizeTags.small.trim(), label: sizeLabel('small') },
+		{ size: 'medium', tag: settings.sizeTags.medium.trim(), label: sizeLabel('medium') },
+		{ size: 'large', tag: settings.sizeTags.large.trim(), label: sizeLabel('large') },
+		{ size: null, tag: null, label: String(t().view.actions.sizeNone) },
+	];
+	for (const opt of options) {
+		// Skip a bucket whose tag the user blanked out (nothing to write).
+		if (opt.size !== null && !opt.tag) continue;
+		menu.addItem((item) => item
+			.setTitle(opt.label)
+			.setChecked(task.size === (opt.size ?? undefined))
+			.onClick(() => undoable(app, String(t().view.undoLabels.updated),
+				updateTaskLine(app, task.file.path, task.lineNumber, (l) => setSize(l, opt.tag, allTags), task.line))));
 	}
 }

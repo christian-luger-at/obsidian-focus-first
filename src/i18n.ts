@@ -79,9 +79,15 @@ interface Translations {
 			priorityMedium: string;
 			priorityLow: string;
 			priorityLowest: string;
+			size: string;
+			sizeNone: string;
+			sizeSmall: string;
+			sizeMedium: string;
+			sizeLarge: string;
 		};
 		detail: {
 			priority: string;
+			size: string;
 			due: string;
 			start: string;
 			scheduled: string;
@@ -138,6 +144,10 @@ interface Translations {
 		focusTag: { name: string; desc: string };
 		focusTargetCount: { name: string; desc: string };
 		hideTag: { name: string; desc: string };
+		sizeTagsDesc: string;
+		sizeTagSmall: string;
+		sizeTagMedium: string;
+		sizeTagLarge: string;
 		futureTasks: {
 			name: string;
 			desc: string;
@@ -258,9 +268,15 @@ const translations: Record<Lang, Translations> = {
 				priorityMedium: '🔼 Medium',
 				priorityLow: '🔽 Low',
 				priorityLowest: '⏬ Lowest',
+				size: 'Set size',
+				sizeNone: 'No size',
+				sizeSmall: 'Small',
+				sizeMedium: 'Medium',
+				sizeLarge: 'Large',
 			},
 			detail: {
 				priority: 'Priority',
+				size: 'Size',
 				due: 'Due',
 				start: 'Start',
 				scheduled: 'Scheduled',
@@ -344,6 +360,10 @@ const translations: Record<Lang, Translations> = {
 				name: 'Hide tag',
 				desc: 'Tasks carrying this tag are hidden from the matrix. Use the hide button on any task to toggle this tag.',
 			},
+			sizeTagsDesc: 'Optional tags marking how big a task is (defaults #s / #m / #l). Set a size from any task\'s popover; size-based views read these. Leave the fields blank to turn sizing off.',
+			sizeTagSmall: 'Small task tag',
+			sizeTagMedium: 'Medium task tag',
+			sizeTagLarge: 'Large task tag',
 			futureTasks: {
 				name: 'Not-yet-started tasks',
 				desc: 'How to treat tasks whose start (🛫) or scheduled (⏳) date is still in the future — they are not actionable yet. The due date still drives urgency and classification.',
@@ -486,9 +506,15 @@ const translations: Record<Lang, Translations> = {
 				priorityMedium: '🔼 Mittel',
 				priorityLow: '🔽 Niedrig',
 				priorityLowest: '⏬ Niedrigste',
+				size: 'Größe festlegen',
+				sizeNone: 'Keine Größe',
+				sizeSmall: 'Klein',
+				sizeMedium: 'Mittel',
+				sizeLarge: 'Groß',
 			},
 			detail: {
 				priority: 'Priorität',
+				size: 'Größe',
 				due: 'Fällig',
 				start: 'Start',
 				scheduled: 'Geplant',
@@ -572,6 +598,10 @@ const translations: Record<Lang, Translations> = {
 				name: 'Ausblenden-Tag',
 				desc: 'Aufgaben mit diesem Tag werden in der Matrix nicht angezeigt. Über den Ausblenden-Button an jeder Aufgabe kann der Tag gesetzt oder entfernt werden.',
 			},
+			sizeTagsDesc: 'Optionale Tags, die angeben, wie groß eine Aufgabe ist (Standard #s / #m / #l). Die Größe lässt sich im Popover jeder Aufgabe setzen; größenbasierte Ansichten lesen diese Tags. Leere Felder schalten die Größe aus.',
+			sizeTagSmall: 'Tag für kleine Aufgaben',
+			sizeTagMedium: 'Tag für mittlere Aufgaben',
+			sizeTagLarge: 'Tag für große Aufgaben',
 			futureTasks: {
 				name: 'Noch nicht gestartete Aufgaben',
 				desc: 'Wie mit Aufgaben umgegangen wird, deren Startdatum (🛫) oder geplantes Datum (⏳) noch in der Zukunft liegt — sie sind noch nicht bearbeitbar. Das Fälligkeitsdatum bestimmt weiterhin Dringlichkeit und Einordnung.',

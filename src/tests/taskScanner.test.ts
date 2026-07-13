@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { scanTasks, isFutureTask, isHiddenTask, TaskItem } from '../taskScanner';
+import { scanTasks, isFutureTask, isHiddenTask, detectSize, TaskItem } from '../taskScanner';
 import { DEFAULT_SETTINGS, FocusFirstSettings } from '../settings';
 import { TFile } from './__mocks__/obsidian';
 
@@ -239,6 +239,46 @@ describe('priority parsing', () => {
 		const app = makeApp([{ path: 'a.md', lines: ['- [ ] Task 🔺 ⏫'] }]);
 		const [task] = await scanTasks(app, makeSettings());
 		expect(task?.priority).toBe('🔺');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Size parsing (#35)
+// ---------------------------------------------------------------------------
+
+describe('size parsing', () => {
+	it('detects each default size tag', () => {
+		const s = makeSettings();
+		expect(detectSize(['#s'], s)).toBe('small');
+		expect(detectSize(['#m'], s)).toBe('medium');
+		expect(detectSize(['#l'], s)).toBe('large');
+	});
+
+	it('returns undefined for an un-sized task (no defaulting)', () => {
+		expect(detectSize(['#work'], makeSettings())).toBeUndefined();
+	});
+
+	it('matches size tags case-insensitively', () => {
+		expect(detectSize(['#S'], makeSettings())).toBe('small');
+	});
+
+	it('honours custom size tags', () => {
+		const s = makeSettings({ sizeTags: { small: '#quick', medium: '#mid', large: '#big' } });
+		expect(detectSize(['#big'], s)).toBe('large');
+		expect(detectSize(['#s'], s)).toBeUndefined();
+	});
+
+	it('ignores a blanked-out size tag', () => {
+		const s = makeSettings({ sizeTags: { small: '', medium: '#m', large: '#l' } });
+		// An empty configured tag must never match the tagless task's (nonexistent) tag.
+		expect(detectSize([], s)).toBeUndefined();
+		expect(detectSize(['#m'], s)).toBe('medium');
+	});
+
+	it('parses the size into the scanned task', async () => {
+		const app = makeApp([{ path: 'a.md', lines: ['- [ ] Quick task #s'] }]);
+		const [task] = await scanTasks(app, makeSettings());
+		expect(task?.size).toBe('small');
 	});
 });
 

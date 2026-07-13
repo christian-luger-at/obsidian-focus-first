@@ -776,6 +776,33 @@ describe('task item actions in the matrix', () => {
 		expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), '- [ ] Sample task ⏫ 📅 2026-07-07');
 	});
 
+	it('the size button opens a menu and writes the chosen size tag (#35)', async () => {
+		const { container, app } = renderSingleTaskMatrix({ line: '- [ ] Sample task 📅 2026-07-07' });
+		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
+		app.vault.read = vi.fn(async () => '- [ ] Sample task 📅 2026-07-07');
+		clearCreatedMenus();
+
+		container.findByClass('focus-first-size-btn')?.dispatch('click', { stopPropagation: () => {} });
+
+		const menu = createdMenus[createdMenus.length - 1];
+		expect(menu?.items.map((i) => i.title)).toEqual(['Small', 'Medium', 'Large', 'No size']);
+		menu?.items.find((i) => i.title === 'Small')?.callback?.();
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), '- [ ] Sample task 📅 2026-07-07 #s');
+	});
+
+	it('shows the size in the popover and omits the size button when size tags are disabled (#35)', () => {
+		const sized = renderSingleTaskMatrix({ line: '- [ ] Sample task #m', tags: ['#m'], size: 'medium' });
+		expect(sized.container.findByClass('focus-first-size-btn')).toBeDefined();
+		const detailValues = sized.container.findAllByClass('focus-first-detail-value').map((v) => v.text);
+		expect(detailValues).toContain('Medium');
+
+		const off = renderSingleTaskMatrix({ line: '- [ ] Sample task' }, { sizeTags: { small: '', medium: '', large: '' } });
+		expect(off.container.findByClass('focus-first-size-btn')).toBeUndefined();
+	});
+
 	it('the postpone button shifts an existing due date by one day', async () => {
 		const { container, app } = renderSingleTaskMatrix({ dueDate: daysFromToday(0), line: '- [ ] Sample task 📅 2026-07-07' });
 		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');

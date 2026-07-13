@@ -41,6 +41,23 @@ export const PRIORITY_OPTIONS = [
 
 export type Priority = (typeof PRIORITY_OPTIONS)[number]['value'];
 
+/** Coarse task size / effort. Deliberately three buckets, never minute estimates. */
+export type TaskSize = 'small' | 'medium' | 'large';
+
+/** The open, configurable tags that mark a task's size (defaults #s / #m / #l). */
+export interface SizeTags {
+	small: string;
+	medium: string;
+	large: string;
+}
+
+/** The configured size tags, trimmed and with empties dropped, in size order. */
+export function sizeTagList(settings: FocusFirstSettings): string[] {
+	return [settings.sizeTags.small, settings.sizeTags.medium, settings.sizeTags.large]
+		.map((tag) => tag.trim())
+		.filter(Boolean);
+}
+
 export interface FocusFirstSettings {
 	taskScope: TaskScope;
 	taskFolder: string;
@@ -61,6 +78,8 @@ export interface FocusFirstSettings {
 	 */
 	focusOrder: string[];
 	hideTag: string;
+	/** Open, configurable tags marking task size / effort (foundation for #35). */
+	sizeTags: SizeTags;
 	futureTasks: FutureTasksMode;
 	quickAddTarget: QuickAddTarget;
 	quickAddInbox: string;
@@ -88,6 +107,7 @@ export const DEFAULT_SETTINGS: FocusFirstSettings = {
 	focusTargetCount: 0,
 	focusOrder: [],
 	hideTag: '#hide',
+	sizeTags: { small: '#s', medium: '#m', large: '#l' },
 	futureTasks: 'show',
 	quickAddTarget: 'inbox',
 	quickAddInbox: '',
@@ -540,6 +560,46 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 						.onChange(async (value) => {
 							this.plugin.settings.hideTag = value.trim();
 							await this.plugin.saveSettings();
+						}),
+				);
+
+			new Setting(body)
+				.setName(t().settings.sizeTagSmall)
+				.setDesc(t().settings.sizeTagsDesc)
+				.addText((text) =>
+					text
+						.setPlaceholder(DEFAULT_SETTINGS.sizeTags.small)
+						.setValue(this.plugin.settings.sizeTags.small)
+						.onChange(async (value) => {
+							this.plugin.settings.sizeTags.small = value.trim();
+							await this.plugin.saveSettings();
+							this.plugin.refreshViews();
+						}),
+				);
+
+			new Setting(body)
+				.setName(t().settings.sizeTagMedium)
+				.addText((text) =>
+					text
+						.setPlaceholder(DEFAULT_SETTINGS.sizeTags.medium)
+						.setValue(this.plugin.settings.sizeTags.medium)
+						.onChange(async (value) => {
+							this.plugin.settings.sizeTags.medium = value.trim();
+							await this.plugin.saveSettings();
+							this.plugin.refreshViews();
+						}),
+				);
+
+			new Setting(body)
+				.setName(t().settings.sizeTagLarge)
+				.addText((text) =>
+					text
+						.setPlaceholder(DEFAULT_SETTINGS.sizeTags.large)
+						.setValue(this.plugin.settings.sizeTags.large)
+						.onChange(async (value) => {
+							this.plugin.settings.sizeTags.large = value.trim();
+							await this.plugin.saveSettings();
+							this.plugin.refreshViews();
 						}),
 				);
 		});

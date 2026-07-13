@@ -184,31 +184,19 @@
 
 /* ── Filter panel ────────────────────────────────────────── */
 
+/* Filters stack one per row (date buckets, then sizes), in a single column. */
 .focus-first-filter-panel {
 	display: flex;
-	flex-wrap: wrap;
+	flex-direction: column;
 	gap: var(--size-4-2);
 	padding: 0 var(--size-4-4) var(--size-4-2);
 }
 
 .focus-first-filter-group {
 	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
+	flex-direction: column;
+	align-items: flex-start;
 	gap: var(--size-4-2);
-}
-
-/* The size filter sits after the date filters, set off by a subtle divider. */
-.focus-first-size-filter-group {
-	padding-left: var(--size-4-2);
-	border-left: 1px solid var(--background-modifier-border);
-}
-
-.focus-first-filter-group-label {
-	font-size: calc(var(--font-ui-smaller) * var(--focus-first-font-scale));
-	color: var(--text-faint);
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
 }
 
 .focus-first-filter-option {

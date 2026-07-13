@@ -189,7 +189,6 @@ export class FocusFirstView extends ItemView {
 		// only "small" is the "quick wins" lens.
 		if (sizeTagList(this.plugin.settings).length > 0) {
 			const sizeGroup = panel.createDiv({ cls: 'focus-first-filter-group focus-first-size-filter-group' });
-			sizeGroup.createEl('span', { cls: 'focus-first-filter-group-label', text: t().view.sizeFilterLabel });
 			const sizeLabels: Record<TaskSize, string> = {
 				small: String(t().view.actions.sizeSmall),
 				medium: String(t().view.actions.sizeMedium),

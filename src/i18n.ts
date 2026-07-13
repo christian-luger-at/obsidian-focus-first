@@ -28,7 +28,6 @@ interface Translations {
 		title: string;
 		refresh: string;
 		searchPlaceholder: string;
-		sizeFilterLabel: string;
 		searchToggle: string;
 		add: string;
 		manualTag: string;
@@ -218,7 +217,6 @@ const translations: Record<Lang, Translations> = {
 			title: 'Focus First',
 			refresh: 'Refresh',
 			searchPlaceholder: 'Search tasks…',
-			sizeFilterLabel: 'Size',
 			searchToggle: 'Search',
 			add: 'Add',
 			manualTag: 'Manually assigned via tag',
@@ -457,7 +455,6 @@ const translations: Record<Lang, Translations> = {
 			title: 'Focus First',
 			refresh: 'Aktualisieren',
 			searchPlaceholder: 'Aufgaben suchen…',
-			sizeFilterLabel: 'Größe',
 			searchToggle: 'Suchen',
 			add: 'Hinzufügen',
 			manualTag: 'Manuell per Tag zugewiesen',

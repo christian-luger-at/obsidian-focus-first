@@ -107,8 +107,22 @@ interface Translations {
 			causePriority: string;
 			causeNoPriority: string;
 			causePriorityNotImportant: string;
+			whyHighValue: string;
+			whyLowValue: string;
+			whyLowEffort: string;
+			whyHighEffort: string;
+			causeValueNoTag: string;
+			causeSize: string;
+			causeUnsized: string;
 		};
+		axes: { label: string; eisenhower: string; valueEffort: string };
 		quadrants: {
+			do: { title: string; subtitle: string; emptyState: string };
+			schedule: { title: string; subtitle: string; emptyState: string };
+			delegate: { title: string; subtitle: string; emptyState: string };
+			eliminate: { title: string; subtitle: string; emptyState: string };
+		};
+		quadrantsValueEffort: {
 			do: { title: string; subtitle: string; emptyState: string };
 			schedule: { title: string; subtitle: string; emptyState: string };
 			delegate: { title: string; subtitle: string; emptyState: string };
@@ -148,6 +162,11 @@ interface Translations {
 		sizeTagSmall: string;
 		sizeTagMedium: string;
 		sizeTagLarge: string;
+		valueEffortHeading: string;
+		valueSource: { name: string; desc: string; optionPriority: string; optionManualTag: string };
+		highValueTag: { name: string; desc: string };
+		lowValueTag: { name: string; desc: string };
+		lowEffortSizes: { name: string; desc: string };
 		futureTasks: {
 			name: string;
 			desc: string;
@@ -296,12 +315,26 @@ const translations: Record<Lang, Translations> = {
 				causePriority: 'priority {priority}',
 				causeNoPriority: 'no priority',
 				causePriorityNotImportant: 'priority {priority} not in important list',
+				whyHighValue: 'High value',
+				whyLowValue: 'Low value',
+				whyLowEffort: 'Low effort',
+				whyHighEffort: 'High effort',
+				causeValueNoTag: 'no {tag} tag',
+				causeSize: 'size {size}',
+				causeUnsized: 'un-sized → high effort',
 			},
+			axes: { label: 'Matrix axes', eisenhower: 'Eisenhower', valueEffort: 'Value/Effort' },
 			quadrants: {
 				do:       { title: 'Do',       subtitle: 'Urgent · Important',        emptyState: 'Nothing urgent right now' },
 				schedule: { title: 'Schedule', subtitle: 'Not urgent · Important',     emptyState: 'No important tasks pending' },
 				delegate: { title: 'Delegate', subtitle: 'Urgent · Not important',     emptyState: 'Nothing to delegate' },
 				eliminate:{ title: 'Eliminate',subtitle: 'Not urgent · Not important', emptyState: 'Nothing to eliminate' },
+			},
+			quadrantsValueEffort: {
+				do:       { title: 'Quick Wins', subtitle: 'High value · Low effort',  emptyState: 'No quick wins right now' },
+				schedule: { title: 'Big Bets',   subtitle: 'High value · High effort', emptyState: 'No big bets pending' },
+				delegate: { title: 'Fill-ins',   subtitle: 'Low value · Low effort',   emptyState: 'No fill-ins right now' },
+				eliminate:{ title: 'Time Sinks',  subtitle: 'Low value · High effort',  emptyState: 'No time sinks' },
 			},
 		},
 		settings: {
@@ -364,6 +397,25 @@ const translations: Record<Lang, Translations> = {
 			sizeTagSmall: 'Small task tag',
 			sizeTagMedium: 'Medium task tag',
 			sizeTagLarge: 'Large task tag',
+			valueEffortHeading: 'Value / Effort matrix',
+			valueSource: {
+				name: 'Value source',
+				desc: 'What "value" means in the Value/Effort matrix. Priority reuses your task priority as an importance proxy; Manual tag only counts the high-value tag below. Due date is deliberately not a value source (that is urgency).',
+				optionPriority: 'Priority',
+				optionManualTag: 'Manual tag only',
+			},
+			highValueTag: {
+				name: 'High-value tag',
+				desc: 'A task with this tag always counts as high value, overriding the value source.',
+			},
+			lowValueTag: {
+				name: 'Low-value tag',
+				desc: 'A task with this tag always counts as low value, overriding the value source.',
+			},
+			lowEffortSizes: {
+				name: 'Low-effort sizes',
+				desc: 'Which task sizes count as "low effort" on the effort axis. Un-sized tasks always count as high effort.',
+			},
 			futureTasks: {
 				name: 'Not-yet-started tasks',
 				desc: 'How to treat tasks whose start (🛫) or scheduled (⏳) date is still in the future — they are not actionable yet. The due date still drives urgency and classification.',
@@ -534,12 +586,26 @@ const translations: Record<Lang, Translations> = {
 				causePriority: 'Priorität {priority}',
 				causeNoPriority: 'keine Priorität',
 				causePriorityNotImportant: 'Priorität {priority} nicht in Wichtig-Liste',
+				whyHighValue: 'Hoher Wert',
+				whyLowValue: 'Geringer Wert',
+				whyLowEffort: 'Geringer Aufwand',
+				whyHighEffort: 'Hoher Aufwand',
+				causeValueNoTag: 'kein {tag}-Tag',
+				causeSize: 'Größe {size}',
+				causeUnsized: 'ungeschätzt → hoher Aufwand',
 			},
+			axes: { label: 'Matrix-Achsen', eisenhower: 'Eisenhower', valueEffort: 'Wert/Aufwand' },
 			quadrants: {
 				do:       { title: 'Erledigen',  subtitle: 'Dringend · Wichtig',             emptyState: 'Aktuell nichts Dringendes' },
 				schedule: { title: 'Einplanen',  subtitle: 'Nicht dringend · Wichtig',        emptyState: 'Keine wichtigen Aufgaben ausstehend' },
 				delegate: { title: 'Delegieren', subtitle: 'Dringend · Nicht wichtig',        emptyState: 'Nichts zu delegieren' },
 				eliminate:{ title: 'Eliminieren',subtitle: 'Nicht dringend · Nicht wichtig',  emptyState: 'Nichts zu eliminieren' },
+			},
+			quadrantsValueEffort: {
+				do:       { title: 'Quick Wins', subtitle: 'Hoher Wert · Geringer Aufwand',  emptyState: 'Aktuell keine Quick Wins' },
+				schedule: { title: 'Big Bets',   subtitle: 'Hoher Wert · Hoher Aufwand',     emptyState: 'Keine Big Bets ausstehend' },
+				delegate: { title: 'Lückenfüller', subtitle: 'Geringer Wert · Geringer Aufwand', emptyState: 'Aktuell keine Lückenfüller' },
+				eliminate:{ title: 'Zeitfresser', subtitle: 'Geringer Wert · Hoher Aufwand',  emptyState: 'Keine Zeitfresser' },
 			},
 		},
 		settings: {
@@ -602,6 +668,25 @@ const translations: Record<Lang, Translations> = {
 			sizeTagSmall: 'Tag für kleine Aufgaben',
 			sizeTagMedium: 'Tag für mittlere Aufgaben',
 			sizeTagLarge: 'Tag für große Aufgaben',
+			valueEffortHeading: 'Wert / Aufwand-Matrix',
+			valueSource: {
+				name: 'Wertquelle',
+				desc: 'Was "Wert" in der Wert/Aufwand-Matrix bedeutet. Priorität nutzt die Aufgaben-Priorität als Näherung für Wichtigkeit; Nur manueller Tag zählt allein den High-Value-Tag unten. Das Fälligkeitsdatum ist bewusst keine Wertquelle (das ist Dringlichkeit).',
+				optionPriority: 'Priorität',
+				optionManualTag: 'Nur manueller Tag',
+			},
+			highValueTag: {
+				name: 'High-Value-Tag',
+				desc: 'Eine Aufgabe mit diesem Tag zählt immer als hoher Wert und überschreibt die Wertquelle.',
+			},
+			lowValueTag: {
+				name: 'Low-Value-Tag',
+				desc: 'Eine Aufgabe mit diesem Tag zählt immer als geringer Wert und überschreibt die Wertquelle.',
+			},
+			lowEffortSizes: {
+				name: 'Größen für geringen Aufwand',
+				desc: 'Welche Aufgabengrößen auf der Aufwand-Achse als "geringer Aufwand" zählen. Ungeschätzte Aufgaben zählen immer als hoher Aufwand.',
+			},
 			futureTasks: {
 				name: 'Noch nicht gestartete Aufgaben',
 				desc: 'Wie mit Aufgaben umgegangen wird, deren Startdatum (🛫) oder geplantes Datum (⏳) noch in der Zukunft liegt — sie sind noch nicht bearbeitbar. Das Fälligkeitsdatum bestimmt weiterhin Dringlichkeit und Einordnung.',

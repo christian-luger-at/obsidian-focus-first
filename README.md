@@ -22,6 +22,7 @@ No manual sorting needed — though you can still pin any task to a quadrant by 
 ## Features
 
 - **Automatic classification** — tasks are sorted into quadrants based on their due date (urgency) and priority (importance), no setup needed beyond your existing Tasks-plugin workflow.
+- **Two matrices, one view** — switch the axes from the header between the classic **Eisenhower** (Urgency × Importance) and a **Value/Effort** matrix (Quick Wins / Big Bets / Fill-ins / Time Sinks). Value comes from your priority (default) or a `#highvalue`/`#lowvalue` tag; effort comes from task size (`#s`/`#m`/`#l`). Same auto-classification and "why here" explanation, just different axes — due date is deliberately never treated as value.
 - **Manual quadrant tags** — add a tag like `#do` or `#eliminate` to any task to pin it to a quadrant, overriding the automatic logic.
 - **Focus Tasks / today plan** — tag a task with `#focus` to pin it in a dedicated section above the matrix, so your top priorities never get buried. The section is an ordered, numbered shortlist (most important first, so #1 is your "frog"), which supports daily-planning methods like **Eat the Frog**, **Ivy Lee**, and **MITs**. **Drag focus tasks to reorder them by hand** — your manual order is remembered — or leave them in the automatic importance order. Set an optional daily target (e.g. 6 or 3) and a subtle line marks where the list runs past it.
 - **Hide & snooze tasks** — tag a task with `#hide` (or use the hide button) to remove it from the matrix without completing it. Hide it indefinitely, or **hide until a date** (tomorrow, next week, next Monday) — the task disappears now and comes back on its own when the date arrives. Under the hood, "hide until" just adds a start date (`🛫`), so it's the same mechanism, not a separate one.
@@ -125,6 +126,7 @@ When the query matches no tasks, the `empty-text` message is shown instead. (The
 | **Classification** | Urgency threshold (days), which priorities count as "important", and how to treat not-yet-started tasks whose start (`🛫`) or scheduled (`⏳`) date is still in the future (show, dim, or hide) |
 | **Quadrants** | Per-quadrant accent color, manual override tag, sort order, and grouping |
 | **Tags** | The special tags: Focus (default `#focus`), Hide (default `#hide`), and the optional size tags (default `#s`/`#m`/`#l`) |
+| **Value / Effort matrix** | For the Value/Effort preset: the value source (priority or manual tag), the `#highvalue`/`#lowvalue` override tags, and which sizes count as low effort |
 | **Quick Add** | Where quick-added tasks go: a configurable inbox note (created if missing) or the active note. On first use, if no inbox note is set, a dialog asks for one. |
 | **Appearance** | Font size used throughout the Focus First view; toggle the "why here" reason in the detail popover |
 | **Reset** | Restore every setting to its default value |

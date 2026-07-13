@@ -69,6 +69,24 @@ export class FocusFirstView extends ItemView {
 		const header = contentEl.createDiv({ cls: 'focus-first-header' });
 		header.createEl('h4', { text: t().view.title });
 		const headerActions = header.createDiv({ cls: 'focus-first-header-actions' });
+
+		// Axis selector (#36): flips the whole matrix between the Eisenhower and
+		// Value/Effort presets. Shows the active preset; clicking switches to the other.
+		const axisBtn = headerActions.createEl('button', { cls: 'focus-first-axis-toggle' });
+		setIcon(axisBtn, 'layout-grid');
+		axisBtn.createSpan({
+			text: String(this.plugin.settings.axisMode === 'valueEffort'
+				? t().view.axes.valueEffort
+				: t().view.axes.eisenhower),
+		});
+		axisBtn.setAttribute('aria-label', String(t().view.axes.label));
+		axisBtn.setAttribute('title', String(t().view.axes.label));
+		axisBtn.addEventListener('click', () => {
+			this.plugin.settings.axisMode = this.plugin.settings.axisMode === 'eisenhower' ? 'valueEffort' : 'eisenhower';
+			void this.plugin.saveSettings();
+			this.render();
+		});
+
 		const searchToggleBtn = headerActions.createEl('button', {
 			cls: 'mod-cta focus-first-search-toggle',
 		});
@@ -388,12 +406,16 @@ export class FocusFirstView extends ItemView {
 		}
 
 		const quadrants = classifyTasks(open, this.plugin.settings);
+		const eisenhower = this.plugin.settings.axisMode === 'eisenhower';
+		// Quadrant labels adapt to the active axes; colours and sort are shared slots.
+		const quadrantLabels = eisenhower ? t().view.quadrants : t().view.quadrantsValueEffort;
 
-		// Degenerate case: tasks exist but none are urgent or important (no due
-		// dates / important priorities), so everything is in Eliminate. Explain why
-		// instead of leaving the user with a matrix that looks broken.
-		if (quadrants.do.length === 0 && quadrants.schedule.length === 0 && quadrants.delegate.length === 0
-			&& quadrants.eliminate.length > 0) {
+		// Degenerate case (Eisenhower only): tasks exist but none are urgent or
+		// important, so everything is in Eliminate. Explain why instead of leaving
+		// the user with a matrix that looks broken. In Value/Effort the same pile-up
+		// (all Time Sinks) has a different meaning, so the hint doesn't apply.
+		if (eisenhower && quadrants.do.length === 0 && quadrants.schedule.length === 0
+			&& quadrants.delegate.length === 0 && quadrants.eliminate.length > 0) {
 			renderEliminateHint(container);
 		}
 
@@ -401,11 +423,13 @@ export class FocusFirstView extends ItemView {
 
 		for (const key of QUADRANT_ORDER) {
 			const tasks = quadrants[key];
-			const quadrant = t().view.quadrants[key];
+			const quadrant = quadrantLabels[key];
 
 			const cell = matrix.createDiv({ cls: `focus-first-quadrant focus-first-quadrant--${key}` });
 			cell.setCssProps({ '--quadrant-color': this.plugin.settings.quadrants[key].color });
-			makeDropTarget(cell, key, this.app, this.plugin.settings);
+			// Drag-to-retag writes Eisenhower quadrant tags; skip it in Value/Effort
+			// (v1 has no quadrant override tags for that preset, #36).
+			if (eisenhower) makeDropTarget(cell, key, this.app, this.plugin.settings);
 			this.renderHeading(cell, quadrant.title, { subtitle: quadrant.subtitle, count: tasks.length });
 
 			if (tasks.length === 0) {

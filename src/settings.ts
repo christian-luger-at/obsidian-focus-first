@@ -44,6 +44,12 @@ export type Priority = (typeof PRIORITY_OPTIONS)[number]['value'];
 /** Coarse task size / effort. Deliberately three buckets, never minute estimates. */
 export type TaskSize = 'small' | 'medium' | 'large';
 
+/** Which two axes drive the 2×2 matrix (#36). */
+export type AxisMode = 'eisenhower' | 'valueEffort';
+
+/** Where the Value axis gets its value from, in the Value/Effort matrix (#36). */
+export type ValueSource = 'priority' | 'manualTag';
+
 /** The open, configurable tags that mark a task's size (defaults #s / #m / #l). */
 export interface SizeTags {
 	small: string;
@@ -80,6 +86,16 @@ export interface FocusFirstSettings {
 	hideTag: string;
 	/** Open, configurable tags marking task size / effort (foundation for #35). */
 	sizeTags: SizeTags;
+	/** Which two axes drive the matrix: Eisenhower or Value/Effort (#36). */
+	axisMode: AxisMode;
+	/** Where the Value axis reads value from in the Value/Effort matrix (#36). */
+	valueSource: ValueSource;
+	/** Override tag that forces high value, always winning over the source (#36). */
+	highValueTag: string;
+	/** Override tag that forces low value, always winning over the source (#36). */
+	lowValueTag: string;
+	/** Which sizes count as "low effort" on the effort axis (#36). */
+	lowEffortSizes: TaskSize[];
 	futureTasks: FutureTasksMode;
 	quickAddTarget: QuickAddTarget;
 	quickAddInbox: string;
@@ -108,6 +124,11 @@ export const DEFAULT_SETTINGS: FocusFirstSettings = {
 	focusOrder: [],
 	hideTag: '#hide',
 	sizeTags: { small: '#s', medium: '#m', large: '#l' },
+	axisMode: 'eisenhower',
+	valueSource: 'priority',
+	highValueTag: '#highvalue',
+	lowValueTag: '#lowvalue',
+	lowEffortSizes: ['small'],
 	futureTasks: 'show',
 	quickAddTarget: 'inbox',
 	quickAddInbox: '',
@@ -602,6 +623,78 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 							this.plugin.refreshViews();
 						}),
 				);
+		});
+
+		// Advanced escape hatch for the Value/Effort preset (#36). The axis itself is
+		// switched in the view header; this only configures how value and effort are
+		// resolved. Presets stay the primary UX — this is deliberately secondary.
+		this.createSection(containerEl, t().settings.valueEffortHeading, (body) => {
+			new Setting(body)
+				.setName(t().settings.valueSource.name)
+				.setDesc(t().settings.valueSource.desc)
+				.addDropdown((drop) =>
+					drop
+						.addOption('priority', t().settings.valueSource.optionPriority)
+						.addOption('manualTag', t().settings.valueSource.optionManualTag)
+						.setValue(this.plugin.settings.valueSource)
+						.onChange(async (value: string) => {
+							this.plugin.settings.valueSource = value as ValueSource;
+							await this.plugin.saveSettings();
+							this.plugin.refreshViews();
+						}),
+				);
+
+			new Setting(body)
+				.setName(t().settings.highValueTag.name)
+				.setDesc(t().settings.highValueTag.desc)
+				.addText((text) =>
+					text
+						.setPlaceholder(DEFAULT_SETTINGS.highValueTag)
+						.setValue(this.plugin.settings.highValueTag)
+						.onChange(async (value) => {
+							this.plugin.settings.highValueTag = value.trim();
+							await this.plugin.saveSettings();
+							this.plugin.refreshViews();
+						}),
+				);
+
+			new Setting(body)
+				.setName(t().settings.lowValueTag.name)
+				.setDesc(t().settings.lowValueTag.desc)
+				.addText((text) =>
+					text
+						.setPlaceholder(DEFAULT_SETTINGS.lowValueTag)
+						.setValue(this.plugin.settings.lowValueTag)
+						.onChange(async (value) => {
+							this.plugin.settings.lowValueTag = value.trim();
+							await this.plugin.saveSettings();
+							this.plugin.refreshViews();
+						}),
+				);
+
+			const sizeSetting = new Setting(body)
+				.setName(t().settings.lowEffortSizes.name)
+				.setDesc(t().settings.lowEffortSizes.desc);
+			const sizePills = sizeSetting.controlEl.createDiv({ cls: 'focus-first-pill-group' });
+			const sizeOptions: { value: TaskSize; label: string }[] = [
+				{ value: 'small', label: String(t().view.actions.sizeSmall) },
+				{ value: 'medium', label: String(t().view.actions.sizeMedium) },
+				{ value: 'large', label: String(t().view.actions.sizeLarge) },
+			];
+			for (const option of sizeOptions) {
+				const pill = sizePills.createEl('button', { text: option.label, cls: 'focus-first-pill' });
+				if (this.plugin.settings.lowEffortSizes.includes(option.value)) pill.classList.add('is-active');
+				pill.addEventListener('click', () => { void (async () => {
+					const current = this.plugin.settings.lowEffortSizes;
+					const isActive = current.includes(option.value);
+					this.plugin.settings.lowEffortSizes = isActive
+						? current.filter((s) => s !== option.value)
+						: [...current, option.value];
+					pill.classList.toggle('is-active', !isActive);
+					await this.plugin.saveSettings();
+					this.plugin.refreshViews();
+				})(); });
+			}
 		});
 
 		this.createSection(containerEl, t().settings.quickAddHeading, (body) => {

@@ -221,27 +221,31 @@ export class FocusFirstView extends ItemView {
 		if (focusTasks.length === 0) { container.classList.add('focus-first-hidden'); return; }
 		container.classList.remove('focus-first-hidden');
 
-		this.renderHeading(container, String(t().view.focusSectionTitle));
-
-		// Render focus tasks through the exact same path as quadrant tasks so
-		// both look and behave identically. Classify them to attach the
-		// `quadrant` field that renderTask/drag-and-drop rely on, while keeping
-		// the original focus order.
+		// Focus tasks render through the same path as quadrant tasks (classified to
+		// attach the `quadrant` field), but ordered most-important-first and numbered
+		// so daily-planning rituals (Eat the Frog, Ivy Lee, MITs) have structure — #1
+		// is the natural "frog" (#34).
 		const byQuadrant = classifyTasks(focusTasks, this.plugin.settings);
-		const matrixByKey = new Map<string, MatrixTask>();
-		for (const q of QUADRANT_ORDER) {
-			for (const mt of byQuadrant[q]) {
-				matrixByKey.set(`${mt.file.path}:${mt.lineNumber}`, mt);
-			}
-		}
+		const ordered: MatrixTask[] = [];
+		for (const q of QUADRANT_ORDER) ordered.push(...byQuadrant[q]);
+		const sorted = sortTasks(ordered, { primary: 'priority', secondary: 'dueDate' });
 
+		this.renderHeading(container, String(t().view.focusSectionTitle), { count: sorted.length });
+
+		const target = this.plugin.settings.focusTargetCount;
 		const list = container.createEl('ul', { cls: 'focus-first-task-list' });
-		for (const task of focusTasks) {
-			const mt = matrixByKey.get(`${task.file.path}:${task.lineNumber}`);
+		sorted.forEach((mt, i) => {
+			// A subtle divider marks where the shortlist runs past the daily target.
+			if (target > 0 && i === target) {
+				list.createEl('li', {
+					cls: 'focus-first-focus-target-line',
+					text: String(t().view.focusOverTarget),
+				});
+			}
 			// Focus tasks never show the "why here" reason (#31): they are here
 			// because of the focus tag, not the quadrant classification.
-			if (mt) this.renderTask(list, mt, { suppressWhyHere: true });
-		}
+			this.renderTask(list, mt, { suppressWhyHere: true, position: i + 1 });
+		});
 	}
 
 	private renderMatrix(contentEl: HTMLElement, container: HTMLElement): void {
@@ -325,7 +329,7 @@ export class FocusFirstView extends ItemView {
 		}
 	}
 
-	private renderTask(parent: HTMLElement, task: MatrixTask, opts: { suppressWhyHere?: boolean } = {}): void {
+	private renderTask(parent: HTMLElement, task: MatrixTask, opts: { suppressWhyHere?: boolean; position?: number } = {}): void {
 		renderTaskItem(parent, task, this.app, this.plugin.settings, opts);
 	}
 

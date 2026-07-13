@@ -395,6 +395,34 @@ describe('renderFocusTasks()', () => {
 		expect(container.findByClass('focus-first-detail-why')).toBeUndefined();
 	});
 
+	it('numbers focus tasks, most important first (#34)', () => {
+		const tasks = [
+			makeTask({ tags: ['#focus'], priority: '🔽', line: '- [ ] Low', lineNumber: 0 }),
+			makeTask({ tags: ['#focus'], priority: '🔺', line: '- [ ] High', lineNumber: 1 }),
+		];
+		const { view, contentEl } = makeView({ focusTag: '#focus' }, tasks);
+		const container = contentEl.createDiv();
+		priv(view).renderFocusTasks(container);
+
+		expect(container.findAllByClass('focus-first-task-position').map((p) => p.text)).toEqual(['1.', '2.']);
+		// Highest priority floats to #1 (the "frog").
+		expect(container.findAllByClass('focus-first-task-text').map((el) => el.text)).toEqual(['High', 'Low']);
+	});
+
+	it('shows the target divider only when the shortlist exceeds the daily target (#34)', () => {
+		const three = [0, 1, 2].map((i) => makeTask({ tags: ['#focus'], line: `- [ ] T${i}`, lineNumber: i }));
+		const over = makeView({ focusTag: '#focus', focusTargetCount: 2 }, three);
+		const overContainer = over.contentEl.createDiv();
+		priv(over.view).renderFocusTasks(overContainer);
+		expect(overContainer.findByClass('focus-first-focus-target-line')).toBeDefined();
+
+		const two = [0, 1].map((i) => makeTask({ tags: ['#focus'], line: `- [ ] T${i}`, lineNumber: i }));
+		const under = makeView({ focusTag: '#focus', focusTargetCount: 2 }, two);
+		const underContainer = under.contentEl.createDiv();
+		priv(under.view).renderFocusTasks(underContainer);
+		expect(underContainer.findByClass('focus-first-focus-target-line')).toBeUndefined();
+	});
+
 	it('excludes hidden tasks even if they carry the focus tag', () => {
 		const tasks = [makeTask({ tags: ['#focus', '#hide'], line: '- [ ] Hidden focus task' })];
 		const { view, contentEl } = makeView({ focusTag: '#focus', hideTag: '#hide' }, tasks);

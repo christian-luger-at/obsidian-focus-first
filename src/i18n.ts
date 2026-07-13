@@ -48,6 +48,7 @@ interface Translations {
 		tasksPluginWarning: string;
 		tasksPluginWarningDismiss: string;
 		focusSectionTitle: string;
+		focusOverTarget: string;
 		focusAdd: string;
 		focusRemove: string;
 		focusDone: string;
@@ -135,6 +136,7 @@ interface Translations {
 		urgencyDays: { name: string; desc: string; error: string };
 		importantPriorities: { name: string; desc: string; error: string };
 		focusTag: { name: string; desc: string };
+		focusTargetCount: { name: string; desc: string };
 		hideTag: { name: string; desc: string };
 		futureTasks: {
 			name: string;
@@ -225,6 +227,7 @@ const translations: Record<Lang, Translations> = {
 			tasksPluginWarning: 'The Tasks plugin is not enabled. Focus First works with plain checkboxes, but the Tasks plugin makes adding due dates and priorities much easier.',
 			tasksPluginWarningDismiss: 'Dismiss',
 			focusSectionTitle: 'Focus Tasks',
+			focusOverTarget: 'Beyond today\'s target',
 			focusAdd: 'Add to focus',
 			focusRemove: 'Remove from focus',
 			focusDone: 'Mark as done',
@@ -332,6 +335,10 @@ const translations: Record<Lang, Translations> = {
 			focusTag: {
 				name: 'Focus tag',
 				desc: 'Add this tag to any task to highlight it as a Focus Task. Focus Tasks are displayed prominently above the matrix.',
+			},
+			focusTargetCount: {
+				name: 'Daily focus target',
+				desc: 'An optional number of focus tasks to aim for each day (e.g. 6 for the Ivy Lee method, 3 for MITs). A subtle line marks where the list runs past it. 0 turns it off.',
 			},
 			hideTag: {
 				name: 'Hide tag',
@@ -448,6 +455,7 @@ const translations: Record<Lang, Translations> = {
 			tasksPluginWarning: 'Das Tasks-Plugin ist nicht aktiviert. Focus First funktioniert auch mit normalen Checkboxen, aber mit dem Tasks-Plugin lassen sich Fälligkeitsdaten und Prioritäten viel einfacher setzen.',
 			tasksPluginWarningDismiss: 'Ausblenden',
 			focusSectionTitle: 'Fokus-Aufgaben',
+			focusOverTarget: 'Über dem Tagesziel',
 			focusAdd: 'Zu Fokus hinzufügen',
 			focusRemove: 'Aus Fokus entfernen',
 			hideTask: 'Aufgabe ausblenden',
@@ -555,6 +563,10 @@ const translations: Record<Lang, Translations> = {
 			focusTag: {
 				name: 'Fokus-Tag',
 				desc: 'Füge diesen Tag einer Aufgabe hinzu, um sie als Fokus-Aufgabe hervorzuheben. Fokus-Aufgaben werden prominent über der Matrix angezeigt.',
+			},
+			focusTargetCount: {
+				name: 'Tagesziel für Fokus',
+				desc: 'Optionale Anzahl an Fokus-Aufgaben pro Tag (z. B. 6 für die Ivy-Lee-Methode, 3 für MITs). Eine dezente Linie markiert, wo die Liste darüber hinausgeht. 0 schaltet es aus.',
 			},
 			hideTag: {
 				name: 'Ausblenden-Tag',

@@ -51,6 +51,8 @@ export interface FocusFirstSettings {
 	quadrants: QuadrantConfig;
 	groupByPrimary: boolean;
 	focusTag: string;
+	/** Optional daily target for the focus shortlist (0 = no target). */
+	focusTargetCount: number;
 	hideTag: string;
 	futureTasks: FutureTasksMode;
 	quickAddTarget: QuickAddTarget;
@@ -76,6 +78,7 @@ export const DEFAULT_SETTINGS: FocusFirstSettings = {
 	},
 	groupByPrimary: true,
 	focusTag: '#focus',
+	focusTargetCount: 0,
 	hideTag: '#hide',
 	futureTasks: 'show',
 	quickAddTarget: 'inbox',
@@ -501,6 +504,23 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 							await this.plugin.saveSettings();
 						}),
 				);
+
+			new Setting(body)
+				.setName(t().settings.focusTargetCount.name)
+				.setDesc(t().settings.focusTargetCount.desc)
+				.addText((text) => {
+					text
+						.setPlaceholder('0')
+						.setValue(String(this.plugin.settings.focusTargetCount))
+						.onChange(async (value) => {
+							const parsed = parseInt(value, 10);
+							this.plugin.settings.focusTargetCount = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+							await this.plugin.saveSettings();
+							this.plugin.refreshViews();
+						});
+					text.inputEl.setAttribute('type', 'number');
+					text.inputEl.setAttribute('min', '0');
+				});
 
 			new Setting(body)
 				.setName(t().settings.hideTag.name)

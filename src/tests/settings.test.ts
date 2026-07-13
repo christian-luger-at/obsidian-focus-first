@@ -81,6 +81,7 @@ function makePlugin(overrides: Partial<FocusFirstSettings> = {}) {
 			saved.push({ ...plugin.settings });
 		}),
 		applyFontSize: vi.fn(),
+		refreshViews: vi.fn(),
 		_saved: saved,
 	};
 	return plugin;
@@ -315,6 +316,7 @@ describe('loadSettings — merges persisted data with defaults', () => {
 			},
 			groupByPrimary: false,
 			focusTag: '#focus',
+			focusTargetCount: 3,
 			hideTag: '#hide',
 			futureTasks: 'hide',
 			quickAddTarget: 'active',
@@ -419,6 +421,23 @@ describe('FocusFirstSettingTab — folder text onChange', () => {
 // ---------------------------------------------------------------------------
 // onChange — urgencyDays text input
 // ---------------------------------------------------------------------------
+
+describe('FocusFirstSettingTab — focusTargetCount text onChange', () => {
+	it('saves a valid non-negative number', async () => {
+		const { plugin } = makeTabWithDisplay({ focusTargetCount: 5 });
+		await textByValue('5')?.simulate('6');
+		expect(plugin.settings.focusTargetCount).toBe(6);
+		expect(plugin.saveSettings).toHaveBeenCalled();
+	});
+
+	it('clamps invalid or negative input to 0', async () => {
+		const { plugin } = makeTabWithDisplay({ focusTargetCount: 5 });
+		await textByValue('5')?.simulate('-2');
+		expect(plugin.settings.focusTargetCount).toBe(0);
+		await textByValue('0')?.simulate('abc');
+		expect(plugin.settings.focusTargetCount).toBe(0);
+	});
+});
 
 describe('FocusFirstSettingTab — urgencyDays text onChange', () => {
 	it('saves a valid number', async () => {

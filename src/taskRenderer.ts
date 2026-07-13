@@ -213,7 +213,7 @@ export function renderTaskItem(
 	task: MatrixTask,
 	app: App,
 	settings: FocusFirstSettings,
-	opts: { suppressWhyHere?: boolean } = {},
+	opts: { suppressWhyHere?: boolean; position?: number } = {},
 ): void {
 	const focusTag = settings.focusTag.trim().toLowerCase();
 	const isFocused = focusTag
@@ -236,6 +236,11 @@ export function renderTaskItem(
 		.replace(/#\S+/g, '')
 		.replace(/\s{2,}/g, ' ')
 		.trim();
+
+	// Position number for the ordered focus shortlist (#34); #1 is the "frog".
+	if (opts.position !== undefined) {
+		li.createEl('span', { text: `${opts.position}.`, cls: 'focus-first-task-position' });
+	}
 
 	// Title — a link: a single click opens the note, like any other link. The list
 	// is just titles; the detail popover opens on row hover (see below).

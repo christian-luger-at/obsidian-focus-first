@@ -94,22 +94,20 @@
 	height: var(--icon-s, 18px);
 }
 
-/* Axis selector (#36): a tab strip above the matrix grid. Text-only tabs with
-   an underline on the active one — a plain "switch view" affordance, clearly
-   distinct from the header's action buttons. */
+/* Axis selector (#36): a light tab strip above the matrix grid. The active
+   preset is a subtle neutral chip; the inactive one is plain muted text. No
+   track, border, or accent fill — so it stays quiet and never reads as a
+   button competing with the header's actions. */
 .focus-first-axis-tabs {
 	display: flex;
-	gap: var(--size-4-3);
-	margin-bottom: var(--size-4-2);
-	border-bottom: 1px solid var(--background-modifier-border);
+	gap: 2px;
+	margin-bottom: var(--size-4-3);
 }
 
 .focus-first-axis-tab {
-	padding: var(--size-2-2) var(--size-2-1);
-	margin-bottom: -1px; /* let the active underline sit on the container border */
+	padding: var(--size-2-1) var(--size-4-2);
 	border: none;
-	border-bottom: 2px solid transparent;
-	border-radius: 0;
+	border-radius: var(--radius-s);
 	box-shadow: none;
 	background: transparent;
 	color: var(--text-muted);
@@ -122,9 +120,8 @@
 }
 
 .focus-first-axis-tab.is-active {
+	background: var(--background-modifier-hover);
 	color: var(--text-normal);
-	border-bottom-color: var(--interactive-accent);
-	font-weight: var(--font-medium, 500);
 	cursor: default;
 }
 

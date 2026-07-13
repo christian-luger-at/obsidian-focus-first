@@ -446,11 +446,27 @@ describe('renderFocusTasks()', () => {
 		const rows = container.findAllByClass('focus-first-task-item'); // [A, B, C]
 		const store = { 'application/json': JSON.stringify({ filePath: 'Notes/test.md', lineNumber: 2, line: '- [ ] C' }) };
 		const dataTransfer = { getData: (k: string) => store[k as keyof typeof store] };
-		// Drop C onto A → C lands immediately before A.
-		rows[0]!.dispatch('drop', { preventDefault: () => {}, dataTransfer });
+		// Drop C onto the upper half of A (rect midpoint is 510) → C lands before A.
+		rows[0]!.dispatch('drop', { preventDefault: () => {}, dataTransfer, clientY: 505 });
 
 		expect(plugin.settings.focusOrder).toEqual(['Notes/test.md::C', 'Notes/test.md::A', 'Notes/test.md::B']);
 		expect(plugin.saveSettings).toHaveBeenCalled();
+	});
+
+	it('dropping on the lower half of the last row moves the task to the end (#37)', () => {
+		const tasks = ['A', 'B', 'C'].map((n, i) =>
+			makeTask({ tags: ['#focus'], line: `- [ ] ${n}`, lineNumber: i }));
+		const { view, plugin, contentEl } = makeView({ focusTag: '#focus' }, tasks);
+		const container = contentEl.createDiv();
+		priv(view).renderFocusTasks(container);
+
+		const rows = container.findAllByClass('focus-first-task-item'); // [A, B, C]
+		const store = { 'application/json': JSON.stringify({ filePath: 'Notes/test.md', lineNumber: 0, line: '- [ ] A' }) };
+		const dataTransfer = { getData: (k: string) => store[k as keyof typeof store] };
+		// Drop A onto the lower half of C (midpoint 510) → A lands after C, i.e. last.
+		rows[2]!.dispatch('drop', { preventDefault: () => {}, dataTransfer, clientY: 515 });
+
+		expect(plugin.settings.focusOrder).toEqual(['Notes/test.md::B', 'Notes/test.md::C', 'Notes/test.md::A']);
 	});
 
 	it('ignores a drop whose task is not in the focus list (#37)', () => {
@@ -467,15 +483,20 @@ describe('renderFocusTasks()', () => {
 		expect(plugin.saveSettings).not.toHaveBeenCalled();
 	});
 
-	it('dragover on a focus row shows the insertion indicator (#37)', () => {
+	it('dragover shows a before/after indicator depending on the pointer half (#37)', () => {
 		const tasks = [makeTask({ tags: ['#focus'], line: '- [ ] A', lineNumber: 0 })];
 		const { view, contentEl } = makeView({ focusTag: '#focus' }, tasks);
 		const container = contentEl.createDiv();
 		priv(view).renderFocusTasks(container);
 
-		const row = container.findByClass('focus-first-task-item')!;
-		row.dispatch('dragover', { preventDefault: () => {} });
+		const row = container.findByClass('focus-first-task-item')!; // rect midpoint is 510
+		row.dispatch('dragover', { preventDefault: () => {}, clientY: 505 });
 		expect(row.classList.contains('focus-first-drop-before')).toBe(true);
+		expect(row.classList.contains('focus-first-drop-after')).toBe(false);
+
+		row.dispatch('dragover', { preventDefault: () => {}, clientY: 515 });
+		expect(row.classList.contains('focus-first-drop-after')).toBe(true);
+		expect(row.classList.contains('focus-first-drop-before')).toBe(false);
 	});
 
 	it('excludes hidden tasks even if they carry the focus tag', () => {

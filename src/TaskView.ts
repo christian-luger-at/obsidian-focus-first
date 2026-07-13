@@ -268,19 +268,29 @@ export class FocusFirstView extends ItemView {
 
 	/**
 	 * Wires a focus row as a drop target for manual reordering (#37): dropping a
-	 * dragged focus task onto this row places it immediately before this one.
+	 * dragged focus task onto this row places it just before or after this one,
+	 * depending on which half of the row the pointer is over — so every gap,
+	 * including above the first row and below the last, is reachable.
 	 */
 	private makeFocusReorderTarget(li: HTMLElement, targetKey: string, keys: string[]): void {
+		// True when the pointer sits in the lower half of the row → drop after it.
+		const isAfter = (e: DragEvent): boolean => {
+			const rect = li.getBoundingClientRect();
+			return e.clientY > rect.top + rect.height / 2;
+		};
+		const clearIndicator = () => li.classList.remove('focus-first-drop-before', 'focus-first-drop-after');
 		li.addEventListener('dragover', (e) => {
 			e.preventDefault();
-			li.classList.add('focus-first-drop-before');
+			const after = isAfter(e);
+			li.classList.toggle('focus-first-drop-after', after);
+			li.classList.toggle('focus-first-drop-before', !after);
 		});
 		li.addEventListener('dragleave', (e) => {
-			if (!li.contains(e.relatedTarget as Node)) li.classList.remove('focus-first-drop-before');
+			if (!li.contains(e.relatedTarget as Node)) clearIndicator();
 		});
 		li.addEventListener('drop', (e) => {
 			e.preventDefault();
-			li.classList.remove('focus-first-drop-before');
+			clearIndicator();
 			const raw = e.dataTransfer?.getData('application/json');
 			if (!raw) return;
 			let data: unknown;
@@ -288,23 +298,23 @@ export class FocusFirstView extends ItemView {
 			if (typeof data !== 'object' || data === null) return;
 			const { filePath, line } = data as { filePath?: unknown; line?: unknown };
 			if (typeof filePath !== 'string' || typeof line !== 'string') return;
-			this.reorderFocus(keys, this.focusKey(filePath, line), targetKey);
+			this.reorderFocus(keys, this.focusKey(filePath, line), targetKey, isAfter(e));
 		});
 	}
 
 	/**
-	 * Rebuilds the manual focus order by moving `draggedKey` to just before
-	 * `targetKey`, then persists it. Rebuilding from the currently-shown keys keeps
-	 * `focusOrder` pruned to tasks that are actually in focus.
+	 * Rebuilds the manual focus order by moving `draggedKey` to just before (or
+	 * after, when `after` is true) `targetKey`, then persists it. Rebuilding from
+	 * the currently-shown keys keeps `focusOrder` pruned to tasks in focus.
 	 */
-	private reorderFocus(keys: string[], draggedKey: string, targetKey: string): void {
+	private reorderFocus(keys: string[], draggedKey: string, targetKey: string, after: boolean): void {
 		if (draggedKey === targetKey) return;
 		// Only reorder within the focus list — ignore drops from elsewhere.
 		if (!keys.includes(draggedKey)) return;
 		const without = keys.filter((k) => k !== draggedKey);
 		const insertAt = without.indexOf(targetKey);
 		if (insertAt === -1) return;
-		without.splice(insertAt, 0, draggedKey);
+		without.splice(after ? insertAt + 1 : insertAt, 0, draggedKey);
 		this.plugin.settings.focusOrder = without;
 		void this.plugin.saveSettings();
 		this.render();

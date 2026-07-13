@@ -159,7 +159,7 @@ If Focus First helps you, a ⭐ on the repo makes it easier for others to discov
 
 ## Contributing
 
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report issues, set up the project, and open a pull request.
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report issues, set up the project, and open a pull request, and [DEVELOPMENT.md](DEVELOPMENT.md) for the local dev/test workflow, the release process, and a **demo-vault generator** (`node scripts/gen-demo-vault.mjs`) that spins up a 400-note product-management vault with 100 varied tasks to try the plugin against.
 
 ## License
 

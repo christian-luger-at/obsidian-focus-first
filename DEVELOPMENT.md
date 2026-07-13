@@ -170,6 +170,34 @@ The coverage report shows statement, branch, function, and line coverage for all
 2. Add any new Obsidian symbols your code uses to `src/tests/__mocks__/obsidian.ts`
 3. Run `npm test` to verify
 
+## Demo vault
+
+A generator script produces a realistic product-management demo vault, so you can exercise the plugin against a large, varied dataset — handy for manual testing, screenshots, and demos.
+
+```bash
+node scripts/gen-demo-vault.mjs            # writes ./demo-vault
+node scripts/gen-demo-vault.mjs my-vault   # or a custom output directory
+```
+
+It creates **400+ notes** organised with the [PARA](https://fortelabs.com/blog/para/) method — `0 Inbox`, `1 Projects`, `2 Areas` (incl. Products), `3 Resources` (Knowledge, Insights, People, Books, Meetings), `4 Archive`, plus `Maps` MOCs — all cross-linked with `[[wikilinks]]` and carrying YAML frontmatter. Meeting notes embed action items.
+
+It also generates exactly **100 checkbox tasks** that exercise the classification:
+
+| Dimension | Spread |
+| --- | --- |
+| Status | 70 open `[ ]`, 30 done `[x]` (with a `✅` date) |
+| Due date | 20 overdue · 30 today/this week · 20 upcoming · 30 no date |
+| Priority | balanced across 🔺⏫🔼🔽⏬, some none |
+| Size | `#s` / `#m` / `#l` mixed, some none |
+| Value | some `#highvalue` / `#lowvalue` (for the Value/Effort matrix) |
+
+Notes:
+
+- The RNG uses a fixed seed, so the structure is stable across runs; **due dates are relative to the day you run it**.
+- The output directory (`demo-vault/`) and any zip are git-ignored — the vault never lands in a commit or a release build.
+- To try it: open the generated folder as a vault in Obsidian, then symlink the plugin into it (see [step 2](#2-link-the-plugin-to-obsidian-symlink) above). To share it, zip the folder: `zip -r focus-first-demo-vault.zip demo-vault`.
+- The generator lives at [`scripts/gen-demo-vault.mjs`](scripts/gen-demo-vault.mjs) — edit the content pools and distributions there. It currently emits only open/done tasks (no `#focus`, `#hide`, or cancelled states).
+
 ## Build production release
 
 ### 1. Bump the version

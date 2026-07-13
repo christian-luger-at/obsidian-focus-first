@@ -380,6 +380,15 @@ describe('renderFocusTasks()', () => {
 		expect(itemText?.text).toBe('Focused task');
 	});
 
+	it('never shows the "why here" row for focus tasks, even with the setting on (#31)', () => {
+		const tasks = [makeTask({ tags: ['#focus'], dueDate: daysFromToday(0), priority: '🔺', line: '- [ ] Focused task' })];
+		const { view, contentEl } = makeView({ focusTag: '#focus', importantPriorities: ['🔺'], showWhyHere: true }, tasks);
+		const container = contentEl.createDiv();
+		priv(view).renderFocusTasks(container);
+
+		expect(container.findByClass('focus-first-detail-why')).toBeUndefined();
+	});
+
 	it('excludes hidden tasks even if they carry the focus tag', () => {
 		const tasks = [makeTask({ tags: ['#focus', '#hide'], line: '- [ ] Hidden focus task' })];
 		const { view, contentEl } = makeView({ focusTag: '#focus', hideTag: '#hide' }, tasks);

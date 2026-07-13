@@ -206,6 +206,7 @@ export function renderTaskItem(
 	task: MatrixTask,
 	app: App,
 	settings: FocusFirstSettings,
+	opts: { suppressWhyHere?: boolean } = {},
 ): void {
 	const focusTag = settings.focusTag.trim().toLowerCase();
 	const isFocused = focusTag
@@ -255,8 +256,10 @@ export function renderTaskItem(
 		build(meta.createDiv({ cls: 'focus-first-detail-value' }));
 	};
 	// Why-here reason first, so the automatic classification is transparent
-	// (unless the user has turned it off in settings).
-	if (settings.showWhyHere) {
+	// (unless the user turned it off, or this is a focus task — a focus task is
+	// here because of the #focus tag, not the quadrant logic, so the reason is
+	// irrelevant there regardless of the setting, issue #31).
+	if (settings.showWhyHere && !opts.suppressWhyHere) {
 		addRow(String(labels.why), (v) => {
 			v.setText(classificationReasonText(task, settings));
 			v.addClass('focus-first-detail-why');

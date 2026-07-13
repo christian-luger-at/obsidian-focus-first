@@ -264,7 +264,9 @@ export class FocusFirstView extends ItemView {
 		const list = container.createEl('ul', { cls: 'focus-first-task-list' });
 		for (const task of focusTasks) {
 			const mt = matrixByKey.get(`${task.file.path}:${task.lineNumber}`);
-			if (mt) this.renderTask(list, mt);
+			// Focus tasks never show the "why here" reason (#31): they are here
+			// because of the focus tag, not the quadrant classification.
+			if (mt) this.renderTask(list, mt, { suppressWhyHere: true });
 		}
 	}
 
@@ -349,8 +351,8 @@ export class FocusFirstView extends ItemView {
 		}
 	}
 
-	private renderTask(parent: HTMLElement, task: MatrixTask): void {
-		renderTaskItem(parent, task, this.app, this.plugin.settings);
+	private renderTask(parent: HTMLElement, task: MatrixTask, opts: { suppressWhyHere?: boolean } = {}): void {
+		renderTaskItem(parent, task, this.app, this.plugin.settings, opts);
 	}
 
 	private renderTaskGroup(list: HTMLElement, label: string, tasks: MatrixTask[]): void {

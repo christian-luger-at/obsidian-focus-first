@@ -334,9 +334,9 @@
 
 /* ── Focus indicator on matrix task items ────────────────── */
 
-.focus-first-task-item.is-focused {
-	border-left: 2px solid var(--interactive-accent);
-	padding-left: calc(var(--size-4-2) - 2px);
+.focus-first-matrix-container .focus-first-task-item.is-focused {
+	background: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
+	border-radius: var(--radius-s);
 }
 
 /* Future tasks (start/scheduled date ahead) in "dim" mode — de-emphasised but

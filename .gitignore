@@ -24,3 +24,7 @@ coverage
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store
 releases/
+
+# Demo vault (usable locally, kept out of git & releases)
+demo-vault/
+focus-first-demo-vault.zip

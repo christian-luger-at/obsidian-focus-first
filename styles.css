@@ -184,7 +184,7 @@
 
 /* ── Filter panel ────────────────────────────────────────── */
 
-/* Filters stack one per row (date buckets, then sizes), in a single column. */
+/* One row per filter group: all date buckets on one line, all sizes on the next. */
 .focus-first-filter-panel {
 	display: flex;
 	flex-direction: column;
@@ -194,8 +194,8 @@
 
 .focus-first-filter-group {
 	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
+	flex-wrap: wrap;
+	align-items: center;
 	gap: var(--size-4-2);
 }
 

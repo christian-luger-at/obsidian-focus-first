@@ -47,7 +47,6 @@ interface Translations {
 		};
 		tasksPluginWarning: string;
 		tasksPluginWarningDismiss: string;
-		filterToggle: string;
 		focusSectionTitle: string;
 		focusAdd: string;
 		focusRemove: string;
@@ -218,7 +217,6 @@ const translations: Record<Lang, Translations> = {
 			},
 			tasksPluginWarning: 'The Tasks plugin is not enabled. Focus First works with plain checkboxes, but the Tasks plugin makes adding due dates and priorities much easier.',
 			tasksPluginWarningDismiss: 'Dismiss',
-			filterToggle: 'More Filters',
 			focusSectionTitle: 'Focus Tasks',
 			focusAdd: 'Add to focus',
 			focusRemove: 'Remove from focus',
@@ -435,7 +433,6 @@ const translations: Record<Lang, Translations> = {
 			},
 			tasksPluginWarning: 'Das Tasks-Plugin ist nicht aktiviert. Focus First funktioniert auch mit normalen Checkboxen, aber mit dem Tasks-Plugin lassen sich Fälligkeitsdaten und Prioritäten viel einfacher setzen.',
 			tasksPluginWarningDismiss: 'Ausblenden',
-			filterToggle: 'Mehr Filter',
 			focusSectionTitle: 'Fokus-Aufgaben',
 			focusAdd: 'Zu Fokus hinzufügen',
 			focusRemove: 'Aus Fokus entfernen',

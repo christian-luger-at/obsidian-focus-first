@@ -182,41 +182,6 @@
 	box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
 }
 
-.focus-first-filter-toggle {
-	flex-shrink: 0;
-	display: flex;
-	align-items: center;
-	gap: var(--size-2-2);
-	background: none;
-	border: none;
-	padding: var(--size-2-1);
-	color: var(--text-faint);
-	cursor: pointer;
-}
-
-.focus-first-filter-toggle svg {
-	width: 15px;
-	height: 15px;
-}
-
-.focus-first-filter-toggle:hover {
-	color: var(--text-muted);
-}
-
-.focus-first-filter-toggle.is-open,
-.focus-first-filter-toggle.has-active {
-	color: var(--interactive-accent);
-}
-
-.focus-first-filter-badge {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
-	border-radius: 999px;
-	font-size: 0.75em;
-	padding: 0 5px;
-	line-height: 1.5;
-}
-
 /* ── Filter panel ────────────────────────────────────────── */
 
 .focus-first-filter-panel {
@@ -224,10 +189,6 @@
 	flex-wrap: wrap;
 	gap: var(--size-4-2);
 	padding: 0 var(--size-4-4) var(--size-4-2);
-}
-
-.focus-first-filter-panel.focus-first-hidden {
-	display: none;
 }
 
 .focus-first-filter-option {

@@ -280,18 +280,24 @@ describe('render()', () => {
 		expect(view.searchQuery).toBe('banana');
 	});
 
-	it('clicking the filter toggle shows the filter panel', () => {
+	it('shows the filter panel inside the search area with no separate filter toggle (#29)', () => {
 		const { view, contentEl } = makeView();
 		priv(view).render();
 
-		const filterPanel = contentEl.findByClass('focus-first-filter-panel');
-		const filterToggle = contentEl.findByClass('focus-first-filter-toggle');
-		expect(filterPanel?.classList.contains('focus-first-hidden')).toBe(true);
+		// The date filters are part of the search area, not behind a second toggle.
+		expect(contentEl.findByClass('focus-first-filter-panel')).toBeDefined();
+		expect(contentEl.findByClass('focus-first-filter-option')).toBeDefined();
+		expect(contentEl.findByClass('focus-first-filter-toggle')).toBeUndefined();
+	});
 
-		filterToggle?.dispatch('click');
+	it('auto-opens the search area when a date filter is active (#29)', () => {
+		const { view, contentEl } = makeView();
+		// @ts-expect-error — seed a private active date filter
+		view.activeDateFilters = new Set(['__overdue__']);
+		priv(view).render();
 
-		expect(filterPanel?.classList.contains('focus-first-hidden')).toBe(false);
-		expect(filterToggle?.classList.contains('is-open')).toBe(true);
+		const searchArea = contentEl.findByClass('focus-first-search-area');
+		expect(searchArea?.classList.contains('focus-first-hidden')).toBe(false);
 	});
 
 	it('collapses the search area by default and toggles it from the header', () => {

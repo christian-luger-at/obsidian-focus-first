@@ -22,7 +22,6 @@ export class FocusFirstView extends ItemView {
 	private tasks: TaskItem[] = [];
 	private searchQuery = '';
 	private activeDateFilters = new Set<DateBucket>();
-	private filtersVisible = false;
 	private searchVisible = false;
 	private debouncedRefresh = debounce(() => this.refresh(), 500, true);
 
@@ -106,10 +105,11 @@ export class FocusFirstView extends ItemView {
 		// sharing the same native card look (--background-secondary + border).
 		const cardsWrapper = contentEl.createDiv({ cls: 'focus-first-cards-wrapper' });
 
-		// Search area groups search input + filter panel visually. It stays
+		// Search area groups the search input and the date filters. It stays
 		// collapsed by default (toggled from the header) so it doesn't take up
-		// permanent vertical space, but auto-opens when a search or filter is
-		// active so the current state is always visible.
+		// permanent vertical space; when opened it reveals the input and all filter
+		// options at once, and it auto-opens when a search or filter is active so
+		// the current state stays visible.
 		this.searchVisible = this.searchVisible
 			|| this.searchQuery !== ''
 			|| this.activeDateFilters.size > 0;
@@ -126,42 +126,16 @@ export class FocusFirstView extends ItemView {
 				value: this.searchQuery,
 			},
 		});
-		const filterToggle = searchBar.createEl('button', {
-			cls: `focus-first-filter-toggle${this.filtersVisible ? ' is-open' : ''}`,
-		});
-		filterToggle.setAttribute('aria-label', String(t().view.filterToggle));
-		filterToggle.setAttribute('title', String(t().view.filterToggle));
-		const updateFilterToggle = () => {
-			filterToggle.empty();
-			setIcon(filterToggle, 'sliders-horizontal');
-			if (this.activeDateFilters.size > 0) {
-				filterToggle.createEl('span', {
-					text: String(this.activeDateFilters.size),
-					cls: 'focus-first-filter-badge',
-				});
-			}
-			filterToggle.classList.toggle('has-active', this.activeDateFilters.size > 0);
-		};
-		updateFilterToggle();
 
-		const filterPanel = searchArea.createDiv({
-			cls: `focus-first-filter-panel${this.filtersVisible ? '' : ' focus-first-hidden'}`,
-		});
+		const filterPanel = searchArea.createDiv({ cls: 'focus-first-filter-panel' });
 
 		// Declare containers before closures reference them
 		const focusContainer = cardsWrapper.createDiv({ cls: 'focus-first-focus-container' });
 		const matrixContainer = contentEl.createDiv({ cls: 'focus-first-matrix-container' });
 
 		this.renderFilterPanel(filterPanel, () => {
-			updateFilterToggle();
 			this.renderFocusTasks(focusContainer);
 			this.renderMatrix(contentEl, matrixContainer);
-		});
-
-		filterToggle.addEventListener('click', () => {
-			this.filtersVisible = !this.filtersVisible;
-			filterPanel.classList.toggle('focus-first-hidden', !this.filtersVisible);
-			filterToggle.classList.toggle('is-open', this.filtersVisible);
 		});
 
 		searchToggleBtn.addEventListener('click', () => {

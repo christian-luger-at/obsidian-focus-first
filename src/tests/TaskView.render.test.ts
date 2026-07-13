@@ -1114,20 +1114,33 @@ describe('openTaskFile()', () => {
 // ---------------------------------------------------------------------------
 
 describe('axis selector', () => {
-	it('shows the active preset and toggles to Value/Effort, persisting the choice', () => {
+	it('shows both presets as a segmented control with the active one highlighted', () => {
+		const { view, contentEl } = makeView();
+		priv(view).render();
+
+		const segments = contentEl.findAllByClass('focus-first-axis-segment');
+		const labels = segments.map((s) => s.children.find((c) => c.tagName === 'span')?.text);
+		expect(labels).toEqual(['Eisenhower', 'Value/Effort']);
+		// Eisenhower is the default active segment.
+		expect(segments[0]?.classList.contains('is-active')).toBe(true);
+		expect(segments[1]?.classList.contains('is-active')).toBe(false);
+	});
+
+	it('clicking the inactive segment switches the preset and persists it', () => {
 		const { view, plugin, contentEl } = makeView();
 		priv(view).render();
 
-		const axisBtn = contentEl.findByClass('focus-first-axis-toggle')!;
-		expect(axisBtn.children.find((c) => c.tagName === 'span')?.text).toBe('Eisenhower');
-
-		axisBtn.dispatch('click');
+		// Click the Value/Effort segment (the inactive one).
+		const valueEffort = contentEl.findAllByClass('focus-first-axis-segment')
+			.find((s) => s.children.find((c) => c.tagName === 'span')?.text === 'Value/Effort')!;
+		valueEffort.dispatch('click');
 
 		expect(plugin.settings.axisMode).toBe('valueEffort');
 		expect(plugin.saveSettings).toHaveBeenCalled();
-		// Re-rendered with the new preset label.
-		expect(contentEl.findByClass('focus-first-axis-toggle')?.children.find((c) => c.tagName === 'span')?.text)
-			.toBe('Value/Effort');
+		// Re-rendered with the Value/Effort segment now active.
+		const segmentsAfter = contentEl.findAllByClass('focus-first-axis-segment');
+		expect(segmentsAfter[1]?.classList.contains('is-active')).toBe(true);
+		expect(segmentsAfter[0]?.classList.contains('is-active')).toBe(false);
 	});
 
 	it('renders Value/Effort quadrant labels when that preset is active', () => {

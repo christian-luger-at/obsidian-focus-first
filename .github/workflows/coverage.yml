@@ -3,6 +3,11 @@ name: Coverage
 on:
     push:
         branches: [main]
+    # Also gate pull requests: the test/coverage run below must pass before merge.
+    # The badge-publish steps are skipped on PRs (they need write access, which
+    # fork PRs don't get, and the badge should only track main).
+    pull_request:
+        branches: [main]
 
 # Needed to push the generated badge to the 'badges' branch.
 permissions:
@@ -20,8 +25,10 @@ jobs:
             - run: npm ci
             - run: npm run test:coverage
             - name: Generate coverage badge
+              if: github.event_name == 'push'
               run: node scripts/coverage-badge.mjs /tmp/coverage.svg
             - name: Publish badge to 'badges' branch
+              if: github.event_name == 'push'
               run: |
                   git config user.name "github-actions[bot]"
                   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

@@ -1114,33 +1114,31 @@ describe('openTaskFile()', () => {
 // ---------------------------------------------------------------------------
 
 describe('axis selector', () => {
-	it('shows both presets as a segmented control with the active one highlighted', () => {
+	it('shows both presets as tabs above the matrix with the active one highlighted', () => {
 		const { view, contentEl } = makeView();
 		priv(view).render();
 
-		const segments = contentEl.findAllByClass('focus-first-axis-segment');
-		const labels = segments.map((s) => s.children.find((c) => c.tagName === 'span')?.text);
-		expect(labels).toEqual(['Eisenhower', 'Value/Effort']);
-		// Eisenhower is the default active segment.
-		expect(segments[0]?.classList.contains('is-active')).toBe(true);
-		expect(segments[1]?.classList.contains('is-active')).toBe(false);
+		const tabs = contentEl.findAllByClass('focus-first-axis-tab');
+		expect(tabs.map((tab) => tab.text)).toEqual(['Eisenhower', 'Value/Effort']);
+		// Eisenhower is the default active tab.
+		expect(tabs[0]?.classList.contains('is-active')).toBe(true);
+		expect(tabs[1]?.classList.contains('is-active')).toBe(false);
 	});
 
-	it('clicking the inactive segment switches the preset and persists it', () => {
+	it('clicking the inactive tab switches the preset and persists it', () => {
 		const { view, plugin, contentEl } = makeView();
 		priv(view).render();
 
-		// Click the Value/Effort segment (the inactive one).
-		const valueEffort = contentEl.findAllByClass('focus-first-axis-segment')
-			.find((s) => s.children.find((c) => c.tagName === 'span')?.text === 'Value/Effort')!;
+		const valueEffort = contentEl.findAllByClass('focus-first-axis-tab')
+			.find((tab) => tab.text === 'Value/Effort')!;
 		valueEffort.dispatch('click');
 
 		expect(plugin.settings.axisMode).toBe('valueEffort');
 		expect(plugin.saveSettings).toHaveBeenCalled();
-		// Re-rendered with the Value/Effort segment now active.
-		const segmentsAfter = contentEl.findAllByClass('focus-first-axis-segment');
-		expect(segmentsAfter[1]?.classList.contains('is-active')).toBe(true);
-		expect(segmentsAfter[0]?.classList.contains('is-active')).toBe(false);
+		// Re-rendered with the Value/Effort tab now active.
+		const tabsAfter = contentEl.findAllByClass('focus-first-axis-tab');
+		expect(tabsAfter[1]?.classList.contains('is-active')).toBe(true);
+		expect(tabsAfter[0]?.classList.contains('is-active')).toBe(false);
 	});
 
 	it('renders Value/Effort quadrant labels when that preset is active', () => {

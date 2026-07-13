@@ -1114,31 +1114,27 @@ describe('openTaskFile()', () => {
 // ---------------------------------------------------------------------------
 
 describe('axis selector', () => {
-	it('shows both presets as tabs above the matrix with the active one highlighted', () => {
+	it('shows both presets in a header dropdown with the active one selected', () => {
 		const { view, contentEl } = makeView();
 		priv(view).render();
 
-		const tabs = contentEl.findAllByClass('focus-first-axis-tab');
-		expect(tabs.map((tab) => tab.text)).toEqual(['Eisenhower', 'Value/Effort']);
-		// Eisenhower is the default active tab.
-		expect(tabs[0]?.classList.contains('is-active')).toBe(true);
-		expect(tabs[1]?.classList.contains('is-active')).toBe(false);
+		const select = contentEl.findByClass('focus-first-axis-select')!;
+		expect(select.children.map((opt) => opt.text)).toEqual(['Eisenhower', 'Value/Effort']);
+		expect(select.value).toBe('eisenhower');
 	});
 
-	it('clicking the inactive tab switches the preset and persists it', () => {
+	it('changing the dropdown switches the preset and persists it', () => {
 		const { view, plugin, contentEl } = makeView();
 		priv(view).render();
 
-		const valueEffort = contentEl.findAllByClass('focus-first-axis-tab')
-			.find((tab) => tab.text === 'Value/Effort')!;
-		valueEffort.dispatch('click');
+		const select = contentEl.findByClass('focus-first-axis-select')!;
+		select.value = 'valueEffort';
+		select.dispatch('change');
 
 		expect(plugin.settings.axisMode).toBe('valueEffort');
 		expect(plugin.saveSettings).toHaveBeenCalled();
-		// Re-rendered with the Value/Effort tab now active.
-		const tabsAfter = contentEl.findAllByClass('focus-first-axis-tab');
-		expect(tabsAfter[1]?.classList.contains('is-active')).toBe(true);
-		expect(tabsAfter[0]?.classList.contains('is-active')).toBe(false);
+		// Re-rendered with the dropdown reflecting the new preset.
+		expect(contentEl.findByClass('focus-first-axis-select')?.value).toBe('valueEffort');
 	});
 
 	it('renders Value/Effort quadrant labels when that preset is active', () => {

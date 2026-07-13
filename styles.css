@@ -94,35 +94,10 @@
 	height: var(--icon-s, 18px);
 }
 
-/* Axis selector (#36): a light tab strip above the matrix grid. The active
-   preset is a subtle neutral chip; the inactive one is plain muted text. No
-   track, border, or accent fill — so it stays quiet and never reads as a
-   button competing with the header's actions. */
-.focus-first-axis-tabs {
-	display: flex;
-	gap: 2px;
-	margin-bottom: var(--size-4-3);
-}
-
-.focus-first-axis-tab {
-	padding: var(--size-2-1) var(--size-4-2);
-	border: none;
-	border-radius: var(--radius-s);
-	box-shadow: none;
-	background: transparent;
-	color: var(--text-muted);
+/* Axis selector (#36): a compact dropdown in the header (Obsidian's native
+   .dropdown styling), so switching the matrix preset costs no extra height. */
+.focus-first-axis-select {
 	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
-	cursor: pointer;
-}
-
-.focus-first-axis-tab:hover:not(.is-active) {
-	color: var(--text-normal);
-}
-
-.focus-first-axis-tab.is-active {
-	background: var(--background-modifier-hover);
-	color: var(--text-normal);
-	cursor: default;
 }
 
 /* ── Quick-add dialog ────────────────────────────────────── */

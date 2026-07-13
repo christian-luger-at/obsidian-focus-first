@@ -2,7 +2,7 @@ import { ItemView, WorkspaceLeaf, TFile, setIcon, debounce } from 'obsidian';
 import FocusFirstPlugin from './main';
 import { scanTasks, TaskItem, isFutureTask, isHiddenTask } from './taskScanner';
 import { classifyTasks, MatrixTask, Quadrant } from './matrixClassifier';
-import { TaskSize, sizeTagList } from './settings';
+import { AxisMode, TaskSize, sizeTagList } from './settings';
 import { isTasksPluginEnabled } from './tasksPlugin';
 import { t } from './i18n';
 import { renderTaskItem, taskTitle } from './taskRenderer';
@@ -70,22 +70,33 @@ export class FocusFirstView extends ItemView {
 		header.createEl('h4', { text: t().view.title });
 		const headerActions = header.createDiv({ cls: 'focus-first-header-actions' });
 
-		// Axis selector (#36): flips the whole matrix between the Eisenhower and
-		// Value/Effort presets. Shows the active preset; clicking switches to the other.
-		const axisBtn = headerActions.createEl('button', { cls: 'focus-first-axis-toggle' });
-		setIcon(axisBtn, 'layout-grid');
-		axisBtn.createSpan({
-			text: String(this.plugin.settings.axisMode === 'valueEffort'
-				? t().view.axes.valueEffort
-				: t().view.axes.eisenhower),
-		});
-		axisBtn.setAttribute('aria-label', String(t().view.axes.label));
-		axisBtn.setAttribute('title', String(t().view.axes.label));
-		axisBtn.addEventListener('click', () => {
-			this.plugin.settings.axisMode = this.plugin.settings.axisMode === 'eisenhower' ? 'valueEffort' : 'eisenhower';
-			void this.plugin.saveSettings();
-			this.render();
-		});
+		// Axis selector (#36): a segmented control that flips the whole matrix
+		// between the Eisenhower and Value/Effort presets. Both options are shown so
+		// it reads as a switch (not a bare label), with the active one highlighted.
+		const axisSwitch = headerActions.createDiv({ cls: 'focus-first-axis-switch' });
+		axisSwitch.setAttribute('role', 'group');
+		axisSwitch.setAttribute('aria-label', String(t().view.axes.label));
+		const axisPresets: { mode: AxisMode; label: string; icon: string }[] = [
+			{ mode: 'eisenhower', label: String(t().view.axes.eisenhower), icon: 'layout-grid' },
+			{ mode: 'valueEffort', label: String(t().view.axes.valueEffort), icon: 'scale' },
+		];
+		for (const preset of axisPresets) {
+			const isActive = this.plugin.settings.axisMode === preset.mode;
+			const seg = axisSwitch.createEl('button', {
+				cls: `focus-first-axis-segment${isActive ? ' is-active' : ''}`,
+			});
+			setIcon(seg, preset.icon);
+			seg.createSpan({ text: preset.label });
+			seg.setAttribute('aria-pressed', String(isActive));
+			seg.setAttribute('title', preset.label);
+			if (!isActive) {
+				seg.addEventListener('click', () => {
+					this.plugin.settings.axisMode = preset.mode;
+					void this.plugin.saveSettings();
+					this.render();
+				});
+			}
+		}
 
 		const searchToggleBtn = headerActions.createEl('button', {
 			cls: 'mod-cta focus-first-search-toggle',

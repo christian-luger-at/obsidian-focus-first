@@ -81,8 +81,7 @@
    action (mod-cta gives it the accent background/colour); Add is a plain
    secondary button. Both just lay out the icon + text and size the glyph. */
 .focus-first-search-toggle,
-.focus-first-add-btn,
-.focus-first-axis-toggle {
+.focus-first-add-btn {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--size-2-2);
@@ -90,10 +89,47 @@
 }
 
 .focus-first-search-toggle svg,
-.focus-first-add-btn svg,
-.focus-first-axis-toggle svg {
+.focus-first-add-btn svg {
 	width: var(--icon-s, 18px);
 	height: var(--icon-s, 18px);
+}
+
+/* Axis selector (#36): a segmented control. Both presets are shown as flush
+   segments inside one bordered pill; the active one carries the accent. */
+.focus-first-axis-switch {
+	display: inline-flex;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	overflow: hidden;
+}
+
+.focus-first-axis-segment {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	padding: var(--size-2-1) var(--size-4-2);
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	background: transparent;
+	color: var(--text-muted);
+	font-size: calc(var(--font-ui-small) * var(--focus-first-font-scale));
+	cursor: pointer;
+}
+
+.focus-first-axis-segment:not(:last-child) {
+	border-right: 1px solid var(--background-modifier-border);
+}
+
+.focus-first-axis-segment svg {
+	width: var(--icon-s, 18px);
+	height: var(--icon-s, 18px);
+}
+
+.focus-first-axis-segment.is-active {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	cursor: default;
 }
 
 /* ── Quick-add dialog ────────────────────────────────────── */

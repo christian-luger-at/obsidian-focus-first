@@ -53,6 +53,13 @@ export interface FocusFirstSettings {
 	focusTag: string;
 	/** Optional daily target for the focus shortlist (0 = no target). */
 	focusTargetCount: number;
+	/**
+	 * Manual order of the focus shortlist, as stable per-task keys
+	 * (`${filePath}::${title}`). Tasks not listed here fall back to the
+	 * importance sort and are appended. Rewritten on every drag-reorder, so it
+	 * only ever holds keys for tasks currently in focus.
+	 */
+	focusOrder: string[];
 	hideTag: string;
 	futureTasks: FutureTasksMode;
 	quickAddTarget: QuickAddTarget;
@@ -79,6 +86,7 @@ export const DEFAULT_SETTINGS: FocusFirstSettings = {
 	groupByPrimary: true,
 	focusTag: '#focus',
 	focusTargetCount: 0,
+	focusOrder: [],
 	hideTag: '#hide',
 	futureTasks: 'show',
 	quickAddTarget: 'inbox',

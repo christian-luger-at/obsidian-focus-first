@@ -317,6 +317,7 @@ describe('loadSettings — merges persisted data with defaults', () => {
 			groupByPrimary: false,
 			focusTag: '#focus',
 			focusTargetCount: 3,
+			focusOrder: ['Work/a.md::Pitch schreiben'],
 			hideTag: '#hide',
 			futureTasks: 'hide',
 			quickAddTarget: 'active',

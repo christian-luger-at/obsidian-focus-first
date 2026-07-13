@@ -720,6 +720,12 @@ body.is-mobile .focus-first-task-list {
 	background: rgba(var(--interactive-accent-rgb), 0.05);
 }
 
+/* Insertion indicator while reordering the focus shortlist (#37): a line above
+   the row the dragged task would land before. */
+.focus-first-task-item.focus-first-drop-before {
+	box-shadow: 0 -2px 0 0 var(--interactive-accent);
+}
+
 /* ── Settings ────────────────────────────────────────────── */
 
 .focus-first-setting-hint {

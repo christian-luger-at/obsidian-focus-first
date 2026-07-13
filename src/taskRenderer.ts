@@ -202,11 +202,29 @@ export async function toggleFocusTagLine(
 }
 
 /**
+ * Strips a raw task line down to its display title: removes the checkbox marker,
+ * priority signifiers, dated signifiers, and tags. Used both for rendering and
+ * as the stable per-task key for the manual focus order (file path + title).
+ */
+export function taskTitle(line: string): string {
+	return line
+		.replace(/^[\s\-*]*\[.\]\s*/, '')
+		.replace(/(🔺|⏫|🔼|🔽|⏬)\s*/g, '')
+		// Strip all date signifiers (due, start, scheduled, created, cancelled,
+		// done) with their dates so the title stays clean — they show in the popover.
+		.replace(/[📅🛫⏳➕❌✅]\s*\d{4}-\d{2}-\d{2}/gu, '')
+		.replace(/#\S+/g, '')
+		.replace(/\s{2,}/g, ' ')
+		.trim();
+}
+
+/**
  * Renders one interactive task row. The list shows only titles (each a link that
  * opens the note on a single click); hovering a row reveals a floating popover
  * with its metadata and actions, which disappears when the pointer leaves — so
  * the list stays clean and never reflows. Identical markup for the matrix, the
- * focus section, and the embedded code block.
+ * focus section, and the embedded code block. Returns the created <li> so callers
+ * can wire extra behaviour (e.g. the focus reorder drop target).
  */
 export function renderTaskItem(
 	parent: HTMLElement,
@@ -214,7 +232,7 @@ export function renderTaskItem(
 	app: App,
 	settings: FocusFirstSettings,
 	opts: { suppressWhyHere?: boolean; position?: number } = {},
-): void {
+): HTMLElement {
 	const focusTag = settings.focusTag.trim().toLowerCase();
 	const isFocused = focusTag
 		? task.tags.some((tag) => tag.toLowerCase() === focusTag)
@@ -227,15 +245,7 @@ export function renderTaskItem(
 	});
 	makeTaskDraggable(li, task);
 
-	const text = task.line
-		.replace(/^[\s\-*]*\[.\]\s*/, '')
-		.replace(/(🔺|⏫|🔼|🔽|⏬)\s*/g, '')
-		// Strip all date signifiers (due, start, scheduled, created, cancelled,
-		// done) with their dates so the title stays clean — they show in the popover.
-		.replace(/[📅🛫⏳➕❌✅]\s*\d{4}-\d{2}-\d{2}/gu, '')
-		.replace(/#\S+/g, '')
-		.replace(/\s{2,}/g, ' ')
-		.trim();
+	const text = taskTitle(task.line);
 
 	// Position number for the ordered focus shortlist (#34); #1 is the "frog".
 	if (opts.position !== undefined) {
@@ -367,6 +377,8 @@ export function renderTaskItem(
 	li.addEventListener('mouseleave', scheduleHide);
 	detail.addEventListener('mouseenter', () => { window.clearTimeout(hideTimer); });
 	detail.addEventListener('mouseleave', scheduleHide);
+
+	return li;
 }
 
 /**

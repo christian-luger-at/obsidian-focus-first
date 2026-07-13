@@ -423,6 +423,61 @@ describe('renderFocusTasks()', () => {
 		expect(underContainer.findByClass('focus-first-focus-target-line')).toBeUndefined();
 	});
 
+	it('applies a saved manual focus order over the importance sort (#37)', () => {
+		const tasks = ['A', 'B', 'C'].map((n, i) =>
+			makeTask({ tags: ['#focus'], line: `- [ ] ${n}`, lineNumber: i }));
+		const focusOrder = ['Notes/test.md::C', 'Notes/test.md::A'];
+		const { view, contentEl } = makeView({ focusTag: '#focus', focusOrder }, tasks);
+		const container = contentEl.createDiv();
+		priv(view).renderFocusTasks(container);
+
+		// C and A were placed by hand (that order); B has no manual slot and keeps
+		// the importance order, so it follows.
+		expect(container.findAllByClass('focus-first-task-text').map((el) => el.text)).toEqual(['C', 'A', 'B']);
+	});
+
+	it('reordering by drag persists the manual focus order (#37)', () => {
+		const tasks = ['A', 'B', 'C'].map((n, i) =>
+			makeTask({ tags: ['#focus'], line: `- [ ] ${n}`, lineNumber: i }));
+		const { view, plugin, contentEl } = makeView({ focusTag: '#focus' }, tasks);
+		const container = contentEl.createDiv();
+		priv(view).renderFocusTasks(container);
+
+		const rows = container.findAllByClass('focus-first-task-item'); // [A, B, C]
+		const store = { 'application/json': JSON.stringify({ filePath: 'Notes/test.md', lineNumber: 2, line: '- [ ] C' }) };
+		const dataTransfer = { getData: (k: string) => store[k as keyof typeof store] };
+		// Drop C onto A → C lands immediately before A.
+		rows[0]!.dispatch('drop', { preventDefault: () => {}, dataTransfer });
+
+		expect(plugin.settings.focusOrder).toEqual(['Notes/test.md::C', 'Notes/test.md::A', 'Notes/test.md::B']);
+		expect(plugin.saveSettings).toHaveBeenCalled();
+	});
+
+	it('ignores a drop whose task is not in the focus list (#37)', () => {
+		const tasks = ['A', 'B'].map((n, i) => makeTask({ tags: ['#focus'], line: `- [ ] ${n}`, lineNumber: i }));
+		const { view, plugin, contentEl } = makeView({ focusTag: '#focus' }, tasks);
+		const container = contentEl.createDiv();
+		priv(view).renderFocusTasks(container);
+
+		const rows = container.findAllByClass('focus-first-task-item');
+		const store = { 'application/json': JSON.stringify({ filePath: 'Notes/other.md', lineNumber: 5, line: '- [ ] Outsider' }) };
+		const dataTransfer = { getData: (k: string) => store[k as keyof typeof store] };
+		rows[0]!.dispatch('drop', { preventDefault: () => {}, dataTransfer });
+
+		expect(plugin.saveSettings).not.toHaveBeenCalled();
+	});
+
+	it('dragover on a focus row shows the insertion indicator (#37)', () => {
+		const tasks = [makeTask({ tags: ['#focus'], line: '- [ ] A', lineNumber: 0 })];
+		const { view, contentEl } = makeView({ focusTag: '#focus' }, tasks);
+		const container = contentEl.createDiv();
+		priv(view).renderFocusTasks(container);
+
+		const row = container.findByClass('focus-first-task-item')!;
+		row.dispatch('dragover', { preventDefault: () => {} });
+		expect(row.classList.contains('focus-first-drop-before')).toBe(true);
+	});
+
 	it('excludes hidden tasks even if they carry the focus tag', () => {
 		const tasks = [makeTask({ tags: ['#focus', '#hide'], line: '- [ ] Hidden focus task' })];
 		const { view, contentEl } = makeView({ focusTag: '#focus', hideTag: '#hide' }, tasks);

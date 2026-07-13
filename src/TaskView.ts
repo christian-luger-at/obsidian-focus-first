@@ -4,7 +4,7 @@ import { scanTasks, TaskItem, isFutureTask, isHiddenTask } from './taskScanner';
 import { classifyTasks, MatrixTask, Quadrant } from './matrixClassifier';
 import { isTasksPluginEnabled } from './tasksPlugin';
 import { t } from './i18n';
-import { renderTaskItem } from './taskRenderer';
+import { renderTaskItem, taskTitle } from './taskRenderer';
 import { sortTasks, groupKey, groupLabel, groupOrder, dueBucket } from './taskSorting';
 import { renderNoMatches, renderOnboarding, renderEliminateHint } from './taskEmptyStates';
 import { makeDropTarget } from './taskDragDrop';
@@ -228,11 +228,23 @@ export class FocusFirstView extends ItemView {
 		const byQuadrant = classifyTasks(focusTasks, this.plugin.settings);
 		const ordered: MatrixTask[] = [];
 		for (const q of QUADRANT_ORDER) ordered.push(...byQuadrant[q]);
-		const sorted = sortTasks(ordered, { primary: 'priority', secondary: 'dueDate' });
+
+		// Base order is most-important-first (#34). A manual drag order (#37), stored
+		// as stable per-task keys, then overrides it: tasks the user has placed by hand
+		// come first in that order; anything not yet placed keeps the importance order
+		// and follows (Array.prototype.sort is stable, so ties preserve it).
+		const manualOrder = this.plugin.settings.focusOrder;
+		const rank = (mt: MatrixTask) => {
+			const i = manualOrder.indexOf(this.focusKey(mt.file.path, mt.line));
+			return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+		};
+		const sorted = sortTasks(ordered, { primary: 'priority', secondary: 'dueDate' })
+			.sort((a, b) => rank(a) - rank(b));
 
 		this.renderHeading(container, String(t().view.focusSectionTitle), { count: sorted.length });
 
 		const target = this.plugin.settings.focusTargetCount;
+		const keys = sorted.map((mt) => this.focusKey(mt.file.path, mt.line));
 		const list = container.createEl('ul', { cls: 'focus-first-task-list' });
 		sorted.forEach((mt, i) => {
 			// A subtle divider marks where the shortlist runs past the daily target.
@@ -244,8 +256,58 @@ export class FocusFirstView extends ItemView {
 			}
 			// Focus tasks never show the "why here" reason (#31): they are here
 			// because of the focus tag, not the quadrant classification.
-			this.renderTask(list, mt, { suppressWhyHere: true, position: i + 1 });
+			const li = this.renderTask(list, mt, { suppressWhyHere: true, position: i + 1 });
+			this.makeFocusReorderTarget(li, this.focusKey(mt.file.path, mt.line), keys);
 		});
+	}
+
+	/** Stable per-task key for the manual focus order: file path + display title. */
+	private focusKey(filePath: string, line: string): string {
+		return `${filePath}::${taskTitle(line)}`;
+	}
+
+	/**
+	 * Wires a focus row as a drop target for manual reordering (#37): dropping a
+	 * dragged focus task onto this row places it immediately before this one.
+	 */
+	private makeFocusReorderTarget(li: HTMLElement, targetKey: string, keys: string[]): void {
+		li.addEventListener('dragover', (e) => {
+			e.preventDefault();
+			li.classList.add('focus-first-drop-before');
+		});
+		li.addEventListener('dragleave', (e) => {
+			if (!li.contains(e.relatedTarget as Node)) li.classList.remove('focus-first-drop-before');
+		});
+		li.addEventListener('drop', (e) => {
+			e.preventDefault();
+			li.classList.remove('focus-first-drop-before');
+			const raw = e.dataTransfer?.getData('application/json');
+			if (!raw) return;
+			let data: unknown;
+			try { data = JSON.parse(raw); } catch { return; }
+			if (typeof data !== 'object' || data === null) return;
+			const { filePath, line } = data as { filePath?: unknown; line?: unknown };
+			if (typeof filePath !== 'string' || typeof line !== 'string') return;
+			this.reorderFocus(keys, this.focusKey(filePath, line), targetKey);
+		});
+	}
+
+	/**
+	 * Rebuilds the manual focus order by moving `draggedKey` to just before
+	 * `targetKey`, then persists it. Rebuilding from the currently-shown keys keeps
+	 * `focusOrder` pruned to tasks that are actually in focus.
+	 */
+	private reorderFocus(keys: string[], draggedKey: string, targetKey: string): void {
+		if (draggedKey === targetKey) return;
+		// Only reorder within the focus list — ignore drops from elsewhere.
+		if (!keys.includes(draggedKey)) return;
+		const without = keys.filter((k) => k !== draggedKey);
+		const insertAt = without.indexOf(targetKey);
+		if (insertAt === -1) return;
+		without.splice(insertAt, 0, draggedKey);
+		this.plugin.settings.focusOrder = without;
+		void this.plugin.saveSettings();
+		this.render();
 	}
 
 	private renderMatrix(contentEl: HTMLElement, container: HTMLElement): void {
@@ -329,8 +391,8 @@ export class FocusFirstView extends ItemView {
 		}
 	}
 
-	private renderTask(parent: HTMLElement, task: MatrixTask, opts: { suppressWhyHere?: boolean; position?: number } = {}): void {
-		renderTaskItem(parent, task, this.app, this.plugin.settings, opts);
+	private renderTask(parent: HTMLElement, task: MatrixTask, opts: { suppressWhyHere?: boolean; position?: number } = {}): HTMLElement {
+		return renderTaskItem(parent, task, this.app, this.plugin.settings, opts);
 	}
 
 	private renderTaskGroup(list: HTMLElement, label: string, tasks: MatrixTask[]): void {

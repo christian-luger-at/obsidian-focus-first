@@ -269,7 +269,7 @@
 
 /* The Eliminate hint sits above the matrix as a calm, left-aligned banner. */
 .focus-first-eliminate-hint {
-	background: var(--background-secondary);
+	background: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-m);
 	padding: var(--size-4-3) var(--size-4-4);
@@ -282,6 +282,11 @@
 
 /* ── View layout ─────────────────────────────────────────── */
 
+.workspace-leaf-content[data-type='focus-first-view'] .view-content {
+	padding: 0;
+	overflow: hidden;
+}
+
 .focus-first-view {
 	--focus-first-font-scale: 1;
 	display: flex;
@@ -291,9 +296,9 @@
 	/* Positioning context for the hover detail popover (appended here so it isn't
 	   clipped by the scrolling quadrants). */
 	position: relative;
-	/* Primary surface so the --background-secondary cards stand out, matching
+	/* Secondary surface so the --background-primary cards stand out, matching
 	   Obsidian's native settings look regardless of where the view is docked. */
-	background: var(--background-primary);
+	background: var(--background-secondary);
 }
 
 /* ── Wrapped Tasks block (```focus-first``` wraps ```tasks```) ── */
@@ -320,7 +325,7 @@
 .focus-first-search-area,
 .focus-first-focus-container,
 .focus-first-quadrant {
-	background: var(--background-secondary);
+	background: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-m);
 	overflow: hidden;
@@ -498,7 +503,7 @@
 
 .focus-first-task-detail {
 	display: none;
-	background: var(--background-secondary);
+	background: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-m);
 	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);

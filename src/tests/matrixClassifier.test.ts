@@ -402,3 +402,77 @@ describe('explainTask()', () => {
 		expect(r.override).toBe('do');
 	});
 });
+
+// ---------------------------------------------------------------------------
+// Value/Effort matrix (#36)
+// ---------------------------------------------------------------------------
+
+describe('value/effort classification', () => {
+	const ve = (overrides: Partial<FocusFirstSettings> = {}): FocusFirstSettings =>
+		makeSettings({ axisMode: 'valueEffort', importantPriorities: ['🔺', '⏫'], lowEffortSizes: ['small'], ...overrides });
+
+	it('high value (priority source) + low effort (small) → Quick Wins (do slot)', () => {
+		const task = makeTask({ priority: '🔺', size: 'small' });
+		const result = classifyTasks([task], ve());
+		expect(result.do).toHaveLength(1);
+		expect(result.do[0]?.manual).toBe(false);
+	});
+
+	it('high value + high effort → Big Bets (schedule slot)', () => {
+		const task = makeTask({ priority: '🔺', size: 'large' });
+		expect(classifyTasks([task], ve()).schedule).toHaveLength(1);
+	});
+
+	it('low value + low effort → Fill-ins (delegate slot)', () => {
+		const task = makeTask({ priority: '🔽', size: 'small' });
+		expect(classifyTasks([task], ve()).delegate).toHaveLength(1);
+	});
+
+	it('low value + high effort → Time Sinks (eliminate slot)', () => {
+		const task = makeTask({ priority: '🔽', size: 'large' });
+		expect(classifyTasks([task], ve()).eliminate).toHaveLength(1);
+	});
+
+	it('un-sized tasks count as high effort (never Quick Wins)', () => {
+		const task = makeTask({ priority: '🔺' }); // no size
+		const result = classifyTasks([task], ve());
+		expect(result.do).toHaveLength(0);
+		expect(result.schedule).toHaveLength(1); // high value, high effort
+	});
+
+	it('#highvalue overrides the value source', () => {
+		const task = makeTask({ priority: '🔽', size: 'small', tags: ['#highvalue'] });
+		expect(classifyTasks([task], ve()).do).toHaveLength(1); // high value + low effort
+	});
+
+	it('#lowvalue overrides the value source', () => {
+		const task = makeTask({ priority: '🔺', size: 'small', tags: ['#lowvalue'] });
+		expect(classifyTasks([task], ve()).delegate).toHaveLength(1); // low value + low effort
+	});
+
+	it('manualTag source: value comes only from #highvalue, not priority', () => {
+		const s = ve({ valueSource: 'manualTag' });
+		expect(classifyTasks([makeTask({ priority: '🔺', size: 'small' })], s).delegate).toHaveLength(1); // low value
+		expect(classifyTasks([makeTask({ size: 'small', tags: ['#highvalue'] })], s).do).toHaveLength(1);
+	});
+
+	it('the low-effort threshold is configurable (small + medium)', () => {
+		const s = ve({ lowEffortSizes: ['small', 'medium'] });
+		expect(classifyTasks([makeTask({ priority: '🔺', size: 'medium' })], s).do).toHaveLength(1);
+	});
+
+	it('Eisenhower quadrant tags do NOT override in value/effort mode', () => {
+		// #do would pin to "do" under Eisenhower; here it is just an ignored tag.
+		const task = makeTask({ priority: '🔽', size: 'large', tags: ['#do'] });
+		expect(classifyTasks([task], ve()).eliminate).toHaveLength(1);
+	});
+
+	it('explainTask reports value/effort reasons in value/effort mode', () => {
+		const r = explainTask(makeTask({ priority: '🔺', size: 'small' }), ve());
+		expect(r.mode).toBe('valueEffort');
+		expect(r.highValue).toBe(true);
+		expect(r.valueCause).toBe('priority');
+		expect(r.lowEffort).toBe(true);
+		expect(r.override).toBeUndefined();
+	});
+});

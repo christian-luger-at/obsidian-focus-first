@@ -1108,3 +1108,63 @@ describe('openTaskFile()', () => {
 		expect(scrollIntoView).toHaveBeenCalled();
 	});
 });
+
+// ---------------------------------------------------------------------------
+// Axis selector — Value/Effort matrix (#36)
+// ---------------------------------------------------------------------------
+
+describe('axis selector', () => {
+	it('shows the active preset and toggles to Value/Effort, persisting the choice', () => {
+		const { view, plugin, contentEl } = makeView();
+		priv(view).render();
+
+		const axisBtn = contentEl.findByClass('focus-first-axis-toggle')!;
+		expect(axisBtn.children.find((c) => c.tagName === 'span')?.text).toBe('Eisenhower');
+
+		axisBtn.dispatch('click');
+
+		expect(plugin.settings.axisMode).toBe('valueEffort');
+		expect(plugin.saveSettings).toHaveBeenCalled();
+		// Re-rendered with the new preset label.
+		expect(contentEl.findByClass('focus-first-axis-toggle')?.children.find((c) => c.tagName === 'span')?.text)
+			.toBe('Value/Effort');
+	});
+
+	it('renders Value/Effort quadrant labels when that preset is active', () => {
+		const task = makeTask({ line: '- [ ] Quick task #s', tags: ['#s'], size: 'small', priority: '🔺' });
+		const { view, contentEl } = makeView({ axisMode: 'valueEffort', importantPriorities: ['🔺'] }, [task]);
+		priv(view).render();
+
+		const titles = contentEl.findAllByClass('setting-item-name').map((el) => el.text);
+		expect(titles).toContain('Quick Wins');
+		expect(titles).toContain('Time Sinks');
+		expect(titles).not.toContain('Do');
+	});
+
+	it('the "why here" line adapts to the value/effort axes', () => {
+		const task = makeTask({ line: '- [ ] Quick task #s', tags: ['#s'], size: 'small', priority: '🔺' });
+		const { view, contentEl } = makeView(
+			{ axisMode: 'valueEffort', importantPriorities: ['🔺'], showWhyHere: true }, [task],
+		);
+		priv(view).render();
+
+		const why = contentEl.findByClass('focus-first-detail-why');
+		expect(why?.text).toContain('High value');
+		expect(why?.text).toContain('Low effort');
+	});
+
+	it('does not wire quadrant drop targets in value/effort mode (no re-tag)', async () => {
+		const task = makeTask({ line: '- [ ] Quick task #s', tags: ['#s'], size: 'small', priority: '🔺' });
+		const { view, contentEl, app } = makeView({ axisMode: 'valueEffort', importantPriorities: ['🔺'] }, [task]);
+		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
+		app.vault.read = vi.fn(async () => '- [ ] Quick task #s');
+		priv(view).render();
+
+		const cell = contentEl.findByClass('focus-first-quadrant')!;
+		const store = { 'application/json': JSON.stringify({ filePath: 'Notes/test.md', lineNumber: 0, quadrant: 'schedule' }) };
+		cell.dispatch('drop', { preventDefault: () => {}, dataTransfer: { getData: (k: string) => store[k as keyof typeof store] } });
+		await Promise.resolve();
+
+		expect(app.vault.modify).not.toHaveBeenCalled();
+	});
+});

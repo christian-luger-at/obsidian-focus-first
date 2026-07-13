@@ -320,6 +320,11 @@ describe('loadSettings — merges persisted data with defaults', () => {
 			focusOrder: ['Work/a.md::Pitch schreiben'],
 			hideTag: '#hide',
 			sizeTags: { small: '#s', medium: '#m', large: '#l' },
+			axisMode: 'valueEffort',
+			valueSource: 'manualTag',
+			highValueTag: '#highvalue',
+			lowValueTag: '#lowvalue',
+			lowEffortSizes: ['small', 'medium'],
 			futureTasks: 'hide',
 			quickAddTarget: 'active',
 			quickAddInbox: 'Tasks/Inbox.md',
@@ -1107,5 +1112,32 @@ describe('FocusFirstSettingTab — collapsible quadrant sections', () => {
 		await first.simulate();
 
 		expect(setIconSpy).toHaveBeenLastCalledWith('chevron-right');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// onChange — Value/Effort settings (#36)
+// ---------------------------------------------------------------------------
+
+function dropdownByName(name: string): DropdownComponent | undefined {
+	return createdSettings.find((s) => s.name === name && s.lastDropdown)?.lastDropdown;
+}
+
+describe('FocusFirstSettingTab — value/effort onChange (#36)', () => {
+	it('sets the value source and saves', async () => {
+		const { plugin } = makeTabWithDisplay({ valueSource: 'priority' });
+		await dropdownByName('Value source')?.simulate('manualTag');
+		expect(plugin.settings.valueSource).toBe('manualTag');
+		expect(plugin.saveSettings).toHaveBeenCalled();
+		expect(plugin.refreshViews).toHaveBeenCalled();
+	});
+
+	it('saves the high-value and low-value tags', async () => {
+		const { plugin } = makeTabWithDisplay();
+		await textByValue('#highvalue')?.simulate('#vip');
+		expect(plugin.settings.highValueTag).toBe('#vip');
+		await textByValue('#lowvalue')?.simulate('#meh');
+		expect(plugin.settings.lowValueTag).toBe('#meh');
+		expect(plugin.saveSettings).toHaveBeenCalled();
 	});
 });

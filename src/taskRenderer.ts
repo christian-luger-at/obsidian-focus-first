@@ -402,6 +402,7 @@ export function renderTaskItem(
 function classificationReasonText(task: MatrixTask, settings: FocusFirstSettings): string {
 	const d = t().view.detail;
 	const r: ClassificationReason = explainTask(task, settings);
+	if (r.mode === 'valueEffort') return valueEffortReasonText(r, settings);
 	if (r.override) {
 		const tag = settings.quadrants[r.override].tag.trim();
 		return String(d.whyOverride).replace('{tag}', tag);
@@ -423,6 +424,28 @@ function classificationReasonText(task: MatrixTask, settings: FocusFirstSettings
 	const urgentPrefix = String(r.urgent ? d.whyUrgent : d.whyNotUrgent);
 	const importantPrefix = String(r.important ? d.whyImportant : d.whyNotImportant);
 	return `${urgentPrefix}: ${urgencyText} · ${importantPrefix}: ${importanceText}`;
+}
+
+/** The "why here" line for the Value/Effort matrix, built from the same explain logic. */
+function valueEffortReasonText(r: ClassificationReason, settings: FocusFirstSettings): string {
+	const d = t().view.detail;
+	let valueText: string;
+	switch (r.valueCause) {
+		case 'tag-high': valueText = settings.highValueTag.trim(); break;
+		case 'tag-low':  valueText = settings.lowValueTag.trim(); break;
+		case 'no-tag':   valueText = String(d.causeValueNoTag).replace('{tag}', settings.highValueTag.trim()); break;
+		default: // 'priority' — reuse the importance phrasing
+			if (r.important) valueText = String(d.causePriority).replace('{priority}', r.priority ?? '');
+			else if (r.priority) valueText = String(d.causePriorityNotImportant).replace('{priority}', r.priority);
+			else valueText = String(d.causeNoPriority);
+			break;
+	}
+	const effortText = r.size === undefined
+		? String(d.causeUnsized)
+		: String(d.causeSize).replace('{size}', sizeLabel(r.size));
+	const valuePrefix = String(r.highValue ? d.whyHighValue : d.whyLowValue);
+	const effortPrefix = String(r.lowEffort ? d.whyLowEffort : d.whyHighEffort);
+	return `${valuePrefix}: ${valueText} · ${effortPrefix}: ${effortText}`;
 }
 
 /**

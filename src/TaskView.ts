@@ -8,7 +8,7 @@ import { t } from './i18n';
 import { renderTaskItem, taskTitle } from './taskRenderer';
 import { sortTasks, groupKey, groupLabel, groupOrder, dueBucket } from './taskSorting';
 import { renderNoMatches, renderOnboarding, renderEliminateHint } from './taskEmptyStates';
-import { makeDropTarget } from './taskDragDrop';
+import { makeDropTarget, makeValueEffortDropTarget } from './taskDragDrop';
 
 export const FOCUS_FIRST_VIEW_TYPE = 'focus-first-view';
 
@@ -427,9 +427,11 @@ export class FocusFirstView extends ItemView {
 
 			const cell = matrix.createDiv({ cls: `focus-first-quadrant focus-first-quadrant--${key}` });
 			cell.setCssProps({ '--quadrant-color': this.plugin.settings.quadrants[key].color });
-			// Drag-to-retag writes Eisenhower quadrant tags; skip it in Value/Effort
-			// (v1 has no quadrant override tags for that preset, #36).
+			// Drag-to-reclassify: Eisenhower writes the quadrant tag; Value/Effort
+			// writes the value override tag (#highvalue/#lowvalue) plus the size tag
+			// for the target effort.
 			if (eisenhower) makeDropTarget(cell, key, this.app, this.plugin.settings);
+			else makeValueEffortDropTarget(cell, key, this.app, this.plugin.settings);
 			this.renderHeading(cell, quadrant.title, { subtitle: quadrant.subtitle, count: tasks.length });
 
 			if (tasks.length === 0) {

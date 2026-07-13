@@ -1153,18 +1153,20 @@ describe('axis selector', () => {
 		expect(why?.text).toContain('Low effort');
 	});
 
-	it('does not wire quadrant drop targets in value/effort mode (no re-tag)', async () => {
-		const task = makeTask({ line: '- [ ] Quick task #s', tags: ['#s'], size: 'small', priority: '🔺' });
+	it('dropping onto a value/effort quadrant re-classifies via value + size tags', async () => {
+		const task = makeTask({ line: '- [ ] Big task', priority: '🔽' });
 		const { view, contentEl, app } = makeView({ axisMode: 'valueEffort', importantPriorities: ['🔺'] }, [task]);
 		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
-		app.vault.read = vi.fn(async () => '- [ ] Quick task #s');
+		app.vault.read = vi.fn(async () => '- [ ] Big task');
 		priv(view).render();
 
+		// First cell is the "do" slot = Quick Wins (high value + low effort).
 		const cell = contentEl.findByClass('focus-first-quadrant')!;
-		const store = { 'application/json': JSON.stringify({ filePath: 'Notes/test.md', lineNumber: 0, quadrant: 'schedule' }) };
+		const store = { 'application/json': JSON.stringify({ filePath: 'Notes/test.md', lineNumber: 0, quadrant: 'eliminate' }) };
 		cell.dispatch('drop', { preventDefault: () => {}, dataTransfer: { getData: (k: string) => store[k as keyof typeof store] } });
 		await Promise.resolve();
+		await Promise.resolve();
 
-		expect(app.vault.modify).not.toHaveBeenCalled();
+		expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), '- [ ] Big task #highvalue #s');
 	});
 });

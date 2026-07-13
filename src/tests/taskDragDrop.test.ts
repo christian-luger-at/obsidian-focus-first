@@ -7,7 +7,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 
-const { moveTaskToQuadrant, makeDropTarget } = await import('../taskDragDrop');
+const { moveTaskToQuadrant, makeDropTarget, moveTaskToValueEffort } = await import('../taskDragDrop');
 const { DEFAULT_SETTINGS } = await import('../settings');
 const { TFile } = await import('./__mocks__/obsidian');
 
@@ -147,5 +147,62 @@ describe('makeDropTarget', () => {
 		expect(() => cell.dispatch('drop', dropEvent('not json'))).not.toThrow();
 		expect(() => cell.dispatch('drop', dropEvent('42'))).not.toThrow();
 		expect(() => cell.dispatch('drop', dropEvent({ filePath: 5, lineNumber: 'x' }))).not.toThrow();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// moveTaskToValueEffort (#36)
+// ---------------------------------------------------------------------------
+
+describe('moveTaskToValueEffort', () => {
+	// Defaults: highValueTag #highvalue, lowValueTag #lowvalue, lowEffortSizes ['small'],
+	// so low effort → #s and high effort → #l (largest size that isn't low-effort).
+	it('Quick Wins (do) → high value + low effort', async () => {
+		const { app, store } = makeApp({ 'a.md': '- [ ] Task' });
+		await moveTaskToValueEffort(app, settings, 'a.md', 0, 'do');
+		expect(store['a.md']).toBe('- [ ] Task #highvalue #s');
+	});
+
+	it('Big Bets (schedule) → high value + high effort', async () => {
+		const { app, store } = makeApp({ 'a.md': '- [ ] Task' });
+		await moveTaskToValueEffort(app, settings, 'a.md', 0, 'schedule');
+		expect(store['a.md']).toBe('- [ ] Task #highvalue #l');
+	});
+
+	it('Fill-ins (delegate) → low value + low effort', async () => {
+		const { app, store } = makeApp({ 'a.md': '- [ ] Task' });
+		await moveTaskToValueEffort(app, settings, 'a.md', 0, 'delegate');
+		expect(store['a.md']).toBe('- [ ] Task #lowvalue #s');
+	});
+
+	it('Time Sinks (eliminate) → low value + high effort', async () => {
+		const { app, store } = makeApp({ 'a.md': '- [ ] Task' });
+		await moveTaskToValueEffort(app, settings, 'a.md', 0, 'eliminate');
+		expect(store['a.md']).toBe('- [ ] Task #lowvalue #l');
+	});
+
+	it('replaces any existing value + size tags (never stacks)', async () => {
+		const { app, store } = makeApp({ 'a.md': '- [ ] Task #lowvalue #l' });
+		await moveTaskToValueEffort(app, settings, 'a.md', 0, 'do');
+		expect(store['a.md']).toBe('- [ ] Task #highvalue #s');
+	});
+
+	it('clears the size (un-sized = high effort) when every size counts as low effort', async () => {
+		const allLow: FocusFirstSettings = { ...settings, lowEffortSizes: ['small', 'medium', 'large'] };
+		const { app, store } = makeApp({ 'a.md': '- [ ] Task #s' });
+		await moveTaskToValueEffort(app, allLow, 'a.md', 0, 'schedule'); // high effort
+		expect(store['a.md']).toBe('- [ ] Task #highvalue');
+	});
+
+	it('does nothing when the line already matches the target slot', async () => {
+		const { app, vault } = makeApp({ 'a.md': '- [ ] Task #highvalue #s' });
+		await moveTaskToValueEffort(app, settings, 'a.md', 0, 'do');
+		expect(vault.modify).not.toHaveBeenCalled();
+	});
+
+	it('honours the stale-line guard', async () => {
+		const { app, vault } = makeApp({ 'a.md': '- [ ] Changed since drag' });
+		await moveTaskToValueEffort(app, settings, 'a.md', 0, 'do', '- [ ] What I dragged');
+		expect(vault.modify).not.toHaveBeenCalled();
 	});
 });

@@ -118,15 +118,16 @@ export function shiftDueDate(line: string, days: number): string {
 }
 
 /**
- * Sets (or clears, when `tag` is null) a task's size tag on a line: every
- * configured size tag is removed first, then the chosen one is appended — so a
- * task never carries more than one size. Matching is case-insensitive;
- * indentation and other tokens are preserved. Non-task lines pass through.
+ * Sets (or clears, when `tag` is null) one tag out of a mutually-exclusive
+ * `group` on a task line: every tag in the group is removed first, then the
+ * chosen one is appended — so the task never carries more than one of them.
+ * Matching is case-insensitive; indentation and other tokens are preserved.
+ * Non-task lines pass through. Backs both the size tag and the value tag.
  */
-export function setSize(line: string, tag: string | null, allSizeTags: string[]): string {
+export function setExclusiveTag(line: string, tag: string | null, group: string[]): string {
 	if (!TASK_LINE_RE.test(line)) return line;
 	let out = line;
-	for (const existing of allSizeTags) {
+	for (const existing of group) {
 		if (!existing) continue;
 		const escaped = existing.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 		out = out.replace(new RegExp(`\\s*${escaped}(?=\\s|$)`, 'gi'), '');
@@ -136,6 +137,11 @@ export function setSize(line: string, tag: string | null, allSizeTags: string[])
 		if (!has) out = `${out.replace(/[ \t]+$/, '')} ${tag}`;
 	}
 	return out;
+}
+
+/** Sets (or clears) a task's size tag — one of the configured size tags. */
+export function setSize(line: string, tag: string | null, allSizeTags: string[]): string {
+	return setExclusiveTag(line, tag, allSizeTags);
 }
 
 /**

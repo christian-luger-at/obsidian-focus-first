@@ -53,6 +53,13 @@ interface Translations {
 		focusDone: string;
 		hideTask: string;
 		unhideTask: string;
+		undo: string;
+		undoLabels: {
+			completed: string;
+			hidden: string;
+			moved: string;
+			updated: string;
+		};
 		actions: {
 			more: string;
 			openNote: string;
@@ -223,6 +230,13 @@ const translations: Record<Lang, Translations> = {
 			focusDone: 'Mark as done',
 			hideTask: 'Hide task',
 			unhideTask: 'Unhide task',
+			undo: 'Undo',
+			undoLabels: {
+				completed: 'Task completed',
+				hidden: 'Task hidden',
+				moved: 'Task moved',
+				updated: 'Task updated',
+			},
 			actions: {
 				more: 'More actions',
 				openNote: 'Open note',
@@ -438,6 +452,13 @@ const translations: Record<Lang, Translations> = {
 			focusRemove: 'Aus Fokus entfernen',
 			hideTask: 'Aufgabe ausblenden',
 			unhideTask: 'Aufgabe einblenden',
+			undo: 'Rückgängig',
+			undoLabels: {
+				completed: 'Aufgabe erledigt',
+				hidden: 'Aufgabe ausgeblendet',
+				moved: 'Aufgabe verschoben',
+				updated: 'Aufgabe aktualisiert',
+			},
 			focusDone: 'Als erledigt markieren',
 			actions: {
 				more: 'Weitere Aktionen',

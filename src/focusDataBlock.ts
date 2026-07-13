@@ -4,6 +4,8 @@ import { scanTasks, TaskItem, isFutureTask, isHiddenTask } from './taskScanner';
 import { classifyTasks } from './matrixClassifier';
 import { completeTaskLine } from './taskRenderer';
 import { canonicalizeTaskLine } from './tasksFormat';
+import { showUndoNotice } from './undo';
+import { t } from './i18n';
 import { FocusSection } from './focusSection';
 
 export { isFocusSection } from './focusSection';
@@ -133,7 +135,8 @@ export class FocusDataBlock extends MarkdownRenderChild {
 			checkbox.addEventListener('click', (e) => {
 				e.preventDefault();
 				e.stopImmediatePropagation();
-				void completeTaskLine(this.plugin.app, task.file.path, task.lineNumber, undefined, task.line);
+				void completeTaskLine(this.plugin.app, task.file.path, task.lineNumber, undefined, task.line)
+					.then((snap) => showUndoNotice(this.plugin.app, String(t().view.undoLabels.completed), snap));
 			}, { capture: true });
 		});
 	}

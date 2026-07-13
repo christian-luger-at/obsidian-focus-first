@@ -4,7 +4,13 @@ import { TaskItem, isFutureTask } from './taskScanner';
 import { FocusFirstSettings, Priority } from './settings';
 import { getTasksApi } from './tasksPlugin';
 import { setDueDate, shiftDueDate, setPriority, setStartDate, addDaysToIso } from './tasksFormat';
+import { EditSnapshot, showUndoNotice } from './undo';
 import { t } from './i18n';
+
+/** Runs a mutating action and, if it changed anything, shows an undo toast (#32). */
+function undoable(app: App, label: string, edit: Promise<EditSnapshot | undefined>): void {
+	void edit.then((snap) => showUndoNotice(app, label, snap));
+}
 
 /**
  * Shared task-item rendering and the vault-mutating helpers behind its action
@@ -108,7 +114,7 @@ export async function completeTaskLine(
 	lineNumber: number,
 	now: Date = new Date(),
 	expectedLine?: string,
-): Promise<void> {
+): Promise<EditSnapshot | undefined> {
 	const file = app.vault.getAbstractFileByPath(filePath);
 	if (!(file instanceof TFile)) return;
 	const content = await app.vault.read(file);
@@ -121,29 +127,29 @@ export async function completeTaskLine(
 
 	// Delegate to the Tasks plugin when it's available: it applies the user's
 	// done-date/status settings and, for recurring (🔁) tasks, generates the next
-	// occurrence. The result can be multiple lines, so splice it in. Without the
-	// plugin, 🔁 has no engine anyway — just flip the checkbox as before.
+	// occurrence. The result can be multiple lines. Without the plugin, 🔁 has no
+	// engine anyway — just flip the checkbox as before.
+	const flip = () => line.replace(/\[\s\]/, '[x]');
 	const api = getTasksApi(app);
-	const done = () => { lines[lineNumber] = line.replace(/\[\s\]/, '[x]'); };
+	let after: string[];
 	if (api) {
 		const raw = api.executeToggleTaskDoneCommand(line, filePath);
 		// A blank result would splice an empty line in place of the task (#28);
 		// fall back to a plain checkbox flip instead.
 		if (raw.trim() === '') {
-			done();
+			after = [flip()];
 		} else {
 			const today = formatDate(now);
 			// The newly generated next occurrence is the still-open `[ ]` line; give
 			// it a created date like the Tasks plugin does. The completed line stays.
-			const replacement = raw
-				.split('\n')
-				.map((l) => (/^\s*[-*+] \[ \]/.test(l) ? withCreatedDate(l, today) : l));
-			lines.splice(lineNumber, 1, ...replacement);
+			after = raw.split('\n').map((l) => (/^\s*[-*+] \[ \]/.test(l) ? withCreatedDate(l, today) : l));
 		}
 	} else {
-		done();
+		after = [flip()];
 	}
+	lines.splice(lineNumber, 1, ...after);
 	await app.vault.modify(file, lines.join('\n'));
+	return { filePath, startLine: lineNumber, before: [line], after };
 }
 
 /**
@@ -157,7 +163,7 @@ export async function updateTaskLine(
 	lineNumber: number,
 	transform: (line: string) => string,
 	expectedLine?: string,
-): Promise<void> {
+): Promise<EditSnapshot | undefined> {
 	const file = app.vault.getAbstractFileByPath(filePath);
 	if (!(file instanceof TFile)) return;
 	const content = await app.vault.read(file);
@@ -170,6 +176,7 @@ export async function updateTaskLine(
 	if (next === line) return;
 	lines[lineNumber] = next;
 	await app.vault.modify(file, lines.join('\n'));
+	return { filePath, startLine: lineNumber, before: [line], after: [next] };
 }
 
 export async function toggleFocusTagLine(
@@ -294,7 +301,8 @@ export function renderTaskItem(
 	const doneBtn = actionButton(actions, 'check', String(t().view.focusDone), 'focus-first-done-btn');
 	doneBtn.addEventListener('click', (e) => {
 		e.stopPropagation();
-		void completeTaskLine(app, task.file.path, task.lineNumber, undefined, task.line);
+		undoable(app, String(t().view.undoLabels.completed),
+			completeTaskLine(app, task.file.path, task.lineNumber, undefined, task.line));
 	});
 
 	if (focusRun) {
@@ -449,7 +457,8 @@ function buildHideMenu(menu: Menu, task: MatrixTask, app: App, settings: FocusFi
 	const tag = settings.hideTag.trim();
 	const today = formatDate(new Date());
 	const edit = (transform: (line: string) => string) =>
-		void updateTaskLine(app, task.file.path, task.lineNumber, transform, task.line);
+		undoable(app, String(t().view.undoLabels.hidden),
+			updateTaskLine(app, task.file.path, task.lineNumber, transform, task.line));
 	const hideUntil = (iso: string) => (l: string) => addTagToLine(setStartDate(l, iso), tag);
 	menu.addItem((item) => item.setTitle(String(t().view.hideTask)).setIcon('eye-off')
 		.onClick(() => edit((l) => addTagToLine(l, tag))));
@@ -465,7 +474,8 @@ function buildHideMenu(menu: Menu, task: MatrixTask, app: App, settings: FocusFi
 function buildPostponeMenu(menu: Menu, task: MatrixTask, app: App): void {
 	const a = t().view.actions;
 	const edit = (transform: (line: string) => string) =>
-		void updateTaskLine(app, task.file.path, task.lineNumber, transform, task.line);
+		undoable(app, String(t().view.undoLabels.updated),
+			updateTaskLine(app, task.file.path, task.lineNumber, transform, task.line));
 	if (task.dueDate) {
 		menu.addItem((item) => item.setTitle(String(a.postponePlusDay)).setIcon('chevron-right')
 			.onClick(() => edit((l) => shiftDueDate(l, 1))));
@@ -490,8 +500,7 @@ function buildPriorityMenu(menu: Menu, task: MatrixTask, app: App): void {
 		menu.addItem((item) => item
 			.setTitle(opt.label)
 			.setChecked(task.priority === (opt.emoji ?? undefined))
-			.onClick(() => void updateTaskLine(
-				app, task.file.path, task.lineNumber, (l) => setPriority(l, opt.emoji), task.line,
-			)));
+			.onClick(() => undoable(app, String(t().view.undoLabels.updated),
+				updateTaskLine(app, task.file.path, task.lineNumber, (l) => setPriority(l, opt.emoji), task.line))));
 	}
 }

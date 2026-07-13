@@ -2,6 +2,8 @@ import { App, TFile } from 'obsidian';
 import { Quadrant } from './matrixClassifier';
 import { FocusFirstSettings } from './settings';
 import { removeTagFromLine } from './taskRenderer';
+import { EditSnapshot, showUndoNotice } from './undo';
+import { t } from './i18n';
 
 const QUADRANT_KEYS = ['do', 'schedule', 'delegate', 'eliminate'] as const;
 
@@ -16,7 +18,7 @@ export async function moveTaskToQuadrant(
 	lineNumber: number,
 	targetQuadrant: Quadrant,
 	expectedLine?: string,
-): Promise<void> {
+): Promise<EditSnapshot | undefined> {
 	const file = app.vault.getAbstractFileByPath(filePath);
 	if (!(file instanceof TFile)) return;
 
@@ -41,8 +43,10 @@ export async function moveTaskToQuadrant(
 		newLine = newLine.trimEnd() + ' ' + targetTag;
 	}
 
+	if (newLine === line) return;
 	lines[lineNumber] = newLine;
 	await app.vault.modify(file, lines.join('\n'));
+	return { filePath, startLine: lineNumber, before: [line], after: [newLine] };
 }
 
 /** Wires a quadrant cell as a drop target that re-tags dropped tasks. */
@@ -84,6 +88,7 @@ export function makeDropTarget(
 		if (typeof filePath !== 'string' || typeof lineNumber !== 'number') return;
 		if (sourceQuadrant === targetQuadrant) return;
 		const expectedLine = typeof line === 'string' ? line : undefined;
-		void moveTaskToQuadrant(app, settings, filePath, lineNumber, targetQuadrant, expectedLine);
+		void moveTaskToQuadrant(app, settings, filePath, lineNumber, targetQuadrant, expectedLine)
+			.then((snap) => showUndoNotice(app, String(t().view.undoLabels.moved), snap));
 	});
 }

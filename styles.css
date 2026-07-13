@@ -794,3 +794,10 @@ input.is-invalid:focus {
 .focus-first-section-body {
 	margin-bottom: var(--size-4-4);
 }
+
+/* Undo link inside the action toast (#32). */
+.focus-first-undo {
+	cursor: pointer;
+	text-decoration: underline;
+	font-weight: var(--font-semibold);
+}

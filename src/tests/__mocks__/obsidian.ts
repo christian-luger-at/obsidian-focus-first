@@ -293,8 +293,15 @@ export class Modal {
 	onClose() {}
 }
 
+export const createdNotices: Notice[] = [];
+export function clearCreatedNotices(): void { createdNotices.length = 0; }
+
 export class Notice {
-	constructor(_message?: string) {}
+	messageEl = new FakeDomEl();
+	hidden = false;
+	constructor(_message?: string, _timeout?: number) { createdNotices.push(this); }
+	hide() { this.hidden = true; }
+	setMessage() { return this; }
 }
 
 export function setIcon(_el: HTMLElement, _icon: string): void {}

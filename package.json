@@ -13,6 +13,9 @@
 		"test:tz": "TZ=America/New_York vitest run",
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
+		"docs:dev": "vitepress dev docs",
+		"docs:build": "vitepress build docs",
+		"docs:preview": "vitepress preview docs",
 		"release": "bash release.sh",
 		"release:publish": "bash release.sh --publish",
 		"release:patch": "bash release.sh --bump patch --publish",
@@ -33,6 +36,7 @@
 		"obsidian": "latest",
 		"typescript": "^5.8.3",
 		"typescript-eslint": "^8.59.1",
+		"vitepress": "^1.6.4",
 		"vitest": "^4.1.9"
 	}
 }

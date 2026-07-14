@@ -8,14 +8,14 @@
  * logic can be exercised and asserted on without a real browser DOM.
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 
 const { FocusFirstView } = await import('../TaskView');
 const { openTaskFile } = await import('../taskRenderer');
 const { DEFAULT_SETTINGS } = await import('../settings');
-const { TFile, MarkdownView, createdMenus, clearCreatedMenus } = await import('./__mocks__/obsidian');
+const { TFile, MarkdownView, createdMenus, clearCreatedMenus, Platform } = await import('./__mocks__/obsidian');
 
 import type { TaskItem } from '../taskScanner';
 import type { FocusFirstSettings } from '../settings';
@@ -750,7 +750,7 @@ describe('task item actions in the matrix', () => {
 		const getLeaf = vi.fn(() => ({ openFile: vi.fn(async () => {}), view: undefined }));
 		app.workspace.getLeaf = getLeaf;
 
-		container.findByClass('focus-first-task-text')?.dispatch('click');
+		container.findByClass('focus-first-task-text')?.dispatch('click', { stopPropagation: () => {} });
 
 		expect(getLeaf).toHaveBeenCalled();
 	});
@@ -1175,5 +1175,40 @@ describe('axis selector', () => {
 		await Promise.resolve();
 
 		expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), '- [ ] Big task #highvalue #s');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Mobile layout (compact chips + tap-to-expand)
+// ---------------------------------------------------------------------------
+
+describe('mobile layout', () => {
+	beforeEach(() => { Platform.isMobile = true; });
+	afterEach(() => { Platform.isMobile = false; });
+
+	it('shows due + priority chips in Eisenhower mode and expands the row on tap', () => {
+		const task = makeTask({ line: '- [ ] Sample task', dueDate: daysFromToday(0), priority: '🔺' });
+		const { view, contentEl } = makeView({ importantPriorities: ['🔺'] }, [task]);
+		priv(view).render();
+
+		const chips = contentEl.findAllByClass('focus-first-chip').map((c) => c.text);
+		expect(chips).toContain('today'); // due chip for a task due today
+		expect(chips).toContain('🔺');    // priority chip
+
+		const item = contentEl.findByClass('focus-first-task-item')!;
+		expect(item.classList.contains('is-expanded')).toBe(false);
+		item.dispatch('click');
+		expect(item.classList.contains('is-expanded')).toBe(true);
+	});
+
+	it('shows size + priority chips (no due) in Value/Effort mode', () => {
+		const task = makeTask({ line: '- [ ] Sample task #m', size: 'medium', priority: '⏫', dueDate: daysFromToday(0) });
+		const { view, contentEl } = makeView({ axisMode: 'valueEffort', importantPriorities: ['⏫'] }, [task]);
+		priv(view).render();
+
+		const chips = contentEl.findAllByClass('focus-first-chip').map((c) => c.text);
+		expect(chips).toContain('M');   // medium → "M"
+		expect(chips).toContain('⏫');
+		expect(chips).not.toContain('today'); // the due chip is not shown in Value/Effort
 	});
 });

@@ -1196,9 +1196,14 @@ describe('mobile layout', () => {
 		expect(chips).toContain('🔺');    // priority chip
 
 		const item = contentEl.findByClass('focus-first-task-item')!;
+		// The hover popover must NOT be wired on mobile — otherwise touch's synthetic
+		// mouse events move the detail out of the row and defeat tap-to-expand.
+		expect(item.listeners['mouseenter']).toBeUndefined();
 		expect(item.classList.contains('is-expanded')).toBe(false);
 		item.dispatch('click');
 		expect(item.classList.contains('is-expanded')).toBe(true);
+		item.dispatch('click');
+		expect(item.classList.contains('is-expanded')).toBe(false);
 	});
 
 	it('shows size + priority chips (no due) in Value/Effort mode', () => {

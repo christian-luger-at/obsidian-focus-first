@@ -1,10 +1,21 @@
 # Embedding tasks in a note
 
-A `focus-first-tasks` code block embeds a task list into any note. It has two modes, and parameters use a simple `key value` form (no colons).
+Sometimes you don't want to open the Focus First view - you want its tasks to appear **inside a normal note**: a project page listing its own "Do" items, a daily note showing today's focus list, a dashboard, a weekly review.
 
-## Show a Focus First section
+A **`focus-first-tasks`** code block does exactly that. It has **two modes**, and its parameters use a simple `key value` form (no colons).
 
-Add a `show-focus` line to render exactly the tasks Focus First would show for one of its sections — the focus list or a single quadrant — as a checklist:
+## Two modes at a glance
+
+| Mode | Add this | Renders | Needs the Tasks plugin? |
+| --- | --- | --- | --- |
+| **Section** | a `show-focus …` line | one of Focus First's own sections (the focus list or a quadrant) as a live checklist | No |
+| **Query** | anything else | a full [Tasks-plugin](https://obsidian.tasks.org/) query, rendered by Tasks | Yes |
+
+Pick **section mode** to mirror what Focus First already computes; pick **query mode** when you need the full power of a Tasks query.
+
+## Section mode: mirror a Focus First section
+
+Add a `show-focus` line naming the section you want:
 
 ````markdown
 ```focus-first-tasks
@@ -13,13 +24,32 @@ empty-text 🎉 Nothing urgent and important
 ```
 ````
 
-`show-focus` accepts `focus`, `do`, `schedule`, `delegate`, or `eliminate`. The tasks are selected with Focus First's own classification (so they match the view exactly, including your urgency threshold, important priorities, quadrant tags, and hide tag) and the list stays in sync as tasks change. When the section is empty, the optional `empty-text` message is shown.
+`show-focus` accepts one of:
 
-The tasks are rendered through Obsidian's Markdown renderer, so they get the same formatting as normal tasks — including the Tasks plugin's rendering when it is enabled. The Tasks plugin is not required (without it, the tasks appear as a plain checklist), and checking a box completes the correct task in its source note.
+| Value | Renders |
+| --- | --- |
+| `focus` | your [focus / today-plan](/guide/focus-size-filters#focus-tasks-today-plan) list |
+| `do` | the **Do** quadrant (urgent + important) |
+| `schedule` | the **Schedule** quadrant |
+| `delegate` | the **Delegate** quadrant |
+| `eliminate` | the **Eliminate** quadrant |
 
-## Wrap a Tasks-plugin query
+What makes this powerful:
 
-Without a `show-focus` line, everything except the `empty-text` line is passed straight to the [Tasks plugin](https://obsidian.tasks.org/) as a query, so the full [Tasks query syntax](https://publish.obsidian.md/tasks/Queries/About+Queries) is available and the result is rendered by Tasks itself:
+- **It matches the view exactly.** The tasks are selected with Focus First's own [classification](/guide/classification): your urgency threshold, important priorities, quadrant tags, and hide tag all apply, so an embedded `do` list is precisely what the view's Do quadrant shows.
+- **It stays in sync.** Edit, complete, or re-tag a task anywhere in your vault and the embedded list updates.
+- **It renders like a real task list.** Tasks go through Obsidian's Markdown renderer, so they pick up the same formatting - including the Tasks plugin's rendering when it's enabled. Without the Tasks plugin they simply appear as a plain checklist.
+- **Checking a box completes the real task** in its source note, not just in the embed.
+- **`empty-text`** sets the message shown when the section is empty (optional).
+
+::: tip A couple of ideas
+- On a **project note**, embed `show-focus do` to keep the project's urgent-and-important tasks in front of you.
+- In your **daily note**, embed `show-focus focus` so your today-plan travels with the day.
+:::
+
+## Query mode: wrap a Tasks-plugin query
+
+Leave out `show-focus`, and every line except `empty-text` is passed straight to the [Tasks plugin](https://obsidian.tasks.org/) as a query. The full [Tasks query syntax](https://publish.obsidian.md/tasks/Queries/About+Queries) is available, and the result is rendered by Tasks itself:
 
 ````markdown
 ```focus-first-tasks
@@ -31,10 +61,10 @@ empty-text 🎉 Nothing to focus on right now
 ```
 ````
 
-When the query matches no tasks, the `empty-text` message is shown instead. (The dedicated `show-focus` key never clashes with Tasks-plugin instructions such as `show tree`, so those keep working inside the query.)
+When the query matches nothing, `empty-text` is shown instead. The dedicated `show-focus` key never clashes with Tasks instructions such as `show tree`, so those keep working inside the query.
 
 ::: warning
-The query mode requires the **Tasks plugin** to be installed and enabled — it renders the Tasks plugin's own output. Without it, the block shows a short notice. (The `show-focus` mode works without the Tasks plugin.)
+Query mode needs the **Tasks plugin** installed and enabled - it renders the Tasks plugin's own output. Without it, the block shows a short notice. (Section mode works without the Tasks plugin.)
 :::
 
 ## Parameters

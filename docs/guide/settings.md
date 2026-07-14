@@ -15,7 +15,7 @@ Focus First's settings live under **Settings → Community plugins → Focus Fir
 
 ## Adding tasks quickly
 
-Capture a task without leaving the view — the `+` button in the header, or the "Add task" command / hotkey. When the Tasks plugin is enabled, this opens its full create dialog (date, priority, and recurrence pickers); otherwise a simple input is used. The new task is appended to a configurable inbox note or the active note — and the very first time you add a task, Focus First asks which inbox note to use (created if missing) and remembers it.
+Capture a task without leaving the view: the `+` button in the header, or the "Add task" command / hotkey. When the Tasks plugin is enabled, this opens its full create dialog (date, priority, and recurrence pickers); otherwise a simple input is used. The new task is appended to a configurable inbox note or the active note. The very first time you add a task, Focus First asks which inbox note to use (created if missing) and remembers it.
 
 ## Grouping & sorting
 

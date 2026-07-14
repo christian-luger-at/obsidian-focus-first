@@ -10,10 +10,10 @@ issues, propose changes, and get a pull request merged.
 
 ## Ways to contribute
 
-- **Report a bug** — open an [issue](https://github.com/christian-luger-at/obsidian-focus-first/issues).
-- **Request a feature** — open an issue describing the problem you want solved.
-- **Improve the docs** — fixes to the README, DEVELOPMENT.md, or in-code docs are welcome.
-- **Send code** — bug fixes and small, well-scoped features via pull request.
+- **Report a bug** - open an [issue](https://github.com/christian-luger-at/obsidian-focus-first/issues).
+- **Request a feature** - open an issue describing the problem you want solved.
+- **Improve the docs** - fixes to the README, DEVELOPMENT.md, or in-code docs are welcome.
+- **Send code** - bug fixes and small, well-scoped features via pull request.
 
 For anything larger than a small fix, please **open an issue first** so we can
 agree on the approach before you invest time. This avoids PRs that have to be
@@ -23,12 +23,12 @@ rejected for scope or design reasons.
 
 A good bug report includes:
 
-1. **What you did** — the steps to reproduce.
+1. **What you did** - the steps to reproduce.
 2. **What you expected** to happen.
 3. **What actually happened** (screenshots or a short screen recording help a lot).
-4. **Environment** — Obsidian version, operating system, Focus First version, and
+4. **Environment** - Obsidian version, operating system, Focus First version, and
    whether the [Tasks plugin](https://obsidian.tasks.org/) is installed.
-5. A **minimal example** — one or two tasks that trigger the problem, if relevant.
+5. A **minimal example** - one or two tasks that trigger the problem, if relevant.
 
 ## Development setup
 
@@ -43,12 +43,12 @@ npm run dev      # start esbuild in watch mode
 
 ## Before you open a pull request
 
-Run all three checks locally — CI runs the same ones and a red build will block
+Run all three checks locally - CI runs the same ones and a red build will block
 the merge:
 
 ```bash
 npm run lint     # eslint (incl. eslint-plugin-obsidianmd rules)
-npm test         # vitest — all tests must pass
+npm test         # vitest - all tests must pass
 npm run build    # type-check + production bundle
 ```
 
@@ -61,7 +61,7 @@ npm run test:coverage
 
 ## Coding guidelines
 
-- **TypeScript, strict mode.** Match the style of the surrounding code — naming,
+- **TypeScript, strict mode.** Match the style of the surrounding code - naming,
   comment density, and idioms.
 - **No custom styling where an Obsidian native class or design token exists.** The
   view is built from standard Obsidian classes and CSS variables on purpose.
@@ -76,9 +76,9 @@ npm run test:coverage
 This project uses [Conventional Commits](https://www.conventionalcommits.org/).
 The release script generates the changelog from them, so the prefix matters:
 
-- `feat:` — a new user-facing feature (→ **Features** in the release notes)
-- `fix:` — a bug fix (→ **Fixes**)
-- `chore:`, `ci:`, `test:`, `docs:`, `style:`, `build:`, `refactor:`, `perf:` —
+- `feat:` - a new user-facing feature (→ **Features** in the release notes)
+- `fix:` - a bug fix (→ **Fixes**)
+- `chore:`, `ci:`, `test:`, `docs:`, `style:`, `build:`, `refactor:`, `perf:` -
   housekeeping; these are omitted from the generated release notes
 
 Example:
@@ -104,7 +104,7 @@ area.
 
 Releases are cut by the author with `release.sh` (see the
 [release section in DEVELOPMENT.md](DEVELOPMENT.md#build-production-release)). Contributors do not
-need to bump versions or create tags — please leave `manifest.json`,
+need to bump versions or create tags - please leave `manifest.json`,
 `package.json`, and `versions.json` version numbers unchanged in your PR.
 
 ## Questions

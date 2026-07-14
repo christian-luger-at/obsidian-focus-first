@@ -22,7 +22,7 @@ How to run the plugin from source and hack on it. For the full release and Commu
    ```bash
    nvm use
    npm install
-   npm run dev   # esbuild in watch mode — rebuilds main.js on save
+   npm run dev   # esbuild in watch mode - rebuilds main.js on save
    ```
 
 3. Enable **Focus First** under **Settings → Community plugins** in the test vault.

@@ -26,10 +26,10 @@
    - [ ] Reorganize the archive folder ⏬
    ```
 
-4. Open the Focus First view — your tasks are already sorted into the four quadrants.
+4. Open the Focus First view - your tasks are already sorted into the four quadrants.
 
 ## Compatibility
 
 - Requires Obsidian **1.12.0** or later.
 - Works on desktop and mobile.
-- Works alongside the [Tasks plugin](https://obsidian.tasks.org/) — Focus First reads the same checkbox/due-date/priority syntax but doesn't require it (only the code block's [query mode](/guide/embedding) needs the Tasks plugin).
+- Works alongside the [Tasks plugin](https://obsidian.tasks.org/) - Focus First reads the same checkbox/due-date/priority syntax but doesn't require it (only the code block's [query mode](/guide/embedding) needs the Tasks plugin).

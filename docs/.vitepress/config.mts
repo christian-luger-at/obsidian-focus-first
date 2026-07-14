@@ -4,7 +4,7 @@ const repo = 'christian-luger-at/obsidian-focus-first'
 
 export default defineConfig({
   title: 'Focus First',
-  description: 'Prioritize your Obsidian tasks with the Eisenhower or Value/Effort matrix — automatically.',
+  description: 'Prioritize your Obsidian tasks with the Eisenhower or Value/Effort matrix - automatically.',
   lang: 'en-US',
   // Project site: served from https://christian-luger-at.github.io/obsidian-focus-first/
   base: '/obsidian-focus-first/',
@@ -12,9 +12,24 @@ export default defineConfig({
   lastUpdated: true,
   sitemap: { hostname: 'https://christian-luger-at.github.io/obsidian-focus-first/' },
 
+  head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/obsidian-focus-first/favicon.svg' }],
+    ['meta', { name: 'theme-color', content: '#7c3aed' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:title', content: 'Focus First - Obsidian task prioritization' }],
+    ['meta', { property: 'og:description', content: 'Sort your Obsidian tasks into the Eisenhower or Value/Effort matrix, automatically.' }],
+    ['meta', { property: 'og:image', content: 'https://christian-luger-at.github.io/obsidian-focus-first/screen.gif' }],
+    ['meta', { property: 'og:url', content: 'https://christian-luger-at.github.io/obsidian-focus-first/' }],
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+  ],
+
   themeConfig: {
+    logo: '/logo.svg',
+
     nav: [
       { text: 'Guide', link: '/guide/introduction' },
+      { text: 'Recipes', link: '/recipes/' },
+      { text: 'Reference', link: '/reference/tags' },
       { text: 'Releases', link: `https://github.com/${repo}/releases` },
     ],
 
@@ -45,6 +60,19 @@ export default defineConfig({
           { text: 'Focus, size & filters', link: '/guide/focus-size-filters' },
           { text: 'Embedding tasks in a note', link: '/guide/embedding' },
           { text: 'Settings', link: '/guide/settings' },
+        ],
+      },
+      {
+        text: 'Recipes',
+        items: [
+          { text: 'Recipes & workflows', link: '/recipes/' },
+        ],
+      },
+      {
+        text: 'Reference',
+        items: [
+          { text: 'Tags & signifiers', link: '/reference/tags' },
+          { text: 'FAQ & troubleshooting', link: '/reference/faq' },
         ],
       },
       {

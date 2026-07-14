@@ -396,31 +396,35 @@ export function renderTaskItem(
 		});
 	}
 
-	// Reveal the popover when the row is hovered. An open delay means it only
+	// Desktop only: reveal the popover on hover. An open delay means it only
 	// appears when you actually rest on a row (so it doesn't flicker while you scan
 	// the list). A short hide delay plus the popover's own hover form a bridge so
-	// you can move from the row into the popover to use its buttons.
-	let hideTimer = 0;
-	let showTimer = 0;
-	let mouseX = 0;
-	let mouseY = 0;
-	const scheduleHide = () => {
-		window.clearTimeout(showTimer);
-		window.clearTimeout(hideTimer);
-		hideTimer = window.setTimeout(() => hideTaskDetail(detail), 150);
-	};
-	const scheduleReveal = (e: MouseEvent) => {
-		mouseX = e.clientX;
-		mouseY = e.clientY;
-		window.clearTimeout(hideTimer);
-		window.clearTimeout(showTimer);
-		showTimer = window.setTimeout(() => showTaskDetail(li, detail, mouseX, mouseY), 400);
-	};
-	li.addEventListener('mouseenter', scheduleReveal);
-	li.addEventListener('mousemove', (e: MouseEvent) => { mouseX = e.clientX; mouseY = e.clientY; });
-	li.addEventListener('mouseleave', scheduleHide);
-	detail.addEventListener('mouseenter', () => { window.clearTimeout(hideTimer); });
-	detail.addEventListener('mouseleave', scheduleHide);
+	// you can move from the row into the popover to use its buttons. On mobile this
+	// is skipped entirely — touch fires synthetic mouse events that would move the
+	// detail to the view root and defeat the tap-to-expand handled above.
+	if (!Platform.isMobile) {
+		let hideTimer = 0;
+		let showTimer = 0;
+		let mouseX = 0;
+		let mouseY = 0;
+		const scheduleHide = () => {
+			window.clearTimeout(showTimer);
+			window.clearTimeout(hideTimer);
+			hideTimer = window.setTimeout(() => hideTaskDetail(detail), 150);
+		};
+		const scheduleReveal = (e: MouseEvent) => {
+			mouseX = e.clientX;
+			mouseY = e.clientY;
+			window.clearTimeout(hideTimer);
+			window.clearTimeout(showTimer);
+			showTimer = window.setTimeout(() => showTaskDetail(li, detail, mouseX, mouseY), 400);
+		};
+		li.addEventListener('mouseenter', scheduleReveal);
+		li.addEventListener('mousemove', (e: MouseEvent) => { mouseX = e.clientX; mouseY = e.clientY; });
+		li.addEventListener('mouseleave', scheduleHide);
+		detail.addEventListener('mouseenter', () => { window.clearTimeout(hideTimer); });
+		detail.addEventListener('mouseleave', scheduleHide);
+	}
 
 	return li;
 }

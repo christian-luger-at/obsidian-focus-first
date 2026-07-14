@@ -628,12 +628,9 @@ body.is-mobile .focus-first-filter-panel {
 	display: none;
 }
 
-/* Rows stack; the title is a full-width tap target that opens the note. */
+/* Rows stack. The title stays inline so the focus position number ("1.") sits
+   on the same line as it, not on a line of its own. */
 body.is-mobile .focus-first-task-item {
-	display: block;
-}
-
-body.is-mobile .focus-first-task-text {
 	display: block;
 }
 
@@ -716,10 +713,16 @@ body.is-mobile .focus-first-task-btn svg {
 	height: 20px;
 }
 
-/* Scroll the whole view as one page; the matrix and quadrant lists size to
-   their content. */
-body.is-mobile .focus-first-view {
+/* One-finger scroll over the whole view: every list shows all its entries at
+   full height (no nested scroll areas), the view grows to its content, and the
+   leaf's own view-content is the single scroll container. */
+body.is-mobile .workspace-leaf-content[data-type='focus-first-view'] .view-content {
 	overflow-y: auto;
+}
+
+body.is-mobile .focus-first-view {
+	height: auto;
+	overflow: visible;
 }
 
 body.is-mobile .focus-first-matrix-container {
@@ -733,14 +736,8 @@ body.is-mobile .focus-first-matrix {
 }
 
 body.is-mobile .focus-first-task-list {
+	max-height: none;
 	overflow: visible;
-}
-
-/* But cap the focus shortlist so a long list scrolls internally instead of
-   pushing the matrix off-screen. */
-body.is-mobile .focus-first-focus-container .focus-first-task-list {
-	max-height: 45vh;
-	overflow-y: auto;
 }
 
 /* ── Settings ────────────────────────────────────────────── */

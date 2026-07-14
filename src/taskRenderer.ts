@@ -1,7 +1,6 @@
 import { App, TFile, MarkdownView, Menu, setIcon, Platform } from 'obsidian';
 import { MatrixTask, ClassificationReason, explainTask } from './matrixClassifier';
 import { TaskItem, isFutureTask } from './taskScanner';
-import { daysBetween } from './dateUtils';
 import { FocusFirstSettings, Priority, TaskSize, sizeTagList } from './settings';
 import { getTasksApi } from './tasksPlugin';
 import { setDueDate, shiftDueDate, setPriority, setStartDate, addDaysToIso, setSize } from './tasksFormat';
@@ -219,15 +218,6 @@ export function taskTitle(line: string): string {
 		.trim();
 }
 
-/** Short, relative due-date label for the mobile compact chip (e.g. "today", "overdue 3d"). */
-function dueChip(due: Date): { text: string; overdue: boolean } {
-	const d = daysBetween(new Date(), due);
-	const v = t().view;
-	if (d === 0) return { text: String(v.chipToday), overdue: false };
-	if (d < 0) return { text: String(v.chipOverdue).replace('{n}', String(-d)), overdue: true };
-	return { text: String(v.chipInDays).replace('{n}', String(d)), overdue: false };
-}
-
 /**
  * Renders one interactive task row. The list shows only titles (each a link that
  * opens the note on a single click); hovering a row reveals a floating popover
@@ -269,22 +259,11 @@ export function renderTaskItem(
 	const titleEl = li.createEl('span', { text, cls: 'focus-first-task-text' });
 	titleEl.addEventListener('click', (e) => { e.stopPropagation(); void openTaskFile(app, task); });
 
-	// Mobile has no hover: show a compact meta line under the title with the two
-	// signals the active axes use (Eisenhower → due + priority; Value/Effort →
-	// size + priority), and expand the full details/actions on a tap of the row.
+	// Mobile has no hover: the collapsed row shows only the title plus a chevron
+	// affordance. A tap expands the full details/actions (due date, priority,
+	// size, tags, source, and the action buttons) in place below.
 	if (Platform.isMobile) {
-		const compact = li.createDiv({ cls: 'focus-first-task-meta-compact' });
-		const chips = compact.createDiv({ cls: 'focus-first-chips' });
-		const addChip = (label: string, extra: string) =>
-			chips.createEl('span', { text: label, cls: `focus-first-chip ${extra}` });
-		if (settings.axisMode === 'valueEffort') {
-			if (task.size) addChip(task.size.charAt(0).toUpperCase(), 'focus-first-chip-size');
-		} else if (task.dueDate) {
-			const c = dueChip(task.dueDate);
-			addChip(c.text, c.overdue ? 'focus-first-chip-overdue' : 'focus-first-chip-due');
-		}
-		if (task.priority) addChip(task.priority, 'focus-first-chip-prio');
-		setIcon(compact.createSpan({ cls: 'focus-first-expand-chevron' }), 'chevron-down');
+		setIcon(li.createSpan({ cls: 'focus-first-expand-chevron' }), 'chevron-down');
 		li.addEventListener('click', () => { li.classList.toggle('is-expanded'); });
 	}
 

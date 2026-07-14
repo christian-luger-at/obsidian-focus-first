@@ -33,5 +33,3 @@
 - Requires Obsidian **1.12.0** or later.
 - Works on desktop and mobile.
 - Works alongside the [Tasks plugin](https://obsidian.tasks.org/) — Focus First reads the same checkbox/due-date/priority syntax but doesn't require it (only the code block's [query mode](/guide/embedding) needs the Tasks plugin).
-
-Next: learn **[how tasks are classified](/guide/classification)**.

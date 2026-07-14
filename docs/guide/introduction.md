@@ -21,4 +21,11 @@ No manual sorting needed — though you can still pin any task to a quadrant by 
 - **[Embeddable task lists](/guide/embedding)** via a `focus-first-tasks` code block.
 - Works on **desktop and mobile**, in **English and German**.
 
-Ready? Head to **[Getting started](/guide/getting-started)**.
+## Where to go next
+
+Focus First is built around a few well-known methods, so it's worth understanding the ideas before the buttons. We recommend reading in order:
+
+1. **Foundations** — start with **[Prioritization methods](/methods/)** to learn *why* Eisenhower, Value/Effort, and daily-planning methods like *Eat the Frog* work and when to use each.
+2. **Using Focus First** — then **[Getting started](/guide/getting-started)** installs the plugin and shows how it runs those methods on your own tasks.
+
+In a hurry? You can skip straight to **[Getting started](/guide/getting-started)** and come back to the concepts later.

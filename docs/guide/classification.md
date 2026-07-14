@@ -23,4 +23,4 @@ Each quadrant has a configurable tag (defaults: `#do`, `#schedule`, `#delegate`,
 
 You can also **drag a task between quadrants** to re-tag it instantly.
 
-Next: the plugin isn't limited to Eisenhower — see **[the two matrices](/guide/matrices)**.
+Focus First isn't limited to Eisenhower — the same view also runs a Value/Effort matrix. See **[The two matrices](/guide/matrices)**.

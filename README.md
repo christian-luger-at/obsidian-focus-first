@@ -14,8 +14,8 @@ It reads standard checkbox tasks from your vault (compatible with the [Tasks plu
 
 | | Urgent | Not urgent |
 | --- | --- | --- |
-| **Important** | 🔴 **Do** — handle now | 🔵 **Schedule** — plan for later |
-| **Not important** | 🟠 **Delegate** — hand off if possible | ⚪ **Eliminate** — reconsider or drop |
+| **Important** | **Do** — handle now | **Schedule** — plan for later |
+| **Not important** | **Delegate** — hand off if possible | **Eliminate** — reconsider or drop |
 
 No manual sorting needed — though you can still pin any task to a quadrant by hand.
 

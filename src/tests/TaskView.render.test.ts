@@ -1186,14 +1186,15 @@ describe('mobile layout', () => {
 	beforeEach(() => { Platform.isMobile = true; });
 	afterEach(() => { Platform.isMobile = false; });
 
-	it('shows due + priority chips in Eisenhower mode and expands the row on tap', () => {
+	it('collapses to title-only with a chevron and expands/collapses on tap', () => {
 		const task = makeTask({ line: '- [ ] Sample task', dueDate: daysFromToday(0), priority: '🔺' });
 		const { view, contentEl } = makeView({ importantPriorities: ['🔺'] }, [task]);
 		priv(view).render();
 
-		const chips = contentEl.findAllByClass('focus-first-chip').map((c) => c.text);
-		expect(chips).toContain('today'); // due chip for a task due today
-		expect(chips).toContain('🔺');    // priority chip
+		// Collapsed row shows only the title + a chevron — no metadata chips.
+		expect(contentEl.findByClass('focus-first-chip')).toBeUndefined();
+		expect(contentEl.findByClass('focus-first-expand-chevron')).toBeDefined();
+		expect(contentEl.findByClass('focus-first-task-text')?.text).toBe('Sample task');
 
 		const item = contentEl.findByClass('focus-first-task-item')!;
 		// The hover popover must NOT be wired on mobile — otherwise touch's synthetic
@@ -1204,16 +1205,5 @@ describe('mobile layout', () => {
 		expect(item.classList.contains('is-expanded')).toBe(true);
 		item.dispatch('click');
 		expect(item.classList.contains('is-expanded')).toBe(false);
-	});
-
-	it('shows size + priority chips (no due) in Value/Effort mode', () => {
-		const task = makeTask({ line: '- [ ] Sample task #m', size: 'medium', priority: '⏫', dueDate: daysFromToday(0) });
-		const { view, contentEl } = makeView({ axisMode: 'valueEffort', importantPriorities: ['⏫'] }, [task]);
-		priv(view).render();
-
-		const chips = contentEl.findAllByClass('focus-first-chip').map((c) => c.text);
-		expect(chips).toContain('M');   // medium → "M"
-		expect(chips).toContain('⏫');
-		expect(chips).not.toContain('today'); // the due chip is not shown in Value/Effort
 	});
 });

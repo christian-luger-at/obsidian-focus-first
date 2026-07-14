@@ -628,46 +628,13 @@ body.is-mobile .focus-first-filter-panel {
 	display: none;
 }
 
-/* Rows stack. The title stays inline so the focus position number ("1.") sits
-   on the same line as it, not on a line of its own. */
+/* The collapsed row is just the title (with the focus number "1." inline) and a
+   chevron pushed to the right. The title flexes to fill; the detail wraps to a
+   full-width line below when expanded. */
 body.is-mobile .focus-first-task-item {
-	display: block;
-}
-
-/* Compact meta line under the title: chips for the active axes' signals plus a
-   chevron. Tapping the row expands the full details/actions below. */
-body.is-mobile .focus-first-task-meta-compact {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
-	justify-content: space-between;
-	gap: var(--size-2-2);
-	margin-top: var(--size-2-1);
-}
-
-body.is-mobile .focus-first-chips {
-	display: flex;
-	align-items: center;
-	gap: var(--size-2-2);
-}
-
-body.is-mobile .focus-first-chip {
-	font-size: calc(var(--font-ui-smaller) * var(--focus-first-font-scale));
-	color: var(--text-muted);
-	background: var(--background-modifier-hover);
-	border-radius: var(--radius-s);
-	padding: 0 var(--size-2-2);
-	white-space: nowrap;
-}
-
-body.is-mobile .focus-first-chip-overdue {
-	color: var(--text-error);
-	background: transparent;
-	padding: 0;
-}
-
-body.is-mobile .focus-first-chip-prio {
-	background: transparent;
-	padding: 0;
 }
 
 body.is-mobile .focus-first-expand-chevron {
@@ -680,9 +647,11 @@ body.is-mobile .focus-first-task-item.is-expanded .focus-first-expand-chevron sv
 	transform: rotate(180deg);
 }
 
-/* Details/actions are hidden until the row is tapped (no hover on touch). */
+/* Details/actions are hidden until the row is tapped (no hover on touch); when
+   shown they take a full-width row under the title. */
 body.is-mobile .focus-first-task-detail {
 	display: none;
+	flex-basis: 100%;
 	position: static;
 	background: transparent;
 	border: none;

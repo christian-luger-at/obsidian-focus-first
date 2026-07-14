@@ -14,37 +14,46 @@ export default defineConfig({
 
   themeConfig: {
     nav: [
-      { text: 'Guide', link: '/guide/getting-started', activeMatch: '/guide/' },
+      { text: 'Guide', link: '/guide/introduction' },
       { text: 'Releases', link: `https://github.com/${repo}/releases` },
     ],
 
-    sidebar: {
-      '/guide/': [
-        {
-          text: 'Introduction',
-          items: [
-            { text: 'What is Focus First?', link: '/guide/introduction' },
-            { text: 'Getting started', link: '/guide/getting-started' },
-          ],
-        },
-        {
-          text: 'Using Focus First',
-          items: [
-            { text: 'How tasks are classified', link: '/guide/classification' },
-            { text: 'The two matrices', link: '/guide/matrices' },
-            { text: 'Focus, size & filters', link: '/guide/focus-size-filters' },
-            { text: 'Embedding tasks in a note', link: '/guide/embedding' },
-            { text: 'Settings', link: '/guide/settings' },
-          ],
-        },
-        {
-          text: 'Contributing',
-          items: [
-            { text: 'Development', link: '/guide/development' },
-          ],
-        },
-      ],
-    },
+    // One linear learning path applied on every page: understand the ideas
+    // first (Foundations), then how to run them in the tool (Using Focus First).
+    sidebar: [
+      {
+        text: 'Introduction',
+        items: [
+          { text: 'What is Focus First?', link: '/guide/introduction' },
+        ],
+      },
+      {
+        text: 'Foundations',
+        items: [
+          { text: 'Prioritization methods', link: '/methods/' },
+          { text: 'The Eisenhower matrix', link: '/methods/eisenhower' },
+          { text: 'The Value / Effort matrix', link: '/methods/value-effort' },
+          { text: 'Daily-planning methods', link: '/methods/daily-planning' },
+        ],
+      },
+      {
+        text: 'Using Focus First',
+        items: [
+          { text: 'Getting started', link: '/guide/getting-started' },
+          { text: 'How tasks are classified', link: '/guide/classification' },
+          { text: 'The two matrices', link: '/guide/matrices' },
+          { text: 'Focus, size & filters', link: '/guide/focus-size-filters' },
+          { text: 'Embedding tasks in a note', link: '/guide/embedding' },
+          { text: 'Settings', link: '/guide/settings' },
+        ],
+      },
+      {
+        text: 'Contributing',
+        items: [
+          { text: 'Development', link: '/guide/development' },
+        ],
+      },
+    ],
 
     socialLinks: [
       { icon: 'github', link: `https://github.com/${repo}` },

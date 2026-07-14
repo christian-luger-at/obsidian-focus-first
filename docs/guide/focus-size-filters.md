@@ -4,6 +4,10 @@
 
 Tag a task with `#focus` to pin it in a dedicated section above the matrix, so your top priorities never get buried. The section is an ordered, numbered shortlist (most important first, so #1 is your "frog"), which supports daily-planning methods like **Eat the Frog**, **Ivy Lee**, and **MITs**.
 
+::: tip What are those methods?
+See **[Daily-planning methods](/methods/daily-planning)** for what Eat the Frog, Ivy Lee, and MITs are and how to run each from this list.
+:::
+
 - **Drag focus tasks to reorder them by hand** — your manual order is remembered — or leave them in the automatic importance order.
 - Set an optional **daily target** (e.g. 6 or 3) and a subtle line marks where the list runs past it.
 

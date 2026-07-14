@@ -2,6 +2,10 @@
 
 Focus First is a 2×2 view whose axes you can switch from the **dropdown in the header**. Same auto-classification, same "why here" explanation — only the axis inputs and quadrant labels change.
 
+::: tip New to these methods?
+This page covers *how to use* the two matrices in Focus First. For *why they exist* and how to think with them, see **[The Eisenhower matrix](/methods/eisenhower)** and **[The Value / Effort matrix](/methods/value-effort)**.
+:::
+
 ## Eisenhower (Urgency × Importance)
 
 The default. Tasks are placed by **urgency** (due date) and **importance** (priority) — see [How tasks are classified](/guide/classification).

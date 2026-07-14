@@ -28,3 +28,7 @@ releases/
 # Demo vault (usable locally, kept out of git & releases)
 demo-vault/
 focus-first-demo-vault.zip
+
+# VitePress
+docs/.vitepress/dist
+docs/.vitepress/cache

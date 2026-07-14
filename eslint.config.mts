@@ -8,6 +8,7 @@ export default tseslint.config(
 	globalIgnores([
 		'node_modules',
 		'dist',
+		'docs',
 		'scripts',
 		'releases',
 		'esbuild.config.mjs',

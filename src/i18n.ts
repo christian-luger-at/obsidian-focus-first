@@ -49,6 +49,9 @@ interface Translations {
 		tasksPluginWarningDismiss: string;
 		focusSectionTitle: string;
 		focusOverTarget: string;
+		chipToday: string;
+		chipOverdue: string;
+		chipInDays: string;
 		focusAdd: string;
 		focusRemove: string;
 		focusDone: string;
@@ -257,6 +260,9 @@ const translations: Record<Lang, Translations> = {
 			tasksPluginWarningDismiss: 'Dismiss',
 			focusSectionTitle: 'Focus Tasks',
 			focusOverTarget: 'Beyond today\'s target',
+			chipToday: 'today',
+			chipOverdue: 'overdue {n}d',
+			chipInDays: 'in {n}d',
 			focusAdd: 'Add to focus',
 			focusRemove: 'Remove from focus',
 			focusDone: 'Mark as done',
@@ -528,6 +534,9 @@ const translations: Record<Lang, Translations> = {
 			tasksPluginWarningDismiss: 'Ausblenden',
 			focusSectionTitle: 'Fokus-Aufgaben',
 			focusOverTarget: 'Über dem Tagesziel',
+			chipToday: 'heute',
+			chipOverdue: 'überfällig {n} T',
+			chipInDays: 'in {n} T',
 			focusAdd: 'Zu Fokus hinzufügen',
 			focusRemove: 'Aus Fokus entfernen',
 			hideTask: 'Aufgabe ausblenden',

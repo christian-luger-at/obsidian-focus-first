@@ -602,14 +602,90 @@
 	fill: var(--interactive-accent);
 }
 
-/* Mobile has no hover: stack the row and show the detail inline under each
-   title. Action buttons get comfortable touch targets. */
+/* ── Mobile ──────────────────────────────────────────────── */
+
+/* Header: title on its own line, actions on the next full-width row, so the
+   heading isn't squeezed and the Add button never runs off-screen. Search and
+   Add go icon-only to keep the actions row compact. */
+body.is-mobile .focus-first-header {
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--size-2-2);
+}
+
+body.is-mobile .focus-first-header-actions {
+	justify-content: space-between;
+	flex-wrap: wrap;
+}
+
+body.is-mobile .focus-first-search-toggle span,
+body.is-mobile .focus-first-add-btn span {
+	display: none;
+}
+
+/* Only the text search is offered on mobile; the date/size filter panel is hidden. */
+body.is-mobile .focus-first-filter-panel {
+	display: none;
+}
+
+/* Rows stack; the title is a full-width tap target that opens the note. */
 body.is-mobile .focus-first-task-item {
 	display: block;
 }
 
-body.is-mobile .focus-first-task-detail {
+body.is-mobile .focus-first-task-text {
 	display: block;
+}
+
+/* Compact meta line under the title: chips for the active axes' signals plus a
+   chevron. Tapping the row expands the full details/actions below. */
+body.is-mobile .focus-first-task-meta-compact {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-2-2);
+	margin-top: var(--size-2-1);
+}
+
+body.is-mobile .focus-first-chips {
+	display: flex;
+	align-items: center;
+	gap: var(--size-2-2);
+}
+
+body.is-mobile .focus-first-chip {
+	font-size: calc(var(--font-ui-smaller) * var(--focus-first-font-scale));
+	color: var(--text-muted);
+	background: var(--background-modifier-hover);
+	border-radius: var(--radius-s);
+	padding: 0 var(--size-2-2);
+	white-space: nowrap;
+}
+
+body.is-mobile .focus-first-chip-overdue {
+	color: var(--text-error);
+	background: transparent;
+	padding: 0;
+}
+
+body.is-mobile .focus-first-chip-prio {
+	background: transparent;
+	padding: 0;
+}
+
+body.is-mobile .focus-first-expand-chevron {
+	display: flex;
+	flex-shrink: 0;
+	color: var(--text-muted);
+}
+
+body.is-mobile .focus-first-task-item.is-expanded .focus-first-expand-chevron svg {
+	transform: rotate(180deg);
+}
+
+/* Details/actions are hidden until the row is tapped (no hover on touch). */
+body.is-mobile .focus-first-task-detail {
+	display: none;
 	position: static;
 	background: transparent;
 	border: none;
@@ -618,6 +694,10 @@ body.is-mobile .focus-first-task-detail {
 	min-width: 0;
 	max-width: none;
 	margin-top: var(--size-2-2);
+}
+
+body.is-mobile .focus-first-task-item.is-expanded .focus-first-task-detail {
+	display: block;
 }
 
 body.is-mobile .focus-first-task-actions {
@@ -636,10 +716,8 @@ body.is-mobile .focus-first-task-btn svg {
 	height: 20px;
 }
 
-/* On mobile, scroll the whole view as one page instead of pinning the search +
-   focus cards and scrolling only the matrix. Otherwise, with several focus
-   tasks, the top section eats the screen and the quadrants below are barely
-   visible. Everything flows and sizes to its content; the view scrolls. */
+/* Scroll the whole view as one page; the matrix and quadrant lists size to
+   their content. */
 body.is-mobile .focus-first-view {
 	overflow-y: auto;
 }
@@ -654,10 +732,15 @@ body.is-mobile .focus-first-matrix {
 	overflow: visible;
 }
 
-/* Let the focus and quadrant lists grow to their content (the page scrolls),
-   rather than scrolling internally inside a squeezed area. */
 body.is-mobile .focus-first-task-list {
 	overflow: visible;
+}
+
+/* But cap the focus shortlist so a long list scrolls internally instead of
+   pushing the matrix off-screen. */
+body.is-mobile .focus-first-focus-container .focus-first-task-list {
+	max-height: 45vh;
+	overflow-y: auto;
 }
 
 /* ── Settings ────────────────────────────────────────────── */

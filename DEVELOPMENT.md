@@ -48,7 +48,7 @@ focus-first -> /Users/christian/dev/obsidian-focus-first
 ```
 
 > [!tip]
-> It is normal for `ls -la` to show the full path `/Users/...` — this is not a misconfiguration.
+> It is normal for `ls -la` to show the full path `/Users/...` - this is not a misconfiguration.
 
 ### 3. Install project dependencies (important)
 
@@ -101,7 +101,7 @@ Note: You can start the dev server before opening the vault; however, it is reco
 src/
   main.ts            # plugin entry point and lifecycle management
   settings.ts        # settings interface, defaults, SettingTab UI, path suggesters
-  TaskView.ts        # custom Leaf View — the matrix panel (render orchestration)
+  TaskView.ts        # custom Leaf View - the matrix panel (render orchestration)
   taskScanner.ts     # vault/folder task discovery via metadataCache; hide/future rules
   matrixClassifier.ts # Eisenhower matrix classification + "why here" reason
   taskSorting.ts     # pure sort/group/date-bucket logic
@@ -157,11 +157,11 @@ The coverage report shows statement, branch, function, and line coverage for all
 | `settings.test.ts` | Integration | `FocusFirstSettingTab` renders without errors for both scope options |
 | `settings.test.ts` | Integration | `onChange` callbacks for scope dropdown, folder input, urgency days, and quadrant tags |
 | `settings.test.ts` | Integration | `saveSettings` is called with correct values; invalid urgency inputs are rejected |
-| `settings.test.ts` | Integration | `loadSettings` merge logic — defaults, partial, and full overrides |
-| `matrixClassifier.test.ts` | Unit | Urgency logic — due today, overdue, within/beyond threshold, no date |
-| `matrixClassifier.test.ts` | Unit | Importance logic — priority in/not in list, no priority |
+| `settings.test.ts` | Integration | `loadSettings` merge logic - defaults, partial, and full overrides |
+| `matrixClassifier.test.ts` | Unit | Urgency logic - due today, overdue, within/beyond threshold, no date |
+| `matrixClassifier.test.ts` | Unit | Importance logic - priority in/not in list, no priority |
 | `matrixClassifier.test.ts` | Unit | All four quadrant combinations (urgent × important) |
-| `matrixClassifier.test.ts` | Unit | Manual tag override — all four tags, case-insensitive, first tag wins |
+| `matrixClassifier.test.ts` | Unit | Manual tag override - all four tags, case-insensitive, first tag wins |
 | `matrixClassifier.test.ts` | Integration | Completed tasks excluded, mixed task list, custom tag configuration |
 
 ### Adding new tests
@@ -172,14 +172,14 @@ The coverage report shows statement, branch, function, and line coverage for all
 
 ## Demo vault
 
-A generator script produces a realistic product-management demo vault, so you can exercise the plugin against a large, varied dataset — handy for manual testing, screenshots, and demos.
+A generator script produces a realistic product-management demo vault, so you can exercise the plugin against a large, varied dataset - handy for manual testing, screenshots, and demos.
 
 ```bash
 node scripts/gen-demo-vault.mjs            # writes ./demo-vault
 node scripts/gen-demo-vault.mjs my-vault   # or a custom output directory
 ```
 
-It creates **400+ notes** organised with the [PARA](https://fortelabs.com/blog/para/) method — `0 Inbox`, `1 Projects`, `2 Areas` (incl. Products), `3 Resources` (Knowledge, Insights, People, Books, Meetings), `4 Archive`, plus `Maps` MOCs — all cross-linked with `[[wikilinks]]` and carrying YAML frontmatter. Meeting notes embed action items.
+It creates **400+ notes** organised with the [PARA](https://fortelabs.com/blog/para/) method - `0 Inbox`, `1 Projects`, `2 Areas` (incl. Products), `3 Resources` (Knowledge, Insights, People, Books, Meetings), `4 Archive`, plus `Maps` MOCs - all cross-linked with `[[wikilinks]]` and carrying YAML frontmatter. Meeting notes embed action items.
 
 It also generates exactly **100 checkbox tasks** that exercise the classification:
 
@@ -194,9 +194,9 @@ It also generates exactly **100 checkbox tasks** that exercise the classificatio
 Notes:
 
 - The RNG uses a fixed seed, so the structure is stable across runs; **due dates are relative to the day you run it**.
-- The output directory (`demo-vault/`) and any zip are git-ignored — the vault never lands in a commit or a release build.
+- The output directory (`demo-vault/`) and any zip are git-ignored - the vault never lands in a commit or a release build.
 - To try it: open the generated folder as a vault in Obsidian, then symlink the plugin into it (see [step 2](#2-link-the-plugin-to-obsidian-symlink) above). To share it, zip the folder: `zip -r focus-first-demo-vault.zip demo-vault`.
-- The generator lives at [`scripts/gen-demo-vault.mjs`](scripts/gen-demo-vault.mjs) — edit the content pools and distributions there. It currently emits only open/done tasks (no `#focus`, `#hide`, or cancelled states).
+- The generator lives at [`scripts/gen-demo-vault.mjs`](scripts/gen-demo-vault.mjs) - edit the content pools and distributions there. It currently emits only open/done tasks (no `#focus`, `#hide`, or cancelled states).
 
 ## Build production release
 
@@ -204,19 +204,19 @@ Notes:
 
 The version number lives in three places: `package.json`, `manifest.json`, and `versions.json`. You can bump it automatically or manually.
 
-#### Option A — automated (`--bump`)
+#### Option A - automated (`--bump`)
 
-Pass `--bump patch|minor|major` to the release script (or use the matching npm shortcut). This runs `npm version <type>`, which bumps `package.json` and — via the existing `version-bump.mjs` hook — keeps `manifest.json` and `versions.json` in sync, then commits the result as `chore: bump version to vX.Y.Z`:
+Pass `--bump patch|minor|major` to the release script (or use the matching npm shortcut). This runs `npm version <type>`, which bumps `package.json` and - via the existing `version-bump.mjs` hook - keeps `manifest.json` and `versions.json` in sync, then commits the result as `chore: bump version to vX.Y.Z`:
 
 ```bash
-bash release.sh --bump patch   # 1.0.1 → 1.0.2 — bug fixes
-bash release.sh --bump minor   # 1.0.1 → 1.1.0 — new features, backwards compatible
-bash release.sh --bump major   # 1.0.1 → 2.0.0 — breaking changes
+bash release.sh --bump patch   # 1.0.1 → 1.0.2 - bug fixes
+bash release.sh --bump minor   # 1.0.1 → 1.1.0 - new features, backwards compatible
+bash release.sh --bump major   # 1.0.1 → 2.0.0 - breaking changes
 ```
 
 This requires a clean working tree (commit or stash any pending changes first). The script then continues straight into building (step 2). Combine with `--publish` (or use the `release:patch` / `release:minor` / `release:major` npm scripts below) to bump, build, and publish in one command.
 
-#### Option B — manual
+#### Option B - manual
 
 Update `manifest.json` and `package.json` by hand, then commit:
 
@@ -229,7 +229,7 @@ git push
 
 ### 2. Build and package
 
-Run the release script — it runs all tests, builds the production bundle, and copies the three required files into `releases/v<version>/`:
+Run the release script - it runs all tests, builds the production bundle, and copies the three required files into `releases/v<version>/`:
 
 ```bash
 npm run release
@@ -241,7 +241,7 @@ Output: `releases/v1.1.0/` containing `main.js`, `manifest.json`, `styles.css`.
 
 You have two options:
 
-#### Option A — automated (`--publish`)
+#### Option A - automated (`--publish`)
 
 The release script can also tag, push, and publish the GitHub release for you. This is **optional**: omit `--publish` (or just run `npm run release`) to build locally only.
 
@@ -269,15 +269,15 @@ Before publishing, the script checks that:
 - the working tree is clean (the version-bump commit from step 1 must already be in place)
 - the tag `<version>` doesn't already exist
 
-It then asks for confirmation (`Publish X.Y.Z to GitHub? [y/N]`) before pushing the tag and creating the release — nothing is pushed without that confirmation, even with `--publish` set.
+It then asks for confirmation (`Publish X.Y.Z to GitHub? [y/N]`) before pushing the tag and creating the release - nothing is pushed without that confirmation, even with `--publish` set.
 
 > [!important]
 > The release tag must match the `version` in `manifest.json` **exactly, without a `v` prefix** (e.g. `1.1.0`, not `v1.1.0`). Obsidian's community-plugin store and the in-app auto-updater only recognise releases tagged this way. `release.sh` already tags without the prefix.
 
-#### Option B — manual
+#### Option B - manual
 
 ```bash
-# Create a git tag that exactly matches the manifest version — no "v" prefix
+# Create a git tag that exactly matches the manifest version - no "v" prefix
 git tag 1.0.0
 git push origin 1.0.0
 
@@ -297,16 +297,16 @@ Either way, the release is now visible on GitHub with the three files as downloa
 
 ## Submit the plugin to the Obsidian Community store
 
-Getting the plugin into the in-app **Community Plugins** browser is a **one-time** pull request against Obsidian's registry. The store serves the very same GitHub release artifacts, so a single correctly-tagged release (see step 3 above — tag **without** the `v` prefix) covers both manual installs and the store.
+Getting the plugin into the in-app **Community Plugins** browser is a **one-time** pull request against Obsidian's registry. The store serves the very same GitHub release artifacts, so a single correctly-tagged release (see step 3 above - tag **without** the `v` prefix) covers both manual installs and the store.
 
-### Before you submit — checklist
+### Before you submit - checklist
 
 Submissions are checked by an automated bot **and** a human reviewer. Make sure:
 
 - **`manifest.json`** sits in the repo root with a unique `id` (lowercase, hyphenated, no spaces, and must not contain `obsidian` or `plugin`), a `name` that doesn't start with "Obsidian", a concise `description` that doesn't start with the plugin name, plus `author`, `minAppVersion`, and `isDesktopOnly`.
 - **`versions.json`** maps each released plugin version to its minimum Obsidian version.
 - A **`LICENSE`** file and a **`README.md`** (what it does + how to use it) exist.
-- No leftover sample-plugin code, no `console.log`, no obfuscated code — the source is public and reviewable.
+- No leftover sample-plugin code, no `console.log`, no obfuscated code - the source is public and reviewable.
 - A **GitHub release** exists whose **tag equals the `manifest.json` version exactly, with no `v` prefix** (e.g. `1.0.0`), with `main.js`, `manifest.json`, and `styles.css` attached as assets.
 
 Run `npm run lint` and `npm test`, then cut the release with `npm run release:publish` (or `release:patch` / `release:minor` / `release:major`).
@@ -326,10 +326,10 @@ Run `npm run lint` and `npm test`, then cut the release with `npm run release:pu
    }
    ```
 
-   - `repo` is the `user/repo` slug — **not** a full URL.
+   - `repo` is the `user/repo` slug - **not** a full URL.
    - Keep the JSON valid and don't reorder existing entries.
 3. Open a **pull request** to `obsidianmd/obsidian-releases` and fill in the PR template (it asks you to confirm the checklist).
-4. The **automated bot** validates the repo and release — fix anything it flags. Then a **maintainer reviews the code manually**; depending on the queue this can take days to a few weeks.
+4. The **automated bot** validates the repo and release - fix anything it flags. Then a **maintainer reviews the code manually**; depending on the queue this can take days to a few weeks.
 5. Once the PR is merged, the plugin shows up in **Settings → Community plugins → Browse** for everyone.
 
 ### Ongoing updates (after acceptance)
@@ -337,11 +337,11 @@ Run `npm run lint` and `npm test`, then cut the release with `npm run release:pu
 No further PR is ever needed. For each update:
 
 1. Bump `manifest.json` **and** `versions.json` (the `--bump` flag does both).
-2. Cut a new release tagged with the exact new version, no `v` prefix, with the three assets — e.g. `npm run release:patch` / `release:minor` / `release:major`.
+2. Cut a new release tagged with the exact new version, no `v` prefix, with the three assets - e.g. `npm run release:patch` / `release:minor` / `release:major`.
 3. Obsidian clients detect the new release automatically and offer the update.
 
 > [!important]
-> The plugin `id` is **permanent** once accepted — changing it later breaks users' saved settings and the update path. Double-check `id` (and that it's unique in `community-plugins.json`) before submitting.
+> The plugin `id` is **permanent** once accepted - changing it later breaks users' saved settings and the update path. Double-check `id` (and that it's unique in `community-plugins.json`) before submitting.
 
 ## Additional resources
 

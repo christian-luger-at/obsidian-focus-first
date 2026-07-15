@@ -28,7 +28,7 @@ Task size powers two things: the **quick-wins** size filter (below) and the **ef
 The search bar is tucked behind a search icon in the header, so it only takes up space when you need it. Open it to:
 
 - **Search** across all visible tasks.
-- Filter by **due-date bucket** (overdue, today, this week, upcoming, no date).
+- Filter by **due-date bucket**: overdue, today, next 7 days, next 14 days, later, no due date. The windows roll from today rather than following the calendar week, so "next 7 days" always means the seven days ahead of you, whichever day you look.
 - Filter by **task size** (small / medium / large) - checking just **Small** is the "quick wins" lens for when you have a small gap.
 
 <figure class="shot">

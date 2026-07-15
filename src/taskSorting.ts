@@ -46,18 +46,34 @@ export function sortTasks(tasks: MatrixTask[], sort: QuadrantSort): MatrixTask[]
 }
 
 /**
+ * Every bucket `dueBucket` can return. Exported so the date filter is forced to
+ * cover all of them: typing this as a plain string once let `__later__` fall
+ * through the filter, hiding those tasks with no way to get them back.
+ */
+export type DueBucket =
+	| '__overdue__'
+	| '__today__'
+	| '__thisweek__'
+	| '__upcoming__'
+	| '__later__'
+	| '__nodate__';
+
+/**
  * The due-date bucket a task falls into. Shared by the date filter and the
  * dueDate grouping, so both stay in sync.
+ *
+ * The horizons are rolling, not calendar-based: an earlier version ended
+ * "this week" at the coming Sunday, which made the bucket unreachable on
+ * Sundays (nothing can be due after today but before the end of the day).
+ * Rolling windows also match the sibling bucket, which has always been
+ * "next 14 days".
  */
-export function dueBucket(task: TaskItem): string {
+export function dueBucket(task: TaskItem): DueBucket {
 	if (!task.dueDate) return '__nodate__';
-	const today = new Date();
-	const diff = daysBetween(today, task.dueDate);
-	const dow = today.getDay();
-	const daysToSunday = dow === 0 ? 0 : 7 - dow;
+	const diff = daysBetween(new Date(), task.dueDate);
 	if (diff < 0) return '__overdue__';
 	if (diff === 0) return '__today__';
-	if (diff <= daysToSunday) return '__thisweek__';
+	if (diff <= 7) return '__thisweek__';
 	if (diff <= 14) return '__upcoming__';
 	return '__later__';
 }

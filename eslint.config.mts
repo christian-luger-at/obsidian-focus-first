@@ -11,6 +11,7 @@ export default tseslint.config(
 		'docs',
 		'scripts',
 		'releases',
+		'.screenshot-vault',
 		'esbuild.config.mjs',
 		'version-bump.mjs',
 		'versions.json',

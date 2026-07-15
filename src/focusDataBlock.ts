@@ -156,6 +156,10 @@ export class FocusDataBlock extends MarkdownRenderChild {
 			return open.filter((task) => task.tags.some((tag) => tag.toLowerCase() === focusTag));
 		}
 
-		return classifyTasks(open, this.plugin.settings)[this.section];
+		// `show-focus do|schedule|delegate|eliminate` names Eisenhower quadrants, so
+		// pin the classification to that preset. Following settings.axisMode would
+		// silently turn an embedded "do" list into Quick Wins the moment the view
+		// switches to Value/Effort, changing a note's content from a view setting.
+		return classifyTasks(open, { ...this.plugin.settings, axisMode: 'eisenhower' })[this.section];
 	}
 }

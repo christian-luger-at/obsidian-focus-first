@@ -186,19 +186,25 @@ export async function toggleFocusTagLine(
 	lineNumber: number,
 	focusTag: string,
 	add: boolean,
-): Promise<void> {
+	expectedLine?: string,
+): Promise<EditSnapshot | undefined> {
 	const file = app.vault.getAbstractFileByPath(filePath);
 	if (!(file instanceof TFile)) return;
 	const content = await app.vault.read(file);
 	const lines = content.split('\n');
 	const line = lines[lineNumber];
 	if (line === undefined) return;
-	if (add) {
-		lines[lineNumber] = line.trimEnd() + ' ' + settings.focusTag;
-	} else {
-		lines[lineNumber] = removeTagFromLine(line, focusTag);
-	}
+	// Stale-line guard (#27): the note may have shifted since the view was
+	// scanned, in which case this line is a different task than the one clicked.
+	if (expectedLine !== undefined && line !== expectedLine) return;
+	// addTagToLine guards against appending a tag the line already carries.
+	const next = add
+		? addTagToLine(line, settings.focusTag.trim())
+		: removeTagFromLine(line, focusTag);
+	if (next === line) return;
+	lines[lineNumber] = next;
 	await app.vault.modify(file, lines.join('\n'));
+	return { filePath, startLine: lineNumber, before: [line], after: [next] };
 }
 
 /**
@@ -321,7 +327,11 @@ export function renderTaskItem(
 	addRow(String(labels.note), (v) => { v.setText(task.file.basename); v.addClass('focus-first-task-source'); });
 
 	const focusRun = focusTag
-		? () => void toggleFocusTagLine(app, settings, task.file.path, task.lineNumber, focusTag, !isFocused)
+		? () => undoable(
+			app,
+			String(isFocused ? t().view.undoLabels.unfocused : t().view.undoLabels.focused),
+			toggleFocusTagLine(app, settings, task.file.path, task.lineNumber, focusTag, !isFocused, task.line),
+		)
 		: null;
 
 	const doneBtn = actionButton(actions, 'check', String(t().view.focusDone), 'focus-first-done-btn');

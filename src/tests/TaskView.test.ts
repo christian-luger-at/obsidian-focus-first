@@ -172,6 +172,53 @@ describe('toggleFocusTagLine', () => {
 		await toggleFocusTagLine(app as never, plugin.settings, 'missing.md', 0, '#focus', true);
 		expect(vault.modify).not.toHaveBeenCalled();
 	});
+
+	it('does nothing when the line number is past the end of the file', async () => {
+		const vault = makeFakeVault({ 'a.md': '- [ ] Task one' });
+		const { plugin, app } = makeView({ focusTag: '#focus' }, vault);
+		await toggleFocusTagLine(app as never, plugin.settings, 'a.md', 9, '#focus', true);
+		expect(vault.modify).not.toHaveBeenCalled();
+	});
+
+	it('does not write when the line already has the intended state', async () => {
+		const vault = makeFakeVault({ 'a.md': '- [ ] Task one #focus' });
+		const { plugin, app } = makeView({ focusTag: '#focus' }, vault);
+		await toggleFocusTagLine(app as never, plugin.settings, 'a.md', 0, '#focus', true);
+		expect(vault.modify).not.toHaveBeenCalled();
+	});
+
+	it('leaves the file alone when the line moved since it was scanned', async () => {
+		// The view's task list can be stale: the file may have been edited elsewhere
+		// after the scan. Writing line 0 blindly would clobber an unrelated task.
+		const vault = makeFakeVault({ 'a.md': '- [ ] Something else entirely' });
+		const { plugin, app } = makeView({ focusTag: '#focus' }, vault);
+		await toggleFocusTagLine(
+			app as never, plugin.settings, 'a.md', 0, '#focus', true, '- [ ] Task one',
+		);
+		expect(vault.modify).not.toHaveBeenCalled();
+		expect(vault._store['a.md']).toBe('- [ ] Something else entirely');
+	});
+
+	it('writes when the expected line still matches', async () => {
+		const vault = makeFakeVault({ 'a.md': '- [ ] Task one' });
+		const { plugin, app } = makeView({ focusTag: '#focus' }, vault);
+		await toggleFocusTagLine(
+			app as never, plugin.settings, 'a.md', 0, '#focus', true, '- [ ] Task one',
+		);
+		expect(vault._store['a.md']).toBe('- [ ] Task one #focus');
+	});
+
+	it('returns a snapshot describing the edit, so it can be undone', async () => {
+		const vault = makeFakeVault({ 'a.md': '- [ ] Task one' });
+		const { plugin, app } = makeView({ focusTag: '#focus' }, vault);
+		const snap = await toggleFocusTagLine(app as never, plugin.settings, 'a.md', 0, '#focus', true);
+		expect(snap).toEqual({
+			filePath: 'a.md',
+			startLine: 0,
+			before: ['- [ ] Task one'],
+			after: ['- [ ] Task one #focus'],
+		});
+	});
 });
 
 describe('completeTaskLine', () => {

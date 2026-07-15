@@ -385,11 +385,12 @@ describe('size filter', () => {
 		const { view, contentEl } = makeView({ importantPriorities: ['🔺'] }, tasks);
 		priv(view).render();
 
-		// The three size checkboxes follow the five date-bucket checkboxes.
-		const checkboxes = contentEl.findAllByClass('focus-first-filter-option')
+		// Find the "Small" box inside the size group, rather than counting past the
+		// date boxes: that index broke as soon as a date bucket was added.
+		const sizeGroup = contentEl.findByClass('focus-first-size-filter-group')!;
+		const smallCheckbox = sizeGroup.findAllByClass('focus-first-filter-option')
 			.map((label) => label.children.find((c) => c.tagName === 'input'))
-			.filter((el): el is FakeEl => !!el);
-		const smallCheckbox = checkboxes[5]!;
+			.filter((el): el is FakeEl => !!el)[0]!;
 		smallCheckbox.checked = true;
 		smallCheckbox.dispatch('change');
 
@@ -581,7 +582,9 @@ describe('renderFocusTasks()', () => {
 	});
 
 	it('the focus (star) button clears the focus tag', async () => {
-		const tasks = [makeTask({ tags: ['#focus'], lineNumber: 0 })];
+		// The line must carry the tag the task claims to have: it is also the
+		// expected-line the stale guard compares against.
+		const tasks = [makeTask({ tags: ['#focus'], lineNumber: 0, line: '- [ ] Sample task #focus' })];
 		const { view, contentEl, app } = makeView({ focusTag: '#focus' }, tasks);
 		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
 		app.vault.read = vi.fn(async () => '- [ ] Sample task #focus');

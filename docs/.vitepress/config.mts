@@ -18,7 +18,7 @@ export default defineConfig({
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: 'Focus First - Obsidian task prioritization' }],
     ['meta', { property: 'og:description', content: 'Sort your Obsidian tasks into the Eisenhower or Value/Effort matrix, automatically.' }],
-    ['meta', { property: 'og:image', content: 'https://christian-luger-at.github.io/obsidian-focus-first/screen.gif' }],
+    ['meta', { property: 'og:image', content: 'https://christian-luger-at.github.io/obsidian-focus-first/screens/tour.gif' }],
     ['meta', { property: 'og:url', content: 'https://christian-luger-at.github.io/obsidian-focus-first/' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
   ],

@@ -2,7 +2,7 @@
 
 Stop guessing what to work on next. **Focus First** sorts your Obsidian tasks into the **Eisenhower matrix**, by urgency (due date) and importance (priority), so the next right action is always obvious.
 
-![The Focus First view](/screen.gif)
+![The Focus First view](/screens/tour.gif)
 
 It reads standard checkbox tasks from your vault (compatible with the [Tasks plugin](https://obsidian.tasks.org/) format - due dates, priorities, tags) and places each one automatically:
 

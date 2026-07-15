@@ -17,6 +17,12 @@ A task without a due date is never automatically urgent. A task without a priori
 Hover a task (desktop) or tap it (mobile) to open its detail popover. It spells out the exact reason a task landed where it did, for example "Urgent: due in 2 d (≤ 3 d) · Important: priority 🔺", so the classification is never a black box.
 :::
 
+<figure class="shot">
+  <img class="light-only doc-shot" src="/screens/task-details-light.png" alt="The detail popover showing the why-here reason, priority, size, due date, tags and one-click actions">
+  <img class="dark-only doc-shot" src="/screens/task-details-dark.png" alt="The detail popover showing the why-here reason, priority, size, due date, tags and one-click actions">
+  <figcaption>The detail popover: why the task landed here, its metadata, and one-click actions.</figcaption>
+</figure>
+
 ## Overriding the automatic classification
 
 Each quadrant has a configurable tag (defaults: `#do`, `#schedule`, `#delegate`, `#eliminate`). Adding that tag to a task always places it in the matching quadrant, regardless of its due date or priority. This is useful for tasks that don't fit the urgent/important model - for example, a low-priority task you've manually decided needs immediate attention.

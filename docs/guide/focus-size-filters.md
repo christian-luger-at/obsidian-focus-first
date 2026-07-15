@@ -8,6 +8,12 @@ Tag a task with `#focus` to pin it in a dedicated section above the matrix, so y
 See **[Daily-planning methods](/methods/daily-planning)** for what Eat the Frog, Ivy Lee, and MITs are and how to run each from this list.
 :::
 
+<figure class="shot">
+  <img class="light-only doc-shot" src="/screens/focus-list-light.png" alt="The focus section: an ordered, numbered shortlist above the matrix">
+  <img class="dark-only doc-shot" src="/screens/focus-list-dark.png" alt="The focus section: an ordered, numbered shortlist above the matrix">
+  <figcaption>The focus section: an ordered, numbered shortlist, number 1 is your frog.</figcaption>
+</figure>
+
 - **Drag focus tasks to reorder them by hand** (your manual order is remembered), or leave them in the automatic importance order.
 - Set an optional **daily target** (e.g. 6 or 3) and a subtle line marks where the list runs past it.
 
@@ -24,6 +30,12 @@ The search bar is tucked behind a search icon in the header, so it only takes up
 - **Search** across all visible tasks.
 - Filter by **due-date bucket** (overdue, today, this week, upcoming, no date).
 - Filter by **task size** (small / medium / large) - checking just **Small** is the "quick wins" lens for when you have a small gap.
+
+<figure class="shot">
+  <img class="light-only doc-shot" src="/screens/size-filter-light.png" alt="The search area with the Small size filter enabled, narrowing the matrix to quick wins">
+  <img class="dark-only doc-shot" src="/screens/size-filter-dark.png" alt="The search area with the Small size filter enabled, narrowing the matrix to quick wins">
+  <figcaption>The Small size filter: only the quick wins are left in the matrix.</figcaption>
+</figure>
 
 ::: info On mobile
 The row collapses to just the title; tap it to reveal the due date, priority, size, and actions. Filtering is trimmed to the text search.

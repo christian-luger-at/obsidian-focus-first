@@ -6,7 +6,7 @@ hero:
   text: Always know what to work on next
   tagline: An Obsidian plugin that sorts your tasks into the Eisenhower (or Value/Effort) matrix, automatically.
   image:
-    src: /screen.gif
+    src: /screens/tour.gif
     alt: The Focus First view
   actions:
     - theme: brand

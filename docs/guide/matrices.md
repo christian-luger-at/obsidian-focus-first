@@ -10,23 +10,21 @@ This page covers *how to use* the two matrices in Focus First. For *why they exi
 
 The default. Tasks are placed by **urgency** (due date) and **importance** (priority) - see [How tasks are classified](/guide/classification).
 
-| Slot | Meaning |
-| --- | --- |
-| **Do** | Urgent · Important |
-| **Schedule** | Not urgent · Important |
-| **Delegate** | Urgent · Not important |
-| **Eliminate** | Not urgent · Not important |
+<figure class="shot">
+  <img class="light-only doc-shot" src="/screens/eisenhower-matrix-light.png" alt="The Eisenhower matrix in Focus First, with the focus list above the four quadrants">
+  <img class="dark-only doc-shot" src="/screens/eisenhower-matrix-dark.png" alt="The Eisenhower matrix in Focus First, with the focus list above the four quadrants">
+  <figcaption>The Eisenhower matrix: the focus list on top, the four quadrants below.</figcaption>
+</figure>
 
 ## Value / Effort
 
 An Impact/Effort-style matrix for deciding where your energy goes.
 
-| Slot | Meaning |
-| --- | --- |
-| **Quick Wins** | High value · Low effort |
-| **Big Bets** | High value · High effort |
-| **Fill-ins** | Low value · Low effort |
-| **Time Sinks** | Low value · High effort |
+<figure class="shot">
+  <img class="light-only doc-shot" src="/screens/value-effort-matrix-light.png" alt="The Value/Effort matrix in Focus First: Quick Wins, Big Bets, Fill-ins and Time Sinks">
+  <img class="dark-only doc-shot" src="/screens/value-effort-matrix-dark.png" alt="The Value/Effort matrix in Focus First: Quick Wins, Big Bets, Fill-ins and Time Sinks">
+  <figcaption>The same view with Value/Effort axes: Quick Wins, Big Bets, Fill-ins and Time Sinks.</figcaption>
+</figure>
 
 **Value** comes from a configurable source:
 

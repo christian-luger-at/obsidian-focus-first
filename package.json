@@ -20,7 +20,8 @@
 		"release:publish": "bash release.sh --publish",
 		"release:patch": "bash release.sh --bump patch --publish",
 		"release:minor": "bash release.sh --bump minor --publish",
-		"release:major": "bash release.sh --bump major --publish"
+		"release:major": "bash release.sh --bump major --publish",
+		"docs:shots": "node scripts/screenshots.mjs"
 	},
 	"keywords": [],
 	"license": "MIT",
@@ -34,6 +35,7 @@
 		"globals": "^17.6.0",
 		"jiti": "^2.6.1",
 		"obsidian": "latest",
+		"playwright-core": "^1.61.1",
 		"typescript": "^5.8.3",
 		"typescript-eslint": "^8.59.1",
 		"vitepress": "^1.6.4",

@@ -29,11 +29,6 @@ The Eisenhower matrix separates the two into a 2×2 grid so you can *see* the di
   <text class="sub" x="422" y="304" text-anchor="middle">Drop it</text>
 </svg>
 
-|               | Urgent                        | Not urgent                        |
-| ------------- | ----------------------------- | --------------------------------- |
-| **Important** | **Do** - do it now            | **Schedule** - plan a time for it |
-| **Not important** | **Delegate** - hand it off | **Eliminate** - drop it           |
-
 ## What each quadrant is really about
 
 - **Do (urgent + important)** - genuine crises and real deadlines. Handle them now, but a life lived only here is reactive and exhausting. If everything is landing here, your planning is happening too late.

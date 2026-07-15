@@ -131,6 +131,8 @@ src/
 | `npm test` | Run all unit and integration tests once (Vitest) |
 | `npm run test:watch` | Run tests in watch mode, re-runs on every file save |
 | `npm run test:coverage` | Run tests and print a coverage report |
+| `npm run docs:dev` | Run the documentation site locally (VitePress) |
+| `npm run docs:shots` | Regenerate the documentation screenshots (see below) |
 
 ## Testing
 
@@ -197,6 +199,31 @@ Notes:
 - The output directory (`demo-vault/`) and any zip are git-ignored - the vault never lands in a commit or a release build.
 - To try it: open the generated folder as a vault in Obsidian, then symlink the plugin into it (see [step 2](#2-link-the-plugin-to-obsidian-symlink) above). To share it, zip the folder: `zip -r focus-first-demo-vault.zip demo-vault`.
 - The generator lives at [`scripts/gen-demo-vault.mjs`](scripts/gen-demo-vault.mjs) - edit the content pools and distributions there. It currently emits only open/done tasks (no `#focus`, `#hide`, or cancelled states).
+
+## Documentation screenshots
+
+The images in the docs are generated, not taken by hand. The script drives the **real Obsidian app** over the Chrome DevTools Protocol, so the shots always match the shipped UI.
+
+```bash
+npm run docs:shots            # Obsidian must be closed
+npm run docs:shots -- --quit  # or close a running Obsidian automatically
+```
+
+What it does:
+
+1. Builds a small, curated vault in `.screenshot-vault/` (git-ignored) with a handful of tasks that fill every quadrant, plus `#focus`, sizes, and value tags.
+2. Points Obsidian at it, launches it with `--remote-debugging-port=9222`, and opens the view in the main pane.
+3. Captures each motif in **light and dark** into `docs/public/screens/`: `eisenhower-matrix`, `value-effort-matrix`, `focus-list`, `size-filter`, `task-details`.
+4. Records a scripted tour (hover a task, switch the axes, filter to quick wins) as `screens/tour.gif` via a CDP screencast plus ffmpeg. That GIF is the hero image and the one used in `README.md`.
+
+Requirements: macOS with Obsidian in `/Applications`, a built plugin (`npm run build`), and `ffmpeg` for the GIF.
+
+Good to know:
+
+- **Your setup is left alone.** Obsidian's `obsidian.json` is backed up before the run and restored afterwards, even if the run fails.
+- **States are set through the plugin's own API** (`settings` + `saveSettings()` + `refreshViews()`), not by clicking around, so the run is reliable.
+- **Sizing is deliberate.** The canvas is 900px wide because the docs render the images in a roughly 690px column; a wider shot would scale down until the UI text is unreadable. The view font is turned up to 125% for the same reason. The GIF uses its own landscape canvas since it doubles as the hero image.
+- **When to run it:** after a UI change. Not on every release. The vault uses dates relative to today (otherwise "overdue" and "today" would be wrong), so every run produces slightly different images. Regenerating without a UI change only creates binary diff noise.
 
 ## Build production release
 

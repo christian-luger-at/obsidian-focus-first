@@ -26,11 +26,6 @@ Your time and energy are the scarce resource. So the useful question often isn't
   <text class="sub" x="422" y="304" text-anchor="middle">Avoid</text>
 </svg>
 
-|                | Low effort                 | High effort                    |
-| -------------- | -------------------------- | ------------------------------ |
-| **High value** | **Quick Wins** - do first  | **Big Bets** - plan & resource |
-| **Low value**  | **Fill-ins** - spare moments | **Time Sinks** - avoid       |
-
 ## What each quadrant is really about
 
 - **Quick Wins (high value, low effort)** - the best return on your time. Do these first: they build momentum and deliver visible progress fast.

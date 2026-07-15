@@ -186,13 +186,6 @@ describe('groupOrder', () => {
 // ---------------------------------------------------------------------------
 
 describe('dueBucket', () => {
-	// "This week" runs through the upcoming Sunday — compute that boundary the
-	// same way the source does, so the test is valid regardless of which day it runs.
-	function daysUntilSunday(): number {
-		const dow = new Date().getDay();
-		return dow === 0 ? 0 : 7 - dow;
-	}
-
 	it('returns "__nodate__" when there is no due date', () => {
 		expect(dueBucket(makeMatrixTask({ dueDate: undefined }))).toBe('__nodate__');
 	});
@@ -205,20 +198,28 @@ describe('dueBucket', () => {
 		expect(dueBucket(makeMatrixTask({ dueDate: daysFromToday(0) }))).toBe('__today__');
 	});
 
-	it('returns "__thisweek__" for a date up to and including the coming Sunday', () => {
-		const sunday = daysUntilSunday();
-		if (sunday > 0) {
-			expect(dueBucket(makeMatrixTask({ dueDate: daysFromToday(sunday) }))).toBe('__thisweek__');
+	it('returns "__thisweek__" for the next 7 days', () => {
+		for (const d of [1, 4, 7]) {
+			expect(dueBucket(makeMatrixTask({ dueDate: daysFromToday(d) }))).toBe('__thisweek__');
 		}
 	});
 
-	it('returns "__upcoming__" for a date within 14 days but after this week', () => {
-		const offset = daysUntilSunday() + 1;
-		expect(dueBucket(makeMatrixTask({ dueDate: daysFromToday(offset) }))).toBe('__upcoming__');
+	it('returns "__upcoming__" from 8 to 14 days out', () => {
+		for (const d of [8, 14]) {
+			expect(dueBucket(makeMatrixTask({ dueDate: daysFromToday(d) }))).toBe('__upcoming__');
+		}
 	});
 
 	it('returns "__later__" for a date more than 14 days out', () => {
+		expect(dueBucket(makeMatrixTask({ dueDate: daysFromToday(15) }))).toBe('__later__');
 		expect(dueBucket(makeMatrixTask({ dueDate: daysFromToday(30) }))).toBe('__later__');
+	});
+
+	it('does not depend on the weekday: a task due tomorrow is always "__thisweek__"', () => {
+		// Regression: the horizon used to end at the coming Sunday, which made the
+		// bucket unreachable on Sundays (daysToSunday was 0), so "this week" was
+		// always empty that day. The window is rolling now, so this holds any day.
+		expect(dueBucket(makeMatrixTask({ dueDate: daysFromToday(1) }))).toBe('__thisweek__');
 	});
 });
 

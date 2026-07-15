@@ -60,6 +60,8 @@ interface Translations {
 			hidden: string;
 			moved: string;
 			updated: string;
+			focused: string;
+			unfocused: string;
 		};
 		actions: {
 			more: string;
@@ -268,6 +270,8 @@ const translations: Record<Lang, Translations> = {
 				hidden: 'Task hidden',
 				moved: 'Task moved',
 				updated: 'Task updated',
+				focused: 'Task focused',
+				unfocused: 'Focus removed',
 			},
 			actions: {
 				more: 'More actions',
@@ -471,7 +475,7 @@ const translations: Record<Lang, Translations> = {
 			noPriority: 'No priority',
 			overdue: 'Overdue',
 			today: 'Today',
-			thisWeek: 'This week',
+			thisWeek: 'Next 7 days',
 			upcoming: 'Next 14 days',
 			later: 'Later',
 			noDate: 'No due date',
@@ -538,6 +542,8 @@ const translations: Record<Lang, Translations> = {
 				hidden: 'Aufgabe ausgeblendet',
 				moved: 'Aufgabe verschoben',
 				updated: 'Aufgabe aktualisiert',
+				focused: 'Aufgabe fokussiert',
+				unfocused: 'Fokus entfernt',
 			},
 			focusDone: 'Als erledigt markieren',
 			actions: {
@@ -742,7 +748,7 @@ const translations: Record<Lang, Translations> = {
 			noPriority: 'Keine Priorität',
 			overdue: 'Überfällig',
 			today: 'Heute',
-			thisWeek: 'Diese Woche',
+			thisWeek: 'Nächste 7 Tage',
 			upcoming: 'Nächste 14 Tage',
 			later: 'Später',
 			noDate: 'Kein Datum',

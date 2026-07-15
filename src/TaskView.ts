@@ -6,7 +6,7 @@ import { AxisMode, TaskSize, sizeTagList } from './settings';
 import { isTasksPluginEnabled } from './tasksPlugin';
 import { t } from './i18n';
 import { renderTaskItem, taskTitle } from './taskRenderer';
-import { sortTasks, groupKey, groupLabel, groupOrder, dueBucket } from './taskSorting';
+import { sortTasks, groupKey, groupLabel, groupOrder, dueBucket, DueBucket } from './taskSorting';
 import { renderNoMatches, renderOnboarding, renderEliminateHint } from './taskEmptyStates';
 import { makeDropTarget, makeValueEffortDropTarget } from './taskDragDrop';
 
@@ -14,9 +14,11 @@ export const FOCUS_FIRST_VIEW_TYPE = 'focus-first-view';
 
 const QUADRANT_ORDER: Quadrant[] = ['do', 'schedule', 'delegate', 'eliminate'];
 
-type DateBucket = '__overdue__' | '__today__' | '__thisweek__' | '__upcoming__' | '__nodate__';
-
-const DATE_FILTER_OPTIONS: DateBucket[] = ['__overdue__', '__today__', '__thisweek__', '__upcoming__', '__nodate__'];
+// Every bucket dueBucket() can produce must be offered, otherwise tasks in the
+// missing one silently vanish as soon as any date filter is active.
+const DATE_FILTER_OPTIONS: DueBucket[] = [
+	'__overdue__', '__today__', '__thisweek__', '__upcoming__', '__later__', '__nodate__',
+];
 
 const SIZE_FILTER_OPTIONS: TaskSize[] = ['small', 'medium', 'large'];
 
@@ -24,7 +26,7 @@ export class FocusFirstView extends ItemView {
 	private plugin: FocusFirstPlugin;
 	private tasks: TaskItem[] = [];
 	private searchQuery = '';
-	private activeDateFilters = new Set<DateBucket>();
+	private activeDateFilters = new Set<DueBucket>();
 	private activeSizeFilters = new Set<TaskSize>();
 	private searchVisible = false;
 	private debouncedRefresh = debounce(() => this.refresh(), 500, true);
@@ -182,11 +184,12 @@ export class FocusFirstView extends ItemView {
 	private renderFilterPanel(panel: HTMLElement, onChange: () => void): void {
 		panel.empty();
 		const g = t().groups;
-		const labels: Record<DateBucket, string> = {
+		const labels: Record<DueBucket, string> = {
 			__overdue__:  g.overdue,
 			__today__:    g.today,
 			__thisweek__: g.thisWeek,
 			__upcoming__: g.upcoming,
+			__later__:    g.later,
 			__nodate__:   g.noDate,
 		};
 		const dateGroup = panel.createDiv({ cls: 'focus-first-filter-group' });
@@ -230,7 +233,7 @@ export class FocusFirstView extends ItemView {
 
 	private passesDateFilter(task: TaskItem): boolean {
 		if (this.activeDateFilters.size === 0) return true;
-		return this.activeDateFilters.has(dueBucket(task) as DateBucket);
+		return this.activeDateFilters.has(dueBucket(task));
 	}
 
 	private passesSizeFilter(task: TaskItem): boolean {

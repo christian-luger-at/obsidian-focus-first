@@ -26,6 +26,7 @@ No manual sorting needed - though you can still pin any task to a quadrant by ha
 
 - **Automatic Eisenhower classification** - tasks sorted by urgency (due date) and importance (priority), with no setup.
 - **Two matrices in one view** - switch between Eisenhower and Value/Effort, or drag a task between quadrants to re-classify it.
+- **Triage view** - a separate list of every task no matrix has judged yet, so nothing gets lost in "Eliminate"; place each with one click from a hover picker.
 - **Focus / today plan** - an ordered, numbered `#focus` shortlist for daily-planning methods like Eat the Frog, Ivy Lee, and MITs.
 - **Task size & quick wins** - tag sizes (`#s`/`#m`/`#l`) and filter the matrix to short tasks.
 - **Details on demand** - hover (desktop) or tap (mobile) a task for its "why here" reason, metadata, and one-click actions, each with a brief Undo.
@@ -41,6 +42,7 @@ The complete guides live at **[christian-luger-at.github.io/obsidian-focus-first
 - [Getting started](https://christian-luger-at.github.io/obsidian-focus-first/guide/getting-started)
 - [How tasks are classified](https://christian-luger-at.github.io/obsidian-focus-first/guide/classification)
 - [The two matrices](https://christian-luger-at.github.io/obsidian-focus-first/guide/matrices)
+- [Triaging unclassified tasks](https://christian-luger-at.github.io/obsidian-focus-first/guide/triage)
 - [Focus, size & filters](https://christian-luger-at.github.io/obsidian-focus-first/guide/focus-size-filters)
 - [Embedding tasks in a note](https://christian-luger-at.github.io/obsidian-focus-first/guide/embedding)
 - [Settings](https://christian-luger-at.github.io/obsidian-focus-first/guide/settings)

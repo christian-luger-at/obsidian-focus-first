@@ -391,31 +391,39 @@ export function renderTaskItem(
 	// you can move from the row into the popover to use its buttons. On mobile this
 	// is skipped entirely — touch fires synthetic mouse events that would move the
 	// detail to the view root and defeat the tap-to-expand handled above.
-	if (!Platform.isMobile) {
-		let hideTimer = 0;
-		let showTimer = 0;
-		let mouseX = 0;
-		let mouseY = 0;
-		const scheduleHide = () => {
-			window.clearTimeout(showTimer);
-			window.clearTimeout(hideTimer);
-			hideTimer = window.setTimeout(() => hideTaskDetail(detail), 150);
-		};
-		const scheduleReveal = (e: MouseEvent) => {
-			mouseX = e.clientX;
-			mouseY = e.clientY;
-			window.clearTimeout(hideTimer);
-			window.clearTimeout(showTimer);
-			showTimer = window.setTimeout(() => showTaskDetail(li, detail, mouseX, mouseY), 400);
-		};
-		li.addEventListener('mouseenter', scheduleReveal);
-		li.addEventListener('mousemove', (e: MouseEvent) => { mouseX = e.clientX; mouseY = e.clientY; });
-		li.addEventListener('mouseleave', scheduleHide);
-		detail.addEventListener('mouseenter', () => { window.clearTimeout(hideTimer); });
-		detail.addEventListener('mouseleave', scheduleHide);
-	}
+	if (!Platform.isMobile) wireDetailHover(li, detail);
 
 	return li;
+}
+
+/**
+ * Wires the desktop hover-reveal for a floating detail popover: open on hover
+ * after a short delay, hide on leave after a shorter one, with a bridge so the
+ * pointer can travel from the row into the popover without it closing. Shared by
+ * the matrix rows and the triage rows, so both hover identically.
+ */
+export function wireDetailHover(li: HTMLElement, detail: HTMLElement): void {
+	let hideTimer = 0;
+	let showTimer = 0;
+	let mouseX = 0;
+	let mouseY = 0;
+	const scheduleHide = () => {
+		window.clearTimeout(showTimer);
+		window.clearTimeout(hideTimer);
+		hideTimer = window.setTimeout(() => hideTaskDetail(detail), 150);
+	};
+	const scheduleReveal = (e: MouseEvent) => {
+		mouseX = e.clientX;
+		mouseY = e.clientY;
+		window.clearTimeout(hideTimer);
+		window.clearTimeout(showTimer);
+		showTimer = window.setTimeout(() => showTaskDetail(li, detail, mouseX, mouseY), 400);
+	};
+	li.addEventListener('mouseenter', scheduleReveal);
+	li.addEventListener('mousemove', (e: MouseEvent) => { mouseX = e.clientX; mouseY = e.clientY; });
+	li.addEventListener('mouseleave', scheduleHide);
+	detail.addEventListener('mouseenter', () => { window.clearTimeout(hideTimer); });
+	detail.addEventListener('mouseleave', scheduleHide);
 }
 
 /**
@@ -583,7 +591,7 @@ function buildPriorityMenu(menu: Menu, task: MatrixTask, app: App): void {
 }
 
 /** Localised label for a task size. */
-function sizeLabel(size: TaskSize): string {
+export function sizeLabel(size: TaskSize): string {
 	const a = t().view.actions;
 	return String(size === 'small' ? a.sizeSmall : size === 'medium' ? a.sizeMedium : a.sizeLarge);
 }

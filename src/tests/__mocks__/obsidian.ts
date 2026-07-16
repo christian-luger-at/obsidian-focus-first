@@ -31,7 +31,11 @@ export class Plugin {
 	}
 	addCommand(cmd: MockCommand) { this.lastCommand = cmd; this.commands.push(cmd); }
 	addSettingTab(tab: unknown) { this.lastSettingTab = tab; }
-	registerView(_type: string, viewCreator: (leaf: unknown) => unknown) { this.lastViewCreator = viewCreator; }
+	viewCreators: Record<string, (leaf: unknown) => unknown> = {};
+	registerView(type: string, viewCreator: (leaf: unknown) => unknown) {
+		this.lastViewCreator = viewCreator;
+		this.viewCreators[type] = viewCreator;
+	}
 	registerEvent(_eventRef: unknown) {}
 	// Provided by Obsidian's Component/Plugin base class; no-op unless overridden.
 	onunload() {}

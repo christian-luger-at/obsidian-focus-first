@@ -7,7 +7,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 
-const { moveTaskToQuadrant, makeDropTarget, moveTaskToValueEffort } = await import('../taskDragDrop');
+const { moveTaskToQuadrant, makeDropTarget, moveTaskToValueEffort, assignTasksToSlot } = await import('../taskDragDrop');
 const { DEFAULT_SETTINGS } = await import('../settings');
 const { TFile } = await import('./__mocks__/obsidian');
 
@@ -204,5 +204,75 @@ describe('moveTaskToValueEffort', () => {
 		const { app, vault } = makeApp({ 'a.md': '- [ ] Changed since drag' });
 		await moveTaskToValueEffort(app, settings, 'a.md', 0, 'do', '- [ ] What I dragged');
 		expect(vault.modify).not.toHaveBeenCalled();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// assignTasksToSlot — batched, one read/write per file
+// ---------------------------------------------------------------------------
+
+describe('assignTasksToSlot', () => {
+	it('assigns several tasks in one file with a single write (no clobber)', async () => {
+		const { app, vault } = makeApp({
+			'a.md': '- [ ] One\n- [ ] Two\n- [ ] Three',
+		});
+		const targets = [
+			{ filePath: 'a.md', lineNumber: 0, expectedLine: '- [ ] One' },
+			{ filePath: 'a.md', lineNumber: 2, expectedLine: '- [ ] Three' },
+		];
+		const snaps = await assignTasksToSlot(app, settings, targets, 'eisenhower', 'do');
+
+		// Both target lines got the #do tag; the untouched middle line is intact.
+		expect(snaps).toHaveLength(2);
+		// One write for the whole file, not one per task.
+		expect(vault.modify).toHaveBeenCalledTimes(1);
+		const written = vault.modify.mock.calls[0]![1];
+		expect(written).toBe('- [ ] One #do\n- [ ] Two\n- [ ] Three #do');
+	});
+
+	it('writes value + size tags in value/effort mode', async () => {
+		const { app, vault } = makeApp({ 'a.md': '- [ ] One' });
+		await assignTasksToSlot(app, settings, [{ filePath: 'a.md', lineNumber: 0, expectedLine: '- [ ] One' }], 'valueEffort', 'do');
+		const written = vault.modify.mock.calls[0]![1];
+		expect(written).toContain('#highvalue');
+		expect(written).toContain(settings.sizeTags.small);
+	});
+
+	it('skips a stale target but still applies the others in the same file', async () => {
+		const { app, vault } = makeApp({ 'a.md': '- [ ] One\n- [ ] Two' });
+		const snaps = await assignTasksToSlot(app, settings, [
+			{ filePath: 'a.md', lineNumber: 0, expectedLine: '- [ ] STALE' },
+			{ filePath: 'a.md', lineNumber: 1, expectedLine: '- [ ] Two' },
+		], 'eisenhower', 'do');
+		expect(snaps).toHaveLength(1);
+		expect(vault.modify.mock.calls[0]![1]).toBe('- [ ] One\n- [ ] Two #do');
+	});
+
+	it('spans multiple files, one write each', async () => {
+		const { app, vault } = makeApp({ 'a.md': '- [ ] A', 'b.md': '- [ ] B' });
+		const snaps = await assignTasksToSlot(app, settings, [
+			{ filePath: 'a.md', lineNumber: 0, expectedLine: '- [ ] A' },
+			{ filePath: 'b.md', lineNumber: 0, expectedLine: '- [ ] B' },
+		], 'eisenhower', 'eliminate');
+		expect(snaps).toHaveLength(2);
+		expect(vault.modify).toHaveBeenCalledTimes(2);
+	});
+
+	it('does not write a file when nothing in it changed', async () => {
+		const { app, vault } = makeApp({ 'a.md': '- [ ] Only #do' });
+		// Assigning to the slot it already has is a no-op.
+		const snaps = await assignTasksToSlot(app, settings, [
+			{ filePath: 'a.md', lineNumber: 0, expectedLine: '- [ ] Only #do' },
+		], 'eisenhower', 'do');
+		expect(snaps).toHaveLength(0);
+		expect(vault.modify).not.toHaveBeenCalled();
+	});
+
+	it('ignores targets in a missing file', async () => {
+		const { app } = makeApp({});
+		const snaps = await assignTasksToSlot(app, settings, [
+			{ filePath: 'gone.md', lineNumber: 0, expectedLine: '- [ ] x' },
+		], 'eisenhower', 'do');
+		expect(snaps).toHaveLength(0);
 	});
 });

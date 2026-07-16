@@ -6,6 +6,7 @@ vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 const { default: FocusFirstPlugin } = await import('../main');
 const { TFile } = await import('./__mocks__/obsidian');
 const { FOCUS_FIRST_VIEW_TYPE, FocusFirstView } = await import('../TaskView');
+const { TriageView } = await import('../TriageView');
 const { FocusDataBlock } = await import('../focusDataBlock');
 const { WrappedTasksBlock } = await import('../wrappedTasksBlock');
 
@@ -15,6 +16,7 @@ const { WrappedTasksBlock } = await import('../wrappedTasksBlock');
 // code access without `any`.
 interface MockPluginExtras {
 	lastViewCreator?: (leaf: unknown) => unknown;
+	viewCreators?: Record<string, (leaf: unknown) => unknown>;
 	lastSettingTab?: unknown;
 	lastRibbonCb?: () => unknown;
 	lastCommand?: { id: string; name: string; callback?: () => unknown };
@@ -136,6 +138,78 @@ describe('FocusFirstPlugin — activateView', () => {
 	});
 });
 
+
+describe('FocusFirstPlugin — activateTriageView', () => {
+	it('reveals an existing triage leaf instead of creating one', async () => {
+		const existingLeaf = { id: 'triage' };
+		const revealLeaf = vi.fn();
+		const getRightLeaf = vi.fn();
+		const app = {
+			workspace: {
+				getLeavesOfType: (type: string) => (type === 'focus-first-triage-view' ? [existingLeaf] : []),
+				getRightLeaf,
+				revealLeaf,
+			},
+		};
+		// @ts-expect-error — stub app/manifest, not real Obsidian types
+		const plugin = new FocusFirstPlugin(app, {});
+		plugin.settings = { ...DEFAULT_SETTINGS };
+
+		await plugin.activateTriageView();
+
+		expect(getRightLeaf).not.toHaveBeenCalled();
+		expect(revealLeaf).toHaveBeenCalledWith(existingLeaf);
+	});
+
+	it('creates a new right leaf with the triage view type when none exists', async () => {
+		const newLeaf = { setViewState: vi.fn(async () => {}) };
+		const revealLeaf = vi.fn();
+		const app = {
+			workspace: {
+				getLeavesOfType: () => [],
+				getRightLeaf: () => newLeaf,
+				revealLeaf,
+			},
+		};
+		// @ts-expect-error — stub app/manifest, not real Obsidian types
+		const plugin = new FocusFirstPlugin(app, {});
+		plugin.settings = { ...DEFAULT_SETTINGS };
+
+		await plugin.activateTriageView();
+
+		expect(newLeaf.setViewState).toHaveBeenCalledWith({ type: 'focus-first-triage-view', active: true });
+		expect(revealLeaf).toHaveBeenCalledWith(newLeaf);
+	});
+
+	it('does nothing when no leaf can be obtained', async () => {
+		const revealLeaf = vi.fn();
+		const app = {
+			workspace: { getLeavesOfType: () => [], getRightLeaf: () => null, revealLeaf },
+		};
+		// @ts-expect-error — stub app/manifest, not real Obsidian types
+		const plugin = new FocusFirstPlugin(app, {});
+		plugin.settings = { ...DEFAULT_SETTINGS };
+		await plugin.activateTriageView();
+		expect(revealLeaf).not.toHaveBeenCalled();
+	});
+
+	it('the open-triage command activates the triage view', async () => {
+		const revealLeaf = vi.fn();
+		const newLeaf = { setViewState: vi.fn(async () => {}) };
+		const app = {
+			workspace: { getLeavesOfType: () => [], getRightLeaf: () => newLeaf, revealLeaf },
+		};
+		// @ts-expect-error — stub app/manifest, not real Obsidian types
+		const plugin = new FocusFirstPlugin(app, {});
+		plugin.settings = { ...DEFAULT_SETTINGS };
+		await plugin.onload();
+		const cmd = withMockExtras(plugin).commands?.find((c) => c.id === 'open-triage');
+		expect(cmd).toBeDefined();
+		await cmd?.callback?.();
+		expect(revealLeaf).toHaveBeenCalledWith(newLeaf);
+	});
+});
+
 // ---------------------------------------------------------------------------
 // applyFontSize
 // ---------------------------------------------------------------------------
@@ -192,9 +266,20 @@ describe('FocusFirstPlugin — onload', () => {
 		await plugin.onload();
 
 		const extras = withMockExtras(plugin);
-		expect(extras.lastViewCreator).toBeTypeOf('function');
-		const view = extras.lastViewCreator?.({ app });
-		expect(view).toBeInstanceOf(FocusFirstView);
+		const creator = extras.viewCreators?.['focus-first-view'];
+		expect(creator).toBeTypeOf('function');
+		expect(creator?.({ app })).toBeInstanceOf(FocusFirstView);
+	});
+
+	it('registers a view creator that builds a TriageView', async () => {
+		const app = { workspace: { getLeavesOfType: () => [] } };
+		// @ts-expect-error — stub app/manifest, not real Obsidian types
+		const plugin = new FocusFirstPlugin(app, {});
+		await plugin.onload();
+
+		const creator = withMockExtras(plugin).viewCreators?.['focus-first-triage-view'];
+		expect(creator).toBeTypeOf('function');
+		expect(creator?.({ app })).toBeInstanceOf(TriageView);
 	});
 
 	it('registers a settings tab', async () => {
@@ -389,17 +474,22 @@ describe('FocusFirstPlugin — quick add', () => {
 		expect(app.vault.modify).not.toHaveBeenCalled();
 	});
 
-	it('refreshViews refreshes open Focus First views and ignores other leaves', () => {
+	it('refreshViews refreshes open Focus First views (matrix + triage) and ignores other leaves', () => {
 		const refreshed: unknown[] = [];
 		const focusView = Object.create(FocusFirstView.prototype) as { refresh: () => Promise<void> };
 		focusView.refresh = () => { refreshed.push(focusView); return Promise.resolve(); };
+		const triageView = Object.create(TriageView.prototype) as { refresh: () => Promise<void> };
+		triageView.refresh = () => { refreshed.push(triageView); return Promise.resolve(); };
 		const app = {
 			workspace: {
-				getLeavesOfType: () => [{ view: focusView }, { view: {} }],
+				getLeavesOfType: (type: string) =>
+					type === 'focus-first-view' ? [{ view: focusView }, { view: {} }]
+						: type === 'focus-first-triage-view' ? [{ view: triageView }]
+							: [],
 			},
 		};
 		const plugin = makePlugin(app);
 		plugin.refreshViews();
-		expect(refreshed).toHaveLength(1);
+		expect(refreshed).toEqual([focusView, triageView]);
 	});
 });

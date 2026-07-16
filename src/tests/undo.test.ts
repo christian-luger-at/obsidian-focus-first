@@ -6,7 +6,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 
-const { applyUndoSnapshot, showUndoNotice } = await import('../undo');
+const { applyUndoSnapshot, showUndoNotice, applyUndoSnapshots, showBatchUndoNotice } = await import('../undo');
 const { updateTaskLine, completeTaskLine } = await import('../taskRenderer');
 const { moveTaskToQuadrant } = await import('../taskDragDrop');
 const { DEFAULT_SETTINGS } = await import('../settings');
@@ -109,5 +109,52 @@ describe('showUndoNotice', () => {
 		const { app } = makeApp({});
 		expect(() => showUndoNotice(app, 'x', undefined)).not.toThrow();
 		expect(createdNotices).toHaveLength(0);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Batch undo (triage assignment)
+// ---------------------------------------------------------------------------
+
+describe('applyUndoSnapshots', () => {
+	it('reverts every snapshot in the batch', async () => {
+		const { app, store } = makeApp({ 'a.md': '- [ ] One #do\n- [ ] Two\n- [ ] Three #do' });
+		await applyUndoSnapshots(app, [
+			{ filePath: 'a.md', startLine: 0, before: ['- [ ] One'], after: ['- [ ] One #do'] },
+			{ filePath: 'a.md', startLine: 2, before: ['- [ ] Three'], after: ['- [ ] Three #do'] },
+		]);
+		expect(store['a.md']).toBe('- [ ] One\n- [ ] Two\n- [ ] Three');
+	});
+
+	it('skips a snapshot whose line has since changed, reverts the rest', async () => {
+		const { app, store } = makeApp({ 'a.md': '- [ ] One EDITED\n- [ ] Two #do' });
+		await applyUndoSnapshots(app, [
+			{ filePath: 'a.md', startLine: 0, before: ['- [ ] One'], after: ['- [ ] One #do'] },
+			{ filePath: 'a.md', startLine: 1, before: ['- [ ] Two'], after: ['- [ ] Two #do'] },
+		]);
+		expect(store['a.md']).toBe('- [ ] One EDITED\n- [ ] Two');
+	});
+});
+
+describe('showBatchUndoNotice', () => {
+	it('shows nothing for an empty batch', () => {
+		clearCreatedNotices();
+		const { app } = makeApp({});
+		showBatchUndoNotice(app, 'Classified (0)', []);
+		expect(createdNotices).toHaveLength(0);
+	});
+
+	it('shows a notice and its Undo reverts the whole batch', async () => {
+		clearCreatedNotices();
+		const { app, store } = makeApp({ 'a.md': '- [ ] One #do\n- [ ] Two #do' });
+		showBatchUndoNotice(app, 'Classified (2)', [
+			{ filePath: 'a.md', startLine: 0, before: ['- [ ] One'], after: ['- [ ] One #do'] },
+			{ filePath: 'a.md', startLine: 1, before: ['- [ ] Two'], after: ['- [ ] Two #do'] },
+		]);
+		expect(createdNotices).toHaveLength(1);
+		const undo = (createdNotices[0]!.messageEl as unknown as { findByClass(c: string): { dispatch(e: string, ev?: unknown): void } | undefined }).findByClass('focus-first-undo');
+		undo?.dispatch('click', { preventDefault: () => {} });
+		await flush();
+		expect(store['a.md']).toBe('- [ ] One\n- [ ] Two');
 	});
 });

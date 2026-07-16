@@ -117,6 +117,75 @@ function tagOverride(task: TaskItem, quadrants: QuadrantConfig): Quadrant | unde
 	return undefined;
 }
 
+/** Which system's axes a triage question is about. Mirrors AxisMode. */
+export type TriageSystem = 'eisenhower' | 'valueEffort';
+
+/** The triage list's scope: one system, or the tasks no system knows anything about. */
+export type TriageFilter = TriageSystem | 'both';
+
+/** Whether each Eisenhower axis has a signal. A quadrant override tag pins both. */
+function eisenhowerAxesFilled(task: TaskItem, settings: FocusFirstSettings): { urgency: boolean; importance: boolean } {
+	if (tagOverride(task, settings.quadrants)) return { urgency: true, importance: true };
+	// Any priority counts as an importance judgement, not just an "important" one:
+	// ⏬ is a decision too.
+	return { urgency: task.dueDate !== undefined, importance: task.priority !== undefined };
+}
+
+/** Whether the Value axis has a signal (value tag, or a priority when the value source is the priority). */
+function hasValueSignal(task: TaskItem, settings: FocusFirstSettings): boolean {
+	const high = settings.highValueTag.trim().toLowerCase();
+	const low = settings.lowValueTag.trim().toLowerCase();
+	const tags = task.tags.map((t) => t.toLowerCase());
+	if (high && tags.includes(high)) return true;
+	if (low && tags.includes(low)) return true;
+	// resolveValue falls back to the priority, but only when configured to.
+	return settings.valueSource === 'priority' && task.priority !== undefined;
+}
+
+/** Whether each Value/Effort axis has a signal. Effort reads the size tag. */
+function valueEffortAxesFilled(task: TaskItem, settings: FocusFirstSettings): { value: boolean; effort: boolean } {
+	return { value: hasValueSignal(task, settings), effort: task.size !== undefined };
+}
+
+/**
+ * True while a task is not yet fully placed on `system`: it counts as classified,
+ * and leaves the triage list, only once BOTH of that system's axes have a signal
+ * (Eisenhower: a due date and a priority; Value/Effort: a value and a size).
+ *
+ * A single signal is not enough: a task with only a due date has its urgency but
+ * not its importance, so it still needs a decision. Assigning it to a slot writes
+ * both axes at once, which is what clears it.
+ */
+export function isUnclassified(
+	task: TaskItem,
+	settings: FocusFirstSettings,
+	system: TriageSystem,
+): boolean {
+	if (system === 'eisenhower') {
+		const { urgency, importance } = eisenhowerAxesFilled(task, settings);
+		return !(urgency && importance);
+	}
+	const { value, effort } = valueEffortAxesFilled(task, settings);
+	return !(value && effort);
+}
+
+/**
+ * Applies a triage filter. `both` (the "Unclassified" scope) is the union: a task
+ * stays in the list until all four axes are filled, so it appears while it is
+ * incomplete on either system.
+ */
+export function matchesTriageFilter(
+	task: TaskItem,
+	settings: FocusFirstSettings,
+	filter: TriageFilter,
+): boolean {
+	if (filter === 'both') {
+		return isUnclassified(task, settings, 'eisenhower')
+			|| isUnclassified(task, settings, 'valueEffort');
+	}
+	return isUnclassified(task, settings, filter);
+}
+
 export function classifyTasks(tasks: TaskItem[], settings: FocusFirstSettings): MatrixQuadrants {
 	const quadrants: MatrixQuadrants = { do: [], schedule: [], delegate: [], eliminate: [] };
 

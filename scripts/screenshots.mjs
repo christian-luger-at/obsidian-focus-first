@@ -309,6 +309,54 @@ async function capture(page) {
 }
 
 /**
+ * The Triage view (a separate view type) with a task's quadrant picker open. It
+ * lives in the sidebar by default; for the shot we open it wide in the main pane
+ * and hover the first row so its floating picker appears.
+ */
+async function captureTriage(page) {
+	// Create the unclassified backlog now, after the matrix and tour shots, so
+	// these bare tasks don't clutter the matrix's Eliminate quadrant. One is pinned
+	// with #schedule so the picker's "already chosen" mark shows on another row.
+	await page.evaluate(async () => {
+		const { vault } = globalThis.app;
+		const body = [
+			'# Triage', '', '## Tasks',
+			'- [ ] Archive last year\'s invoices',
+			'- [ ] Assign the budget owners #schedule',
+			'- [ ] Clean up the downloads folder',
+			'- [ ] Research the new CRM tool', '',
+		].join('\n');
+		const existing = vault.getAbstractFileByPath('Triage.md');
+		if (existing) await vault.modify(existing, body);
+		else await vault.create('Triage.md', body);
+	});
+	await sleep(1500); // let the metadata cache index the new tasks
+
+	await page.evaluate(async () => {
+		const ws = globalThis.app.workspace;
+		ws.leftSplit?.collapse?.();
+		ws.rightSplit?.collapse?.();
+		const leaf = ws.getLeaf(false);
+		await leaf.setViewState({ type: 'focus-first-triage-view', active: true });
+		await ws.revealLeaf(leaf);
+	});
+	await page.waitForSelector('.focus-first-triage-view .focus-first-triage-item', { timeout: 15000 });
+	await sleep(800);
+
+	for (const theme of ['light', 'dark']) {
+		await setTheme(page, theme);
+		await sleep(300);
+		// Hover the first row; wireDetailHover opens the floating picker after a
+		// short delay, so wait for it before shooting (keepPopover, so it stays).
+		await page.locator('.focus-first-triage-view .focus-first-triage-item').first().hover();
+		await sleep(900);
+		await shoot(page, 'triage', theme, '.focus-first-triage-view', true);
+		await page.mouse.move(0, 0);
+		await sleep(400);
+	}
+}
+
+/**
  * Records a short scripted tour as an animated GIF: hover a task for its
  * popover, switch the axes to Value/Effort and back, then filter to quick wins.
  *
@@ -437,6 +485,7 @@ try {
 	await ensurePlugin(page);
 	await capture(page);
 	await recordTour(page);
+	await captureTriage(page);
 	await browser.close();
 	console.log(`\nScreenshots written to ${OUT}`);
 } catch (err) {

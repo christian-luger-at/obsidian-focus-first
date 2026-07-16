@@ -6,6 +6,7 @@ interface Translations {
 	ribbon: { tooltip: string };
 	commands: {
 		openView: { name: string };
+		openTriage: { name: string };
 		addTask: { name: string };
 	};
 	quickAdd: {
@@ -130,6 +131,20 @@ interface Translations {
 			delegate: { title: string; subtitle: string; emptyState: string };
 			eliminate: { title: string; subtitle: string; emptyState: string };
 		};
+		triage: {
+			viewTitle: string;
+			filterLabel: string;
+			filterEisenhower: string;
+			filterValueEffort: string;
+			filterBoth: string;
+			sectionTitle: string;
+			empty: string;
+			assignTo: string;
+			currentChoice: string;
+			pickerHintOne: string;
+			pickerHintBoth: string;
+			assigned: string;
+		};
 	};
 	settings: {
 		setting1: { name: string; desc: string; placeholder: string };
@@ -216,6 +231,7 @@ const translations: Record<Lang, Translations> = {
 		ribbon: { tooltip: 'Focus first' },
 		commands: {
 			openView: { name: 'Open Focus First' },
+			openTriage: { name: 'Open triage' },
 			addTask: { name: 'Add task' },
 		},
 		quickAdd: {
@@ -339,6 +355,20 @@ const translations: Record<Lang, Translations> = {
 				schedule: { title: 'Big Bets',   subtitle: 'High value · High effort', emptyState: 'No big bets pending' },
 				delegate: { title: 'Fill-ins',   subtitle: 'Low value · Low effort',   emptyState: 'No fill-ins right now' },
 				eliminate:{ title: 'Time Sinks',  subtitle: 'Low value · High effort',  emptyState: 'No time sinks' },
+			},
+			triage: {
+				viewTitle: 'Focus First: Triage',
+				filterLabel: 'Triage scope',
+				filterEisenhower: 'Eisenhower',
+				filterValueEffort: 'Value/Effort',
+				filterBoth: 'Unclassified',
+				sectionTitle: 'To classify',
+				empty: 'Nothing to classify: every task has been placed.',
+				assignTo: 'Move to',
+				currentChoice: 'Current choice',
+				pickerHintOne: 'Click the matching quadrant.',
+				pickerHintBoth: 'Pick one per matrix.',
+				assigned: 'Classified',
 			},
 		},
 		settings: {
@@ -489,6 +519,7 @@ const translations: Record<Lang, Translations> = {
 		ribbon: { tooltip: 'Focus First' },
 		commands: {
 			openView: { name: 'Focus First öffnen' },
+			openTriage: { name: 'Triage öffnen' },
 			addTask: { name: 'Aufgabe hinzufügen' },
 		},
 		quickAdd: {
@@ -612,6 +643,20 @@ const translations: Record<Lang, Translations> = {
 				schedule: { title: 'Big Bets',   subtitle: 'Hoher Wert · Hoher Aufwand',     emptyState: 'Keine Big Bets ausstehend' },
 				delegate: { title: 'Lückenfüller', subtitle: 'Geringer Wert · Geringer Aufwand', emptyState: 'Aktuell keine Lückenfüller' },
 				eliminate:{ title: 'Zeitfresser', subtitle: 'Geringer Wert · Hoher Aufwand',  emptyState: 'Keine Zeitfresser' },
+			},
+			triage: {
+				viewTitle: 'Focus First: Triage',
+				filterLabel: 'Triage-Umfang',
+				filterEisenhower: 'Eisenhower',
+				filterValueEffort: 'Wert/Aufwand',
+				filterBoth: 'Unklassifiziert',
+				sectionTitle: 'Zu klassifizieren',
+				empty: 'Nichts zu klassifizieren: jede Aufgabe ist eingeordnet.',
+				assignTo: 'Verschieben nach',
+				currentChoice: 'Aktuelle Wahl',
+				pickerHintOne: 'Passenden Quadranten klicken.',
+				pickerHintBoth: 'Je Matrix einen wählen.',
+				assigned: 'Klassifiziert',
 			},
 		},
 		settings: {

@@ -43,3 +43,29 @@ export function showUndoNotice(app: App, label: string, snap: EditSnapshot | und
 		notice.hide();
 	});
 }
+
+/** Reverts a batch of edits (each independently guarded). Order does not matter:
+ * every snapshot rewrites the same number of lines it wrote, so positions hold. */
+export async function applyUndoSnapshots(app: App, snaps: EditSnapshot[]): Promise<void> {
+	for (const snap of snaps) {
+		await applyUndoSnapshot(app, snap);
+	}
+}
+
+/**
+ * Undo toast for a batch assignment: shows how many tasks were changed and, on
+ * Undo, reverts all of them. No-op when the batch is empty (nothing changed).
+ */
+export function showBatchUndoNotice(app: App, label: string, snaps: EditSnapshot[]): void {
+	if (snaps.length === 0) return;
+	const notice = new Notice('', 5000);
+	const el = notice.messageEl;
+	el.empty();
+	el.createEl('span', { text: `${label}  ` });
+	const undo = el.createEl('a', { text: String(t().view.undo), cls: 'focus-first-undo' });
+	undo.addEventListener('click', (e) => {
+		(e as Event).preventDefault();
+		void applyUndoSnapshots(app, snaps);
+		notice.hide();
+	});
+}

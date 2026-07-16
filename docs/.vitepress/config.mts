@@ -57,6 +57,7 @@ export default defineConfig({
           { text: 'Getting started', link: '/guide/getting-started' },
           { text: 'How tasks are classified', link: '/guide/classification' },
           { text: 'The two matrices', link: '/guide/matrices' },
+          { text: 'Triaging unclassified tasks', link: '/guide/triage' },
           { text: 'Focus, size & filters', link: '/guide/focus-size-filters' },
           { text: 'Embedding tasks in a note', link: '/guide/embedding' },
           { text: 'Settings', link: '/guide/settings' },

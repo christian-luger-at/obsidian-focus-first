@@ -20,27 +20,15 @@ const SLOT_TARGET: Record<Quadrant, { highValue: boolean; lowEffort: boolean }> 
 const SIZE_ORDER: TaskSize[] = ['small', 'medium', 'large'];
 
 /**
- * Re-tags a task line to a target quadrant: strips every configured quadrant tag
- * and appends the target's. The view auto-refreshes on the resulting file change.
+ * The pure line transform for an Eisenhower target: strips every configured
+ * quadrant tag and appends the target's. Kept separate from the file I/O so the
+ * batched triage writer can apply it to many lines in one read/write.
  */
-export async function moveTaskToQuadrant(
-	app: App,
-	settings: FocusFirstSettings,
-	filePath: string,
-	lineNumber: number,
+export function quadrantTagLine(
+	line: string,
 	targetQuadrant: Quadrant,
-	expectedLine?: string,
-): Promise<EditSnapshot | undefined> {
-	const file = app.vault.getAbstractFileByPath(filePath);
-	if (!(file instanceof TFile)) return;
-
-	const content = await app.vault.read(file);
-	const lines = content.split('\n');
-	const line = lines[lineNumber];
-	if (line === undefined) return;
-	// Stale-line guard (#27): the note may have shifted since the drag started.
-	if (expectedLine !== undefined && line !== expectedLine) return;
-
+	settings: FocusFirstSettings,
+): string {
 	const quadrantTags = QUADRANT_KEYS
 		.map((key) => settings.quadrants[key].tag.trim())
 		.filter(Boolean);
@@ -54,11 +42,53 @@ export async function moveTaskToQuadrant(
 	if (targetTag) {
 		newLine = newLine.trimEnd() + ' ' + targetTag;
 	}
+	return newLine;
+}
 
+/**
+ * Reads a file, applies `transform` to the line at `lineNumber`, and writes it
+ * back. Shared by both single-task drop handlers. Returns the revert snapshot,
+ * or undefined when nothing was written (missing file, out-of-range line, stale
+ * line, or a no-op transform).
+ */
+async function editSingleLine(
+	app: App,
+	filePath: string,
+	lineNumber: number,
+	expectedLine: string | undefined,
+	transform: (line: string) => string,
+): Promise<EditSnapshot | undefined> {
+	const file = app.vault.getAbstractFileByPath(filePath);
+	if (!(file instanceof TFile)) return;
+
+	const content = await app.vault.read(file);
+	const lines = content.split('\n');
+	const line = lines[lineNumber];
+	if (line === undefined) return;
+	// Stale-line guard (#27): the note may have shifted since the drag started.
+	if (expectedLine !== undefined && line !== expectedLine) return;
+
+	const newLine = transform(line);
 	if (newLine === line) return;
 	lines[lineNumber] = newLine;
 	await app.vault.modify(file, lines.join('\n'));
 	return { filePath, startLine: lineNumber, before: [line], after: [newLine] };
+}
+
+/**
+ * Re-tags a task line to a target quadrant: strips every configured quadrant tag
+ * and appends the target's. The view auto-refreshes on the resulting file change.
+ */
+export async function moveTaskToQuadrant(
+	app: App,
+	settings: FocusFirstSettings,
+	filePath: string,
+	lineNumber: number,
+	targetQuadrant: Quadrant,
+	expectedLine?: string,
+): Promise<EditSnapshot | undefined> {
+	return editSingleLine(app, filePath, lineNumber, expectedLine,
+		(line) => quadrantTagLine(line, targetQuadrant, settings));
 }
 
 interface DropPayload {
@@ -131,9 +161,29 @@ function effortSizeTag(settings: FocusFirstSettings, lowEffort: boolean): string
 }
 
 /**
- * Re-classifies a task to a Value/Effort slot by writing both axes: the value
+ * The pure line transform for a Value/Effort target: writes both axes, the value
  * override tag (#highvalue / #lowvalue, which always wins over the value source)
- * and the size tag for the target effort. The view auto-refreshes on the change.
+ * and the size tag for the target effort.
+ */
+export function valueEffortLine(
+	line: string,
+	targetSlot: Quadrant,
+	settings: FocusFirstSettings,
+): string {
+	const target = SLOT_TARGET[targetSlot];
+	const highTag = settings.highValueTag.trim();
+	const lowTag = settings.lowValueTag.trim();
+	const valueGroup = [highTag, lowTag].filter(Boolean);
+	const valueTag = target.highValue ? (highTag || null) : (lowTag || null);
+
+	let newLine = setExclusiveTag(line, valueTag, valueGroup);
+	newLine = setSize(newLine, effortSizeTag(settings, target.lowEffort), sizeTagList(settings));
+	return newLine;
+}
+
+/**
+ * Re-classifies a task to a Value/Effort slot by writing both axes. The view
+ * auto-refreshes on the change.
  */
 export async function moveTaskToValueEffort(
 	app: App,
@@ -143,28 +193,67 @@ export async function moveTaskToValueEffort(
 	targetSlot: Quadrant,
 	expectedLine?: string,
 ): Promise<EditSnapshot | undefined> {
-	const file = app.vault.getAbstractFileByPath(filePath);
-	if (!(file instanceof TFile)) return;
+	return editSingleLine(app, filePath, lineNumber, expectedLine,
+		(line) => valueEffortLine(line, targetSlot, settings));
+}
 
-	const content = await app.vault.read(file);
-	const lines = content.split('\n');
-	const line = lines[lineNumber];
-	if (line === undefined) return;
-	if (expectedLine !== undefined && line !== expectedLine) return;
+/** One task to assign in a batch: its location and the line the view last saw. */
+export interface TriageTarget {
+	filePath: string;
+	lineNumber: number;
+	expectedLine: string;
+}
 
-	const target = SLOT_TARGET[targetSlot];
-	const highTag = settings.highValueTag.trim();
-	const lowTag = settings.lowValueTag.trim();
-	const valueGroup = [highTag, lowTag].filter(Boolean);
-	const valueTag = target.highValue ? (highTag || null) : (lowTag || null);
+/**
+ * Assigns many tasks to one slot in a single pass per file. Reads each file
+ * once, applies the transform to every target line, and writes once, so twenty
+ * tasks in one note can't clobber each other through interleaved read/writes,
+ * the way twenty separate move calls would.
+ *
+ * Returns one snapshot per line actually changed, most-recent order preserved,
+ * so the caller can offer a single Undo that reverts the whole batch. Lines that
+ * no longer match what the view saw are skipped (the same #27 guard, per line).
+ */
+export async function assignTasksToSlot(
+	app: App,
+	settings: FocusFirstSettings,
+	targets: TriageTarget[],
+	system: 'eisenhower' | 'valueEffort',
+	targetSlot: Quadrant,
+): Promise<EditSnapshot[]> {
+	const transform = (line: string): string =>
+		system === 'eisenhower'
+			? quadrantTagLine(line, targetSlot, settings)
+			: valueEffortLine(line, targetSlot, settings);
 
-	let newLine = setExclusiveTag(line, valueTag, valueGroup);
-	newLine = setSize(newLine, effortSizeTag(settings, target.lowEffort), sizeTagList(settings));
+	// Group by file so each note is read and written exactly once.
+	const byFile = new Map<string, TriageTarget[]>();
+	for (const target of targets) {
+		const list = byFile.get(target.filePath) ?? [];
+		list.push(target);
+		byFile.set(target.filePath, list);
+	}
 
-	if (newLine === line) return;
-	lines[lineNumber] = newLine;
-	await app.vault.modify(file, lines.join('\n'));
-	return { filePath, startLine: lineNumber, before: [line], after: [newLine] };
+	const snapshots: EditSnapshot[] = [];
+	for (const [filePath, fileTargets] of byFile) {
+		const file = app.vault.getAbstractFileByPath(filePath);
+		if (!(file instanceof TFile)) continue;
+
+		const lines = (await app.vault.read(file)).split('\n');
+		const fileSnapshots: EditSnapshot[] = [];
+		for (const { lineNumber, expectedLine } of fileTargets) {
+			const line = lines[lineNumber];
+			if (line === undefined || line !== expectedLine) continue;
+			const newLine = transform(line);
+			if (newLine === line) continue;
+			lines[lineNumber] = newLine;
+			fileSnapshots.push({ filePath, startLine: lineNumber, before: [line], after: [newLine] });
+		}
+		if (fileSnapshots.length === 0) continue;
+		await app.vault.modify(file, lines.join('\n'));
+		snapshots.push(...fileSnapshots);
+	}
+	return snapshots;
 }
 
 /** Wires a quadrant cell as a drop target for the Value/Effort matrix. */

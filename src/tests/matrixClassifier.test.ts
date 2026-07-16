@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { classifyTasks, explainTask, Quadrant } from '../matrixClassifier';
+import { classifyTasks, explainTask, Quadrant, isUnclassified, matchesTriageFilter } from '../matrixClassifier';
 import { FocusFirstSettings, DEFAULT_SETTINGS } from '../settings';
 import { TaskItem } from '../taskScanner';
 
@@ -474,5 +474,76 @@ describe('value/effort classification', () => {
 		expect(r.valueCause).toBe('priority');
 		expect(r.lowEffort).toBe(true);
 		expect(r.override).toBeUndefined();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// isUnclassified / matchesTriageFilter (triage view)
+// ---------------------------------------------------------------------------
+
+describe('isUnclassified', () => {
+	it('Eisenhower: a task with neither a date nor a priority is unclassified', () => {
+		expect(isUnclassified(makeTask(), makeSettings(), 'eisenhower')).toBe(true);
+	});
+
+	it('Eisenhower: a due date alone is not enough, importance is still missing', () => {
+		expect(isUnclassified(makeTask({ dueDate: daysFromToday(30) }), makeSettings(), 'eisenhower')).toBe(true);
+	});
+
+	it('Eisenhower: a priority alone is not enough, urgency is still missing', () => {
+		expect(isUnclassified(makeTask({ priority: '⏬' }), makeSettings(), 'eisenhower')).toBe(true);
+	});
+
+	it('Eisenhower: a due date AND a priority together are classified', () => {
+		expect(isUnclassified(makeTask({ dueDate: daysFromToday(3), priority: '🔺' }), makeSettings(), 'eisenhower')).toBe(false);
+	});
+
+	it('Eisenhower: a quadrant override tag fills both axes at once', () => {
+		expect(isUnclassified(makeTask({ tags: ['#do'] }), makeSettings(), 'eisenhower')).toBe(false);
+	});
+
+	it('Value/Effort: no value and no size is unclassified', () => {
+		expect(isUnclassified(makeTask(), makeSettings(), 'valueEffort')).toBe(true);
+	});
+
+	it('Value/Effort: a size alone is not enough, value is still missing', () => {
+		expect(isUnclassified(makeTask({ size: 'small' }), makeSettings(), 'valueEffort')).toBe(true);
+	});
+
+	it('Value/Effort: a value tag alone is not enough, effort is still missing', () => {
+		expect(isUnclassified(makeTask({ tags: ['#highvalue'] }), makeSettings(), 'valueEffort')).toBe(true);
+	});
+
+	it('Value/Effort: a value (or priority-as-value) plus a size is classified', () => {
+		expect(isUnclassified(makeTask({ tags: ['#highvalue'], size: 'small' }), makeSettings(), 'valueEffort')).toBe(false);
+		expect(isUnclassified(makeTask({ priority: '🔺', size: 'large' }), makeSettings({ valueSource: 'priority' }), 'valueEffort')).toBe(false);
+	});
+
+	it('Value/Effort: with manualTag as the value source, a priority does not fill the value axis', () => {
+		expect(isUnclassified(makeTask({ priority: '🔺', size: 'small' }), makeSettings({ valueSource: 'manualTag' }), 'valueEffort')).toBe(true);
+	});
+});
+
+describe('matchesTriageFilter', () => {
+	const s = makeSettings();
+
+	it('"both" is the union: a task appears until all four axes are filled', () => {
+		// Dated + prioritised: complete for Eisenhower, but has no value or size, so it is
+		// still incomplete for Value/Effort and therefore still in the Unclassified list.
+		const halfDone = makeTask({ dueDate: daysFromToday(3), priority: '🔺' });
+		expect(matchesTriageFilter(halfDone, s, 'eisenhower')).toBe(false);
+		expect(matchesTriageFilter(halfDone, s, 'valueEffort')).toBe(true);
+		expect(matchesTriageFilter(halfDone, s, 'both')).toBe(true);
+	});
+
+	it('"both" excludes a task once every axis has a signal', () => {
+		// Priority fills importance AND (as value source) value; date fills urgency;
+		// size fills effort, all four covered.
+		const complete = makeTask({ dueDate: daysFromToday(3), priority: '🔺', size: 'small' });
+		expect(matchesTriageFilter(complete, s, 'both')).toBe(false);
+	});
+
+	it('"both" matches a task no system knows anything about', () => {
+		expect(matchesTriageFilter(makeTask(), s, 'both')).toBe(true);
 	});
 });

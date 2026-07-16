@@ -23,6 +23,7 @@ Everything Focus First does, with links to where it's explained.
 - **Two matrices, one view** - switch between Eisenhower and Value/Effort from the header. → [The two matrices](/guide/matrices)
 - **Manual quadrant tags** - pin any task to a quadrant with a tag, overriding the automatic logic. → [Overriding classification](/guide/classification#overriding-the-automatic-classification)
 - **Drag & drop** a task between quadrants to re-classify it instantly. → [The two matrices](/guide/matrices)
+- **Triage view** - a separate list of the tasks no matrix has judged yet; place each with one click from a hover picker. → [Triaging unclassified tasks](/guide/triage)
 
 **Focus & planning**
 

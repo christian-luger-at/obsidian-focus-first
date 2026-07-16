@@ -504,9 +504,12 @@
 .focus-first-task-detail {
 	display: none;
 	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
+	/* A clearly visible border plus a faint light ring so the popover reads as a
+	   distinct surface in dark mode too, where a dark card on a dark list with a
+	   black-only shadow would otherwise blend in. */
+	border: 1px solid var(--background-modifier-border-hover, var(--background-modifier-border));
 	border-radius: var(--radius-m);
-	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.07);
 	padding: var(--size-4-2) var(--size-4-3);
 	z-index: var(--layer-popover, 48);
 	min-width: 15rem;
@@ -898,4 +901,180 @@ input.is-invalid:focus {
 	color: var(--text-faint);
 	font-size: calc(var(--font-ui-smaller) * var(--focus-first-font-scale));
 	text-align: center;
+}
+
+/* --- Triage view -------------------------------------------------------- */
+
+.focus-first-triage-empty {
+	margin: var(--size-4-4);
+	color: var(--text-muted);
+	text-align: center;
+}
+
+/* The result list sits in a card box, matching a matrix quadrant. */
+.focus-first-triage-box {
+	margin: var(--size-2-3) var(--size-4-4);
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	overflow: hidden;
+}
+
+.focus-first-triage-box .focus-first-task-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* A flat, self-contained row: checkbox, title, and the slot buttons inline.
+   No floating popover, so the list scrolls freely and nothing is covered. */
+.focus-first-triage-item {
+	flex-wrap: wrap;
+	align-items: center;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.focus-first-triage-list .focus-first-triage-item:first-child {
+	border-top: none;
+}
+
+.focus-first-triage-item .focus-first-task-text {
+	flex: 1 1 45%;
+}
+
+/* Badges showing which signals are already set (priority, due, size, value). */
+.focus-first-triage-badges {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--size-2-1);
+	flex: 0 1 auto;
+}
+
+.focus-first-triage-badge {
+	font-size: calc(var(--font-ui-smaller) * var(--focus-first-font-scale));
+	color: var(--text-muted);
+	background: var(--background-modifier-hover);
+	border-radius: var(--radius-s);
+	padding: 0 var(--size-2-2);
+	white-space: nowrap;
+}
+
+/* The picker lives in the floating detail popover (the matrix hover mechanism):
+   the .focus-first-task-detail base gives the floating card, its position, and
+   its padding; here we only lay out the one or two method matrices inside, with
+   a generous gap between the two methods. */
+.focus-first-triage-detail {
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: var(--size-4-4);
+	/* Size to the matrices, overriding the wide default meant for the metadata
+	   popover, so a single-system picker stays narrow. */
+	min-width: 0;
+}
+
+.focus-first-triage-detail.is-open,
+body.is-mobile .focus-first-task-item.is-expanded .focus-first-triage-detail {
+	display: flex;
+}
+
+/* Hug the matrices instead of filling the pane: cap the width so the instruction
+   wraps and, in "both" scope, the two matrices stack rather than stretch wide. */
+.focus-first-triage-detail.is-open {
+	max-width: 14rem;
+	min-width: 0;
+}
+
+/* A one-line instruction above the matrices, so it is clear the cells are click
+   targets. Spans the full width so the grids start on the next line. */
+.focus-first-triage-hint {
+	flex: 0 0 100%;
+	font-size: calc(var(--font-ui-smaller) * var(--focus-first-font-scale));
+	color: var(--text-muted);
+	line-height: 1.3;
+	white-space: nowrap;
+}
+
+/* One system's target picker: a label (only in "both" scope) above a 2×2 grid.
+   The two systems sit side by side and wrap to stacked only when very narrow, so
+   the picker stays short instead of pushing the list far down. */
+.focus-first-slot-group {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+	flex: 1 1 100%;
+	min-width: 0;
+}
+
+.focus-first-slot-group-label {
+	font-size: calc(var(--font-ui-smaller) * var(--focus-first-font-scale));
+	color: var(--text-faint);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+/* The four targets in matrix order (do, schedule / delegate, eliminate) fill a
+   2-column grid, so their positions mirror the matrix. Generous gap gives the
+   picker room to breathe. */
+/* One framed 2×2 with internal divider lines (a cross), so the four cells read
+   as a single quadrant matrix rather than four separate buttons. */
+.focus-first-slot-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	overflow: hidden;
+}
+
+/* Each cell tints lightly with its quadrant colour and carries the quadrant
+   name; the dividers come from the right/bottom borders, cleared on the last
+   column and row so only the interior cross shows. */
+.focus-first-slot-btn {
+	cursor: pointer;
+	text-align: left;
+	padding: var(--size-2-2) var(--size-2-3);
+	border: none;
+	border-right: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--background-modifier-border);
+	border-radius: 0;
+	background: color-mix(in srgb, var(--quadrant-color, var(--text-muted)) 9%, transparent);
+	font-size: calc(var(--font-ui-smaller) * var(--focus-first-font-scale));
+	font-weight: var(--font-semibold);
+	color: var(--quadrant-color, var(--text-normal));
+	line-height: 1.2;
+	min-height: 2.4em;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.focus-first-slot-btn:nth-child(2n) {
+	border-right: none;
+}
+
+.focus-first-slot-btn:nth-child(n+3) {
+	border-bottom: none;
+}
+
+/* Round each corner cell to match the frame, so the is-current ring follows the
+   rounded corners instead of being clipped square against them. */
+.focus-first-slot-btn:nth-child(1) { border-top-left-radius: var(--radius-s); }
+.focus-first-slot-btn:nth-child(2) { border-top-right-radius: var(--radius-s); }
+.focus-first-slot-btn:nth-child(3) { border-bottom-left-radius: var(--radius-s); }
+.focus-first-slot-btn:nth-child(4) { border-bottom-right-radius: var(--radius-s); }
+
+.focus-first-slot-btn:hover {
+	background: color-mix(in srgb, var(--quadrant-color, var(--text-muted)) 20%, transparent);
+}
+
+/* The quadrant this system already places the task in: a filled tint, a ring, and
+   a check, so with both systems shown it is obvious which value is already set. */
+.focus-first-slot-btn.is-current {
+	background: color-mix(in srgb, var(--quadrant-color, var(--text-muted)) 28%, transparent);
+	box-shadow: inset 0 0 0 2px var(--quadrant-color, var(--text-muted));
+}
+
+.focus-first-slot-btn.is-current::before {
+	content: "✓ ";
+	font-weight: 700;
 }

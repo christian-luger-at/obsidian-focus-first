@@ -13,6 +13,10 @@ A task is considered **important** if it carries one of the priorities selected 
 
 A task without a due date is never automatically urgent. A task without a priority (or with a priority not in your "important" list) is never automatically important - by default, only 🔺 and ⏫ count as important, while 🔼🔽⏬ do not.
 
+::: warning Tasks with neither land in "Eliminate"
+A task with no due date and no priority has no signal on either axis, so the automatic logic drops it into **Eliminate**, even though nobody has actually judged it. To surface and place those unjudged tasks deliberately, use the **[Triage view](/guide/triage)**.
+:::
+
 ::: tip Why here?
 Hover a task (desktop) or tap it (mobile) to open its detail popover. It spells out the exact reason a task landed where it did, for example "Urgent: due in 2 d (≤ 3 d) · Important: priority 🔺", so the classification is never a black box.
 :::

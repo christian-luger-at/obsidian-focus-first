@@ -6,6 +6,7 @@ import {
 } from './settings';
 import { t } from './i18n';
 import { FocusFirstView, FOCUS_FIRST_VIEW_TYPE } from './TaskView';
+import { TriageView, FOCUS_FIRST_TRIAGE_VIEW_TYPE } from './TriageView';
 import { WrappedTasksBlock, parseTasksBlock } from './wrappedTasksBlock';
 import { FocusDataBlock, isFocusSection } from './focusDataBlock';
 import { QuickAddModal } from './quickAddModal';
@@ -24,6 +25,11 @@ export default class FocusFirstPlugin extends Plugin {
 			(leaf) => new FocusFirstView(leaf, this),
 		);
 
+		this.registerView(
+			FOCUS_FIRST_TRIAGE_VIEW_TYPE,
+			(leaf) => new TriageView(leaf, this),
+		);
+
 		this.applyFontSize();
 
 		this.addRibbonIcon('list-checks', t().ribbon.tooltip, async () => {
@@ -34,6 +40,12 @@ export default class FocusFirstPlugin extends Plugin {
 			id: 'open-view',
 			name: t().commands.openView.name,
 			callback: async () => await this.activateView(),
+		});
+
+		this.addCommand({
+			id: 'open-triage',
+			name: t().commands.openTriage.name,
+			callback: async () => await this.activateTriageView(),
 		});
 
 		this.addCommand({
@@ -112,6 +124,23 @@ export default class FocusFirstPlugin extends Plugin {
 		if (leaf) await workspace.revealLeaf(leaf);
 	}
 
+	/** Opens (or reveals) the triage view. Like the matrix view, it lives in the
+	 *  right sidebar and is reused if already open. */
+	async activateTriageView() {
+		const { workspace } = this.app;
+		let leaf: WorkspaceLeaf | null = null;
+		const existing = workspace.getLeavesOfType(FOCUS_FIRST_TRIAGE_VIEW_TYPE);
+
+		if (existing.length > 0) {
+			leaf = existing[0] ?? null;
+		} else {
+			leaf = workspace.getRightLeaf(false) ?? null;
+			await leaf?.setViewState({ type: FOCUS_FIRST_TRIAGE_VIEW_TYPE, active: true });
+		}
+
+		if (leaf) await workspace.revealLeaf(leaf);
+	}
+
 	async loadSettings() {
 		this.settings = Object.assign(
 			{},
@@ -132,9 +161,13 @@ export default class FocusFirstPlugin extends Plugin {
 
 	applyFontSize() {
 		const scale = this.settings.fontSize / 100;
-		for (const leaf of this.app.workspace.getLeavesOfType(FOCUS_FIRST_VIEW_TYPE)) {
+		const leaves = [
+			...this.app.workspace.getLeavesOfType(FOCUS_FIRST_VIEW_TYPE),
+			...this.app.workspace.getLeavesOfType(FOCUS_FIRST_TRIAGE_VIEW_TYPE),
+		];
+		for (const leaf of leaves) {
 			const view = leaf.view;
-			if (view instanceof FocusFirstView) {
+			if (view instanceof FocusFirstView || view instanceof TriageView) {
 				view.contentEl.style.setProperty('--focus-first-font-scale', String(scale));
 			}
 		}
@@ -142,9 +175,13 @@ export default class FocusFirstPlugin extends Plugin {
 
 	/** Re-renders every open Focus First view (used after a settings change). */
 	refreshViews() {
-		for (const leaf of this.app.workspace.getLeavesOfType(FOCUS_FIRST_VIEW_TYPE)) {
+		const leaves = [
+			...this.app.workspace.getLeavesOfType(FOCUS_FIRST_VIEW_TYPE),
+			...this.app.workspace.getLeavesOfType(FOCUS_FIRST_TRIAGE_VIEW_TYPE),
+		];
+		for (const leaf of leaves) {
 			const view = leaf.view;
-			if (view instanceof FocusFirstView) {
+			if (view instanceof FocusFirstView || view instanceof TriageView) {
 				void view.refresh();
 			}
 		}

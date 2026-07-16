@@ -13,6 +13,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 
 const { FocusFirstView } = await import('../TaskView');
+const { TriageView } = await import('../TriageView');
 const { openTaskFile } = await import('../taskRenderer');
 const { DEFAULT_SETTINGS } = await import('../settings');
 const { TFile, MarkdownView, createdMenus, clearCreatedMenus, Platform } = await import('./__mocks__/obsidian');
@@ -1208,5 +1209,429 @@ describe('mobile layout', () => {
 		expect(item.classList.contains('is-expanded')).toBe(true);
 		item.dispatch('click');
 		expect(item.classList.contains('is-expanded')).toBe(false);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// TriageView — the dedicated, separate triage view
+// ---------------------------------------------------------------------------
+
+function makeTriageView(settings: Partial<FocusFirstSettings> = {}, tasks: TaskItem[] = []) {
+	const vault = {
+		getAbstractFileByPath: (_path: string): InstanceType<typeof TFile> | null => null,
+		read: vi.fn(async (_file: unknown) => ''),
+		modify: vi.fn(async (_file: unknown, _content: string) => {}),
+	};
+	const app = { vault, workspace: {} };
+	const leaf = { app };
+	const plugin = { settings: { ...DEFAULT_SETTINGS, ...settings }, saveSettings: vi.fn(async () => {}) };
+	// @ts-expect-error — stub leaf/plugin, not real Obsidian types
+	const view = new TriageView(leaf, plugin);
+	const contentEl = new FakeEl('div');
+	contentEl.cls.add('focus-first-view');
+	// @ts-expect-error — FakeEl stands in for the real HTMLElement contentEl
+	view.contentEl = contentEl;
+	// @ts-expect-error — assign tasks directly, bypassing scanTasks()
+	view.tasks = tasks;
+	return { view, plugin, app, contentEl };
+}
+
+interface TestableTriage {
+	render(): void;
+	refresh(): Promise<void>;
+	triageScope: 'eisenhower' | 'valueEffort' | 'both';
+}
+function trg(view: unknown): TestableTriage { return view as TestableTriage; }
+
+describe('TriageView', () => {
+	it('has its own view type and inbox icon', () => {
+		const { view } = makeTriageView();
+		expect(view.getViewType()).toBe('focus-first-triage-view');
+		expect(view.getIcon()).toBe('inbox');
+	});
+
+	it('renders a scope dropdown and a search toggle, but no Add button', () => {
+		const { view, contentEl } = makeTriageView({}, [makeTask({ line: '- [ ] Bare' })]);
+		trg(view).render();
+		expect(contentEl.findByClass('focus-first-triage-scope')).toBeDefined();
+		expect(contentEl.findByClass('focus-first-search-toggle')).toBeDefined();
+		expect(contentEl.findByClass('focus-first-add-btn')).toBeUndefined();
+	});
+
+	it('has no date or size filter panel — search is text only', () => {
+		const { view, contentEl } = makeTriageView({}, [makeTask({ line: '- [ ] Bare' })]);
+		trg(view).render();
+		expect(contentEl.findByClass('focus-first-search-input')).toBeDefined();
+		expect(contentEl.findByClass('focus-first-filter-panel')).toBeUndefined();
+		expect(contentEl.findByClass('focus-first-size-filter-group')).toBeUndefined();
+	});
+
+	it('lists the tasks no system has classified (scope "both")', () => {
+		const tasks = [
+			makeTask({ line: '- [ ] Bare one', lineNumber: 0 }),
+			makeTask({ line: '- [ ] Bare two', lineNumber: 1 }),
+		];
+		const { view, contentEl } = makeTriageView({}, tasks);
+		trg(view).triageScope = 'both';
+		trg(view).render();
+		expect(contentEl.findByClass('focus-first-triage-list')).toBeDefined();
+		expect(contentEl.findAllByClass('focus-first-task-item')).toHaveLength(2);
+	});
+
+	it('a task complete for Eisenhower still shows under "both" and "valueEffort", not "eisenhower"', () => {
+		// Dated + prioritised: both Eisenhower axes filled, but no value/size.
+		const tasks = [makeTask({ line: '- [ ] Half done', dueDate: daysFromToday(30), priority: '🔺' })];
+
+		const eis = makeTriageView({}, tasks);
+		trg(eis.view).triageScope = 'eisenhower';
+		trg(eis.view).render();
+		expect(eis.contentEl.findAllByClass('focus-first-task-item')).toHaveLength(0);
+
+		const ve = makeTriageView({}, tasks);
+		trg(ve.view).triageScope = 'valueEffort';
+		trg(ve.view).render();
+		expect(ve.contentEl.findAllByClass('focus-first-task-item')).toHaveLength(1);
+
+		const both = makeTriageView({}, tasks);
+		trg(both.view).triageScope = 'both';
+		trg(both.view).render();
+		expect(both.contentEl.findAllByClass('focus-first-task-item')).toHaveLength(1);
+	});
+
+	it('shows a calm empty state when nothing needs classifying', () => {
+		const { view, contentEl } = makeTriageView({}, [makeTask({ tags: ['#do'] })]);
+		trg(view).triageScope = 'eisenhower';
+		trg(view).render();
+		expect(contentEl.findByClass('focus-first-triage-empty')).toBeDefined();
+		expect(contentEl.findByClass('focus-first-triage-list')).toBeUndefined();
+	});
+
+	it('offers four slot buttons per system, eight in scope "both"', () => {
+		const { view, contentEl } = makeTriageView({}, [makeTask({ line: '- [ ] Bare' })]);
+		trg(view).triageScope = 'both';
+		trg(view).render();
+		expect(contentEl.findAllByClass('focus-first-slot-btn')).toHaveLength(8);
+	});
+
+	it('clicking a slot button writes the target tag to the task line', async () => {
+		const tasks = [makeTask({ line: '- [ ] Bare', lineNumber: 0 })];
+		const { view, contentEl, app } = makeTriageView({}, tasks);
+		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
+		app.vault.read = vi.fn(async () => '- [ ] Bare');
+		trg(view).refresh = vi.fn(async () => {}); // don't fall through to real scanTasks
+		trg(view).triageScope = 'eisenhower';
+		trg(view).render();
+
+		const doBtn = contentEl.findAllByClass('focus-first-slot-btn--do')[0]!;
+		doBtn.dispatch('click', { stopPropagation: () => {} });
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), '- [ ] Bare #do');
+	});
+
+	it('has no selection checkboxes or batch action bar (single-task triage only)', () => {
+		const tasks = [
+			makeTask({ line: '- [ ] One', lineNumber: 0 }),
+			makeTask({ line: '- [ ] Two', lineNumber: 1 }),
+		];
+		const { view, contentEl } = makeTriageView({}, tasks);
+		trg(view).triageScope = 'both';
+		trg(view).render();
+		expect(contentEl.findAllByClass('focus-first-select-box')).toHaveLength(0);
+		expect(contentEl.findByClass('focus-first-triage-actionbar')).toBeUndefined();
+		expect(contentEl.findByClass('focus-first-triage-selectall')).toBeUndefined();
+	});
+});
+
+describe('TriageView — interactions', () => {
+	it('getDisplayText returns the triage view title', () => {
+		const { view } = makeTriageView();
+		expect(typeof view.getDisplayText()).toBe('string');
+		expect(view.getDisplayText().length).toBeGreaterThan(0);
+	});
+
+	it('typing in the search box narrows the list', () => {
+		const tasks = [
+			makeTask({ line: '- [ ] Alpha thing', lineNumber: 0 }),
+			makeTask({ line: '- [ ] Beta thing', lineNumber: 1 }),
+		];
+		const { view, contentEl } = makeTriageView({}, tasks);
+		trg(view).render();
+		expect(contentEl.findAllByClass('focus-first-task-item')).toHaveLength(2);
+
+		const input = contentEl.findByClass('focus-first-search-input')!;
+		input.value = 'alpha';
+		input.dispatch('input');
+		expect(contentEl.findAllByClass('focus-first-task-item')).toHaveLength(1);
+	});
+
+	it('a search matching nothing offers to clear, which restores the list', () => {
+		const { view, contentEl } = makeTriageView({}, [makeTask({ line: '- [ ] Alpha' })]);
+		trg(view).render();
+		const input = contentEl.findByClass('focus-first-search-input')!;
+		input.value = 'zzz-no-match';
+		input.dispatch('input');
+		expect(contentEl.findAllByClass('focus-first-task-item')).toHaveLength(0);
+		const clear = contentEl.findByClass('focus-first-info-clear');
+		expect(clear).toBeDefined();
+		clear!.dispatch('click');
+		expect(contentEl.findAllByClass('focus-first-task-item')).toHaveLength(1);
+	});
+
+	it('the search toggle reveals and hides the search area', () => {
+		const { view, contentEl } = makeTriageView({}, [makeTask({ line: '- [ ] X' })]);
+		trg(view).render();
+		const area = contentEl.findByClass('focus-first-search-area')!;
+		expect(area.classList.contains('focus-first-hidden')).toBe(true);
+		contentEl.findByClass('focus-first-search-toggle')!.dispatch('click');
+		expect(area.classList.contains('focus-first-hidden')).toBe(false);
+	});
+
+	it('the scope dropdown switches which tasks are shown', () => {
+		// Complete for Eisenhower (date + priority), incomplete for Value/Effort (no size).
+		const tasks = [makeTask({ line: '- [ ] Half done', dueDate: daysFromToday(30), priority: '🔺' })];
+		const { view, contentEl } = makeTriageView({}, tasks);
+		trg(view).render(); // default scope 'both' → still incomplete on VE → shown
+		expect(contentEl.findAllByClass('focus-first-task-item')).toHaveLength(1);
+		const scope = contentEl.findByClass('focus-first-triage-scope')!;
+		scope.value = 'eisenhower';
+		scope.dispatch('change');
+		expect(contentEl.findAllByClass('focus-first-task-item')).toHaveLength(0);
+	});
+
+	it('a Value/Effort slot click writes both the value tag and the size tag', async () => {
+		const tasks = [makeTask({ line: '- [ ] Bare', lineNumber: 0 })];
+		const { view, contentEl, app } = makeTriageView({}, tasks);
+		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
+		app.vault.read = vi.fn(async () => '- [ ] Bare');
+		trg(view).refresh = vi.fn(async () => {});
+		trg(view).triageScope = 'valueEffort';
+		trg(view).render();
+
+		// Quick Wins (the "do" slot) = high value + low effort.
+		contentEl.findAllByClass('focus-first-slot-btn--do')[0]!.dispatch('click', { stopPropagation: () => {} });
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(app.vault.modify).toHaveBeenCalledTimes(1);
+		const written = app.vault.modify.mock.calls[0]![1];
+		expect(written).toContain('#highvalue');
+		expect(written).toContain('#s');
+	});
+
+	it('on mobile, tapping a row expands its inline picker', () => {
+		Platform.isMobile = true;
+		try {
+			const { view, contentEl } = makeTriageView({}, [makeTask({ line: '- [ ] One' })]);
+			trg(view).triageScope = 'eisenhower';
+			trg(view).render();
+			const row = contentEl.findByClass('focus-first-triage-item')!;
+			expect(row.classList.contains('is-expanded')).toBe(false);
+			row.dispatch('click');
+			expect(row.classList.contains('is-expanded')).toBe(true);
+		} finally {
+			Platform.isMobile = false;
+		}
+	});
+});
+
+describe('TriageView — row signals and sorting', () => {
+	it('shows badges for the properties already set (still shown: no size, so effort is open)', () => {
+		const tasks = [makeTask({
+			line: '- [ ] Rich task',
+			priority: '🔺',
+			dueDate: daysFromToday(2),
+			tags: ['#lowvalue'],
+		})];
+		const { view, contentEl } = makeTriageView({}, tasks);
+		trg(view).render();
+		const badges = contentEl.findAllByClass('focus-first-triage-badge');
+		// priority + due + value tag = 3 badges (no size on this task).
+		expect(badges).toHaveLength(3);
+		expect(badges.some((b) => b.text === '🔺')).toBe(true);
+		expect(badges.some((b) => b.text.startsWith('📅'))).toBe(true);
+		expect(badges.some((b) => b.text === '#lowvalue')).toBe(true);
+	});
+
+	it('a bare task shows no badges', () => {
+		const { view, contentEl } = makeTriageView({}, [makeTask({ line: '- [ ] Bare' })]);
+		trg(view).render();
+		expect(contentEl.findAllByClass('focus-first-triage-badge')).toHaveLength(0);
+	});
+
+	it('orders the rows by title, A to Z', () => {
+		const tasks = [
+			makeTask({ line: '- [ ] Charlie', lineNumber: 0 }),
+			makeTask({ line: '- [ ] alpha', lineNumber: 1 }),
+			makeTask({ line: '- [ ] Bravo', lineNumber: 2 }),
+		];
+		const { view, contentEl } = makeTriageView({}, tasks);
+		trg(view).render();
+		const titles = contentEl.findAllByClass('focus-first-task-text').map((el) => el.text);
+		expect(titles).toEqual(['alpha', 'Bravo', 'Charlie']);
+	});
+});
+
+describe('TriageView — current choice and post-assign hover', () => {
+	it('marks the quadrant a system has already placed the task in, and only that one', () => {
+		// Priority (important) + far-off due date = complete for Eisenhower (Schedule:
+		// important, not urgent); no size, so Value/Effort is still open.
+		const tasks = [makeTask({ line: '- [ ] Half done', priority: '🔺', dueDate: daysFromToday(60) })];
+		const { view, contentEl } = makeTriageView({}, tasks);
+		trg(view).triageScope = 'both';
+		trg(view).render();
+
+		const current = contentEl.findAllByClass('is-current');
+		expect(current).toHaveLength(1);
+		expect(current[0]!.classList.contains('focus-first-slot-btn--schedule')).toBe(true);
+	});
+
+	it('marks nothing when neither system is fully placed', () => {
+		const { view, contentEl } = makeTriageView({}, [makeTask({ line: '- [ ] Bare' })]);
+		trg(view).triageScope = 'both';
+		trg(view).render();
+		expect(contentEl.findAllByClass('is-current')).toHaveLength(0);
+	});
+
+	it('marks the Value/Effort quadrant a value tag + size resolve to', () => {
+		// High value + small (low effort) = Quick Wins (the "do" slot): complete for
+		// Value/Effort. No date/priority, so Eisenhower is open and it shows in "both".
+		const tasks = [makeTask({ line: '- [ ] Valued', tags: ['#highvalue'], size: 'small' })];
+		const { view, contentEl } = makeTriageView({}, tasks);
+		trg(view).triageScope = 'both';
+		trg(view).render();
+		const current = contentEl.findAllByClass('is-current');
+		expect(current).toHaveLength(1);
+		expect(current[0]!.classList.contains('focus-first-slot-btn--do')).toBe(true);
+	});
+
+	it('marks the quadrant an Eisenhower override tag pins, over the auto axes', () => {
+		// #delegate pins the slot; the picker shows Delegate as the current choice.
+		// No size, so Value/Effort stays open and the task still shows.
+		const tasks = [makeTask({ line: '- [ ] Pinned', tags: ['#delegate'] })];
+		const { view, contentEl } = makeTriageView({}, tasks);
+		trg(view).triageScope = 'both';
+		trg(view).render();
+		const current = contentEl.findAllByClass('is-current');
+		expect(current).toHaveLength(1);
+		expect(current[0]!.classList.contains('focus-first-slot-btn--delegate')).toBe(true);
+	});
+
+	it('puts the picker in a floating detail popover, like the matrix rows', () => {
+		const { view, contentEl } = makeTriageView({}, [makeTask({ line: '- [ ] One' })]);
+		trg(view).triageScope = 'eisenhower';
+		trg(view).render();
+		// The slot grid lives inside the shared .focus-first-task-detail popover.
+		const detail = contentEl.findByClass('focus-first-triage-detail');
+		expect(detail).toBeDefined();
+		expect(detail!.classList.contains('focus-first-task-detail')).toBe(true);
+		expect(detail!.findByClass('focus-first-slot-grid')).toBeDefined();
+	});
+
+	it('shows an instruction line in the picker, worded for the scope', () => {
+		const one = makeTriageView({}, [makeTask({ line: '- [ ] One' })]);
+		trg(one.view).triageScope = 'eisenhower';
+		trg(one.view).render();
+		const hintOne = one.contentEl.findByClass('focus-first-triage-hint');
+		expect(hintOne?.text).toBe('Click the matching quadrant.');
+
+		const both = makeTriageView({}, [makeTask({ line: '- [ ] One' })]);
+		trg(both.view).triageScope = 'both';
+		trg(both.view).render();
+		const hintBoth = both.contentEl.findByClass('focus-first-triage-hint');
+		expect(hintBoth?.text).toBe('Pick one per matrix.');
+	});
+
+	it('gives every row its own picker popover', () => {
+		const tasks = [
+			makeTask({ line: '- [ ] One', lineNumber: 0 }),
+			makeTask({ line: '- [ ] Two', lineNumber: 1 }),
+		];
+		const { view, contentEl } = makeTriageView({}, tasks);
+		trg(view).triageScope = 'eisenhower';
+		trg(view).render();
+		expect(contentEl.findAllByClass('focus-first-triage-detail')).toHaveLength(2);
+	});
+
+	it('removes an open hover popover left on the view root when the list re-renders', () => {
+		const tasks = [makeTask({ line: '- [ ] One', lineNumber: 0 })];
+		const { view, contentEl } = makeTriageView({}, tasks);
+		trg(view).triageScope = 'eisenhower';
+		trg(view).render();
+
+		// Simulate showTaskDetail having reparented an open popover onto the root.
+		const stray = contentEl.createDiv({ cls: 'focus-first-triage-detail is-open' });
+		expect(stray.classList.contains('is-open')).toBe(true);
+
+		// Any re-render (here: a search keystroke) must drop the stray.
+		const input = contentEl.findByClass('focus-first-search-input')!;
+		input.value = '';
+		input.dispatch('input');
+		const open = contentEl.findAllByClass('focus-first-triage-detail').filter((el) => el.classList.contains('is-open'));
+		expect(open).toHaveLength(0);
+	});
+});
+
+describe('TriageView — changing an already-set quadrant', () => {
+	it('re-classifies an Eisenhower task that already has a quadrant', async () => {
+		// The task is already "Do" (marked current); clicking Schedule must save.
+		let content = '- [ ] Task #do';
+		const tasks = [makeTask({ line: '- [ ] Task #do', tags: ['#do'], lineNumber: 0 })];
+		const { view, contentEl, app } = makeTriageView({}, tasks);
+		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
+		app.vault.read = vi.fn(async () => content);
+		app.vault.modify = vi.fn(async (_f: unknown, c: string) => { content = c; });
+		trg(view).refresh = vi.fn(async () => {}); // avoid re-scanning the stubbed vault
+		trg(view).triageScope = 'both';
+		trg(view).render();
+
+		expect(contentEl.findAllByClass('is-current')[0]!.classList.contains('focus-first-slot-btn--do')).toBe(true);
+		contentEl.findAllByClass('focus-first-slot-btn--schedule')[0]!.dispatch('click', { stopPropagation: () => {} });
+		for (let i = 0; i < 6; i++) await Promise.resolve();
+
+		expect(content).toContain('#schedule');
+		expect(content).not.toContain('#do');
+	});
+});
+
+describe('TriageView — both-scope sequential assignment', () => {
+	it('setting one system then the other in the same popover keeps both writes', async () => {
+		let content = '- [ ] Bare';
+		const tasks = [makeTask({ line: '- [ ] Bare', lineNumber: 0 })];
+		const { view, contentEl, app } = makeTriageView({}, tasks);
+		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
+		app.vault.read = vi.fn(async () => content);
+		app.vault.modify = vi.fn(async (_f: unknown, c: string) => { content = c; });
+		trg(view).refresh = vi.fn(async () => {}); // avoid re-scanning the stubbed vault
+		trg(view).triageScope = 'both';
+		trg(view).render();
+
+		// Both matrices share the class names; [0] is Eisenhower, [1] is Value/Effort.
+		const doBtns = contentEl.findAllByClass('focus-first-slot-btn--do');
+		doBtns[0]!.dispatch('click', { stopPropagation: () => {} }); // Eisenhower → Do
+		for (let i = 0; i < 6; i++) await Promise.resolve();
+		doBtns[1]!.dispatch('click', { stopPropagation: () => {} }); // Value/Effort → Quick Wins
+		for (let i = 0; i < 6; i++) await Promise.resolve();
+
+		// The second assignment must not be dropped by the stale-line guard.
+		expect(content).toContain('#do');
+		expect(content).toContain('#highvalue');
+		expect(content).toContain('#s');
+	});
+});
+
+describe('TriageView — marking is independent of the global axis mode', () => {
+	it('marks the Eisenhower override quadrant (#do) even when axisMode is valueEffort', () => {
+		// Regression: currentSlots used explainTask, whose override is gated on
+		// axisMode === 'eisenhower'. In Value/Effort mode a #do task was mis-marked
+		// as Eliminate (the priority/date fallback), so setting Do looked like Eliminate.
+		const tasks = [makeTask({ line: '- [ ] T #do', tags: ['#do'], lineNumber: 0 })];
+		const { view, contentEl } = makeTriageView({ axisMode: 'valueEffort' }, tasks);
+		trg(view).triageScope = 'both';
+		trg(view).render();
+		const current = contentEl.findAllByClass('is-current');
+		expect(current).toHaveLength(1);
+		expect(current[0]!.classList.contains('focus-first-slot-btn--do')).toBe(true);
 	});
 });

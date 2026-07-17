@@ -165,7 +165,12 @@ if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
 fi
 
 git tag "$TAG"
-git push origin HEAD --tags
+# Push the branch and ONLY this release's tag. Never `--tags`: that re-pushes
+# every local tag (re-creating any deleted ones) and, when more than three tags
+# go up at once, GitHub suppresses the tag push events, so the attest workflow
+# would not fire for the new release.
+git push origin HEAD
+git push origin "refs/tags/${TAG}"
 
 # Create the release as a DRAFT: the attest.yml workflow (triggered by this draft
 # being created) rebuilds in CI, attests all three assets, re-uploads them, and

@@ -1,22 +1,25 @@
 name: Attest release build
 
-# Triggered by the version tag that release.sh pushes (release.sh then creates the
-# GitHub release as a DRAFT). It rebuilds main.js in CI, generates a signed
-# build-provenance attestation for all three release assets (main.js, styles.css,
-# manifest.json), re-uploads them so what users download matches the attestation,
-# and only then flips the release to published. Publishing last means a public
-# release never exists with un-attested assets. Verify any asset with, e.g.:
+# Runs after release.sh has created and published the GitHub release. It rebuilds
+# main.js in CI, generates a signed build-provenance attestation for all three
+# release assets (main.js, styles.css, manifest.json), and re-uploads them so what
+# users download matches the attestation. Verify any asset with, e.g.:
 #   gh attestation verify main.js --repo christian-luger-at/obsidian-focus-first
 #   gh attestation verify styles.css --repo christian-luger-at/obsidian-focus-first
 #
-# The trigger is the tag push, not the "release" event: a release created as a
-# draft does not fire release events, so this is the reliable signal. Also runnable
-# manually (workflow_dispatch) with a tag input to (re-)attest a release; the
-# publish step is a no-op if it is already published.
+# The trigger MUST stay a "release" event. Obsidian's community-plugin review only
+# accepts provenance whose build was triggered by a release; attestations produced
+# from a tag push or a manual workflow_dispatch are rejected ("attestation ... does
+# not match this repository"), even though `gh attestation verify` accepts them.
+# A draft release fires no event at all, so the release cannot be attested before
+# it is published.
+#
+# Also runnable manually (workflow_dispatch) with a tag input, but note that such
+# an attestation carries event_name=workflow_dispatch and will NOT satisfy the
+# review; use it only for local checks, never to fix a release.
 on:
-    push:
-        tags:
-            - '*.*.*'
+    release:
+        types: [published]
     workflow_dispatch:
         inputs:
             tag:
@@ -56,20 +59,7 @@ jobs:
                       styles.css
                       manifest.json
 
-            - name: Upload attested assets, then publish the release
+            - name: Upload attested assets to the release
               env:
                   GH_TOKEN: ${{ github.token }}
-              run: |
-                  # release.sh pushes the tag (this trigger) and then creates the
-                  # draft release a moment later. The build above normally outlasts
-                  # that, but wait briefly so we never race ahead of the draft.
-                  for i in $(seq 1 30); do
-                      gh release view "${TAG}" >/dev/null 2>&1 && break
-                      echo "Waiting for release ${TAG} to exist ($i)..."
-                      sleep 2
-                  done
-                  gh release upload "${TAG}" main.js styles.css manifest.json --clobber
-                  # Flip the draft to published only now that the attested assets
-                  # are in place. A no-op if the release is already published (e.g.
-                  # a manual re-attest of an older release).
-                  gh release edit "${TAG}" --draft=false
+              run: gh release upload "${TAG}" main.js styles.css manifest.json --clobber

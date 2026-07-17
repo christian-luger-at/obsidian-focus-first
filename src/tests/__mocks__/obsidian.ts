@@ -209,6 +209,7 @@ export class FakeDomEl {
 	addEventListener(event: string, cb: (e?: unknown) => void) { (this._listeners[event] ??= []).push(cb); }
 	dispatch(event: string, e?: unknown) { for (const cb of this._listeners[event] ?? []) cb(e); }
 	createDiv(o?: { cls?: string; text?: string }) { return this.createEl('div', o); }
+	createSpan(o?: { cls?: string; text?: string }) { return this.createEl('span', o); }
 	createEl(tag: string, o?: { cls?: string; text?: string }) {
 		const el = new FakeDomEl(tag);
 		if (o?.cls) for (const c of o.cls.split(' ').filter(Boolean)) el.classList.add(c);

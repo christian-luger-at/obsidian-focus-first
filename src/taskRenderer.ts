@@ -255,14 +255,14 @@ export function renderTaskItem(
 
 	// Position number for the ordered focus shortlist (#34); #1 is the "frog".
 	if (opts.position !== undefined) {
-		li.createEl('span', { text: `${opts.position}.`, cls: 'focus-first-task-position' });
+		li.createSpan({ text: `${opts.position}.`, cls: 'focus-first-task-position' });
 	}
 
 	// Title — a link: a single click opens the note, like any other link. The list
 	// is just titles; the detail popover opens on row hover (desktop) or on tap
 	// (mobile, see below). stopPropagation so the title tap opens the note without
 	// also toggling the mobile expand.
-	const titleEl = li.createEl('span', { text, cls: 'focus-first-task-text' });
+	const titleEl = li.createSpan({ text, cls: 'focus-first-task-text' });
 	titleEl.addEventListener('click', (e) => { e.stopPropagation(); void openTaskFile(app, task); });
 
 	// Mobile has no hover: the collapsed row shows only the title plus a chevron
@@ -321,7 +321,7 @@ export function renderTaskItem(
 	if (task.tags.length > 0) {
 		addRow(String(labels.tags), (v) => {
 			v.addClass('focus-first-task-tags');
-			for (const tag of task.tags) v.createEl('span', { text: tag, cls: 'focus-first-task-tag' });
+			for (const tag of task.tags) v.createSpan({ text: tag, cls: 'focus-first-task-tag' });
 		});
 	}
 	addRow(String(labels.note), (v) => { v.setText(task.file.basename); v.addClass('focus-first-task-source'); });

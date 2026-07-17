@@ -158,7 +158,7 @@ if [[ -z "$NOTES" ]]; then
 	echo "-----------------------------"
 fi
 
-read -r -p "Publish ${TAG} to GitHub? This will push a tag and create a draft release. [y/N] " CONFIRM
+read -r -p "Publish ${TAG} to GitHub? This will push a tag and create a public release. [y/N] " CONFIRM
 if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
 	echo "Aborted. Local build in $RELEASE_DIR was kept; nothing was pushed."
 	exit 0
@@ -166,25 +166,25 @@ fi
 
 git tag "$TAG"
 # Push the branch and ONLY this release's tag. Never `--tags`: that re-pushes
-# every local tag (re-creating any deleted ones) and, when more than three tags
-# go up at once, GitHub suppresses the tag push events, so the attest workflow
-# would not fire for the new release.
+# every local tag, re-creating any deleted ones.
 git push origin HEAD
 git push origin "refs/tags/${TAG}"
 
-# Create the release as a DRAFT: the attest.yml workflow (triggered by this draft
-# being created) rebuilds in CI, attests all three assets, re-uploads them, and
-# only then flips the release to published. That way a public release never
-# exists with un-attested assets, closing the window between "published" and
-# "attested" that a locally-built upload would otherwise leave open.
+# Publish the release directly (NOT as a draft): publishing fires the "release"
+# event that attest.yml needs, and Obsidian's plugin review only accepts
+# provenance whose build was triggered by a release. A draft fires no event, so
+# it could never be attested in a way the review accepts.
+#
+# This leaves a short window in which the assets are the locally built ones; the
+# attest workflow rebuilds them in CI and re-uploads within ~30s. If the review
+# happens to look inside that window, just re-run it.
 gh release create "$TAG" \
 	"$RELEASE_DIR/main.js" \
 	"$RELEASE_DIR/manifest.json" \
 	"$RELEASE_DIR/styles.css" \
-	--draft \
 	--title "$TAG" \
 	--notes "$NOTES"
 
 echo ""
-echo "Created draft release ${TAG}. The 'Attest release build' workflow will"
-echo "attest the assets and publish it automatically once that succeeds."
+echo "Published ${TAG} to GitHub. The 'Attest release build' workflow now"
+echo "rebuilds and attests the assets, and re-uploads them (~30s)."

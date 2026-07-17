@@ -48,7 +48,7 @@ if [[ -n "$BUMP" ]]; then
 	NEW_VERSION=$(node -e "console.log(require('./manifest.json').version)")
 	# `npm version` also bumps package-lock.json — stage it too, otherwise it is
 	# left modified and the clean-tree check before publishing fails.
-	git add package.json package-lock.json manifest.json versions.json
+	git add package.json package-lock.json manifest.json versions.json styles.css
 	git commit -m "chore: bump version to v${NEW_VERSION}"
 	echo "Bumped version to v${NEW_VERSION}"
 fi

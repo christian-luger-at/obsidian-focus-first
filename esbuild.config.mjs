@@ -3,10 +3,10 @@ import process from 'process';
 import { builtinModules } from 'node:module';
 import { readFileSync } from 'node:fs';
 
-// Stamp the version into the banner so main.js has unique bytes (and thus a
-// unique build-provenance attestation) for every release, even when the source
-// didn't change between two versions. Read from manifest.json, so a local build
-// and the CI attest build produce identical output at a given tag.
+// Stamp the version into the banner so main.js has unique bytes for every
+// release, even when the source didn't change between two versions. This keeps a
+// new release from inheriting an older release's build-provenance attestation,
+// which is keyed by file digest and cannot be deleted. See version-bump.mjs.
 const version = JSON.parse(readFileSync('manifest.json', 'utf8')).version;
 
 const banner = `/*

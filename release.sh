@@ -170,14 +170,19 @@ git tag "$TAG"
 git push origin HEAD
 git push origin "refs/tags/${TAG}"
 
-# Publish the release directly (NOT as a draft): publishing fires the "release"
-# event that attest.yml needs, and Obsidian's plugin review only accepts
-# provenance whose build was triggered by a release. A draft fires no event, so
-# it could never be attested in a way the review accepts.
+# Publish the release directly, with the assets built above. Nothing rewrites
+# them afterwards.
 #
-# This leaves a short window in which the assets are the locally built ones; the
-# attest workflow rebuilds them in CI and re-uploads within ~30s. If the review
-# happens to look inside that window, just re-run it.
+# There is deliberately NO build-provenance attestation (the attest.yml workflow
+# was removed on 2026-07-17). Obsidian's automated plugin review rejected our
+# attestations with "attestation ... failed cryptographic verification", even
+# though they were valid: identical in form to the reviewed-green 1.4.2, a single
+# attestation per digest, correct tag, and passing `gh attestation verify` under
+# every policy (--repo, --owner, --signer-workflow, --cert-identity, --source-ref).
+# The failing review got the plugin delisted from the community store, in a bot
+# commit that dropped 10 plugins from 10 different authors at once. Of those, the
+# ones that got relisted carry no attestation at all. Until Obsidian's checker
+# accepts our provenance, shipping without it is what keeps the plugin listed.
 gh release create "$TAG" \
 	"$RELEASE_DIR/main.js" \
 	"$RELEASE_DIR/manifest.json" \
@@ -186,5 +191,4 @@ gh release create "$TAG" \
 	--notes "$NOTES"
 
 echo ""
-echo "Published ${TAG} to GitHub. The 'Attest release build' workflow now"
-echo "rebuilds and attests the assets, and re-uploads them (~30s)."
+echo "Published ${TAG} to GitHub."

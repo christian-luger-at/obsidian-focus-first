@@ -158,7 +158,7 @@ if [[ -z "$NOTES" ]]; then
 	echo "-----------------------------"
 fi
 
-read -r -p "Publish ${TAG} to GitHub? This will push a tag and create a public release. [y/N] " CONFIRM
+read -r -p "Publish ${TAG} to GitHub? This will push a tag and create a draft release. [y/N] " CONFIRM
 if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
 	echo "Aborted. Local build in $RELEASE_DIR was kept; nothing was pushed."
 	exit 0
@@ -167,12 +167,19 @@ fi
 git tag "$TAG"
 git push origin HEAD --tags
 
+# Create the release as a DRAFT: the attest.yml workflow (triggered by this draft
+# being created) rebuilds in CI, attests all three assets, re-uploads them, and
+# only then flips the release to published. That way a public release never
+# exists with un-attested assets, closing the window between "published" and
+# "attested" that a locally-built upload would otherwise leave open.
 gh release create "$TAG" \
 	"$RELEASE_DIR/main.js" \
 	"$RELEASE_DIR/manifest.json" \
 	"$RELEASE_DIR/styles.css" \
+	--draft \
 	--title "$TAG" \
 	--notes "$NOTES"
 
 echo ""
-echo "Published ${TAG} to GitHub."
+echo "Created draft release ${TAG}. The 'Attest release build' workflow will"
+echo "attest the assets and publish it automatically once that succeeds."

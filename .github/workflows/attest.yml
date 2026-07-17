@@ -1,17 +1,19 @@
 name: Attest release build
 
-# Runs after release.sh has created and published the GitHub release. It rebuilds
-# main.js in CI, generates a signed build-provenance attestation for all three
-# release assets (main.js, styles.css, manifest.json), and re-uploads them so what
-# users download matches the attestation. Verify any asset with, e.g.:
+# Runs when release.sh creates the GitHub release as a DRAFT. It rebuilds main.js
+# in CI, generates a signed build-provenance attestation for all three release
+# assets (main.js, styles.css, manifest.json), re-uploads them so what users
+# download matches the attestation, and only then flips the release to published.
+# Publishing last means a public release never exists with un-attested assets.
+# Verify any asset with, e.g.:
 #   gh attestation verify main.js --repo christian-luger-at/obsidian-focus-first
 #   gh attestation verify styles.css --repo christian-luger-at/obsidian-focus-first
 #
 # Also runnable manually (workflow_dispatch) with a tag input to attest an
-# already-published release retroactively.
+# already-published release retroactively (the publish step is then a no-op).
 on:
     release:
-        types: [published]
+        types: [created]
     workflow_dispatch:
         inputs:
             tag:
@@ -51,7 +53,12 @@ jobs:
                       styles.css
                       manifest.json
 
-            - name: Upload attested assets to the release
+            - name: Upload attested assets, then publish the release
               env:
                   GH_TOKEN: ${{ github.token }}
-              run: gh release upload "${TAG}" main.js styles.css manifest.json --clobber
+              run: |
+                  gh release upload "${TAG}" main.js styles.css manifest.json --clobber
+                  # Flip the draft to published only now that the attested assets
+                  # are in place. A no-op if the release is already published (e.g.
+                  # a manual re-attest of an older release).
+                  gh release edit "${TAG}" --draft=false

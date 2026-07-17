@@ -198,7 +198,7 @@ export class FocusFirstView extends ItemView {
 			const cb = label.createEl('input');
 			cb.type = 'checkbox';
 			cb.checked = this.activeDateFilters.has(bucket);
-			label.createEl('span', { text: labels[bucket] });
+			label.createSpan({ text: labels[bucket] });
 			cb.addEventListener('change', () => {
 				if (cb.checked) this.activeDateFilters.add(bucket);
 				else this.activeDateFilters.delete(bucket);
@@ -221,7 +221,7 @@ export class FocusFirstView extends ItemView {
 				const cb = label.createEl('input');
 				cb.type = 'checkbox';
 				cb.checked = this.activeSizeFilters.has(size);
-				label.createEl('span', { text: sizeLabels[size] });
+				label.createSpan({ text: sizeLabels[size] });
 				cb.addEventListener('change', () => {
 					if (cb.checked) this.activeSizeFilters.add(size);
 					else this.activeSizeFilters.delete(size);
@@ -440,7 +440,7 @@ export class FocusFirstView extends ItemView {
 
 			if (tasks.length === 0) {
 				const emptyEl = cell.createDiv({ cls: 'focus-first-quadrant-empty' });
-				emptyEl.createEl('span', { cls: 'focus-first-quadrant-empty-icon' });
+				emptyEl.createSpan({ cls: 'focus-first-quadrant-empty-icon' });
 				emptyEl.createEl('p', { text: quadrant.emptyState, cls: 'focus-first-quadrant-empty-text' });
 				continue;
 			}
@@ -474,8 +474,8 @@ export class FocusFirstView extends ItemView {
 
 	private renderTaskGroup(list: HTMLElement, label: string, tasks: MatrixTask[]): void {
 		const header = list.createEl('li', { cls: 'focus-first-group-header' });
-		header.createEl('span', { text: label, cls: 'focus-first-group-header-label' });
-		header.createEl('span', { cls: 'focus-first-group-header-line' });
+		header.createSpan({ text: label, cls: 'focus-first-group-header-label' });
+		header.createSpan({ cls: 'focus-first-group-header-line' });
 		for (const task of tasks) {
 			this.renderTask(list, task);
 		}

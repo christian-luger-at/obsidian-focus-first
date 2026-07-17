@@ -35,7 +35,7 @@ export function showUndoNotice(app: App, label: string, snap: EditSnapshot | und
 	const notice = new Notice('', 5000);
 	const el = notice.messageEl;
 	el.empty();
-	el.createEl('span', { text: `${label}  ` });
+	el.createSpan({ text: `${label}  ` });
 	const undo = el.createEl('a', { text: String(t().view.undo), cls: 'focus-first-undo' });
 	undo.addEventListener('click', (e) => {
 		(e as Event).preventDefault();
@@ -61,7 +61,7 @@ export function showBatchUndoNotice(app: App, label: string, snaps: EditSnapshot
 	const notice = new Notice('', 5000);
 	const el = notice.messageEl;
 	el.empty();
-	el.createEl('span', { text: `${label}  ` });
+	el.createSpan({ text: `${label}  ` });
 	const undo = el.createEl('a', { text: String(t().view.undo), cls: 'focus-first-undo' });
 	undo.addEventListener('click', (e) => {
 		(e as Event).preventDefault();

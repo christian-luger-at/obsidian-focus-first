@@ -212,7 +212,7 @@ export class TriageView extends ItemView {
 	private renderRow(list: HTMLElement, task: MatrixTask): void {
 		const li = list.createEl('li', { cls: 'focus-first-task-item focus-first-triage-item' });
 
-		const title = li.createEl('span', { cls: 'focus-first-task-text', text: taskTitle(task.line) });
+		const title = li.createSpan({ cls: 'focus-first-task-text', text: taskTitle(task.line) });
 		title.addEventListener('click', (e) => { e.stopPropagation(); void openTaskFile(this.app, task); });
 
 		this.renderSignalBadges(li, task);
@@ -307,7 +307,7 @@ export class TriageView extends ItemView {
 				// A div, not a <button>: Obsidian's heavy default button styling would
 				// otherwise override the quadrant tint and colour (the matrix cells are
 				// divs for the same reason). role/tabindex keep it keyboard-operable.
-				const cell = grid.createEl('div', {
+				const cell = grid.createDiv({
 					cls: `focus-first-slot-btn focus-first-slot-btn--${q}${isCurrent ? ' is-current' : ''}`,
 					text: labels[q].title,
 				});

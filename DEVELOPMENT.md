@@ -298,7 +298,10 @@ Before publishing, the script checks that:
 
 It then asks for confirmation (`Publish X.Y.Z to GitHub? [y/N]`) before pushing the tag and creating the release - nothing is pushed without that confirmation, even with `--publish` set.
 
-The release is created as a **draft**. Creating it triggers the `Attest release build` workflow, which rebuilds `main.js` in CI, attests all three assets (build provenance), re-uploads them, and only then flips the release to **published**. Publishing last guarantees a public release never exists with un-attested assets, so there is no window in which `gh attestation verify` (or a store check) would fail. Expect the release to appear as a draft for ~30-60 s before it goes public.
+The release is published directly, with the locally built assets. Nothing rewrites them afterwards, and there is no build-provenance attestation.
+
+> [!note]
+> Releases used to be attested by an `Attest release build` workflow. It was removed on 2026-07-17: Obsidian's automated review kept rejecting the provenance as cryptographically invalid, even though it verified cleanly under every `gh attestation verify` policy and was identical in form to 1.4.2, which the same review had passed. The failed check got the plugin delisted from the community store, alongside 9 other plugins removed in the same bot commit; the ones that returned carry no attestation. The version stamping in `esbuild.config.mjs` and `version-bump.mjs` stays, so a release can never inherit an older release's attestation via a matching digest.
 
 > [!important]
 > The release tag must match the `version` in `manifest.json` **exactly, without a `v` prefix** (e.g. `1.1.0`, not `v1.1.0`). Obsidian's community-plugin store and the in-app auto-updater only recognise releases tagged this way. `release.sh` already tags without the prefix.

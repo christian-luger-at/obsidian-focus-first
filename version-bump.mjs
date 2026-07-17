@@ -16,11 +16,13 @@ if (!(targetVersion in versions)) {
 	writeFileSync('versions.json', JSON.stringify(versions, null, '\t'));
 }
 
-// Stamp the version into styles.css so each release's stylesheet has unique bytes
-// (and thus a unique build-provenance attestation), even when the CSS itself is
-// unchanged between two versions. The marker line is rewritten in place on each
-// bump. This matters because the community-store validator rejects a release whose
-// asset digest also carries an attestation from a different ref.
+// Stamp the version into styles.css so each release's stylesheet has unique bytes,
+// even when the CSS itself is unchanged between two versions. The marker line is
+// rewritten in place on each bump. We no longer attest releases, but attestations
+// are keyed by file digest and cannot be deleted: without this stamp, a release
+// whose CSS happens to match an older, attested one would inherit that old
+// attestation, and Obsidian's review rejects a digest carrying provenance from a
+// different ref.
 const styleMarker = /^\/\* Focus First v[^\n]* \*\/\n/;
 const styleHeader = `/* Focus First v${targetVersion} */\n`;
 let styles = readFileSync('styles.css', 'utf8');

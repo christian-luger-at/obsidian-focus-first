@@ -980,6 +980,45 @@ describe('task item actions in the matrix', () => {
 		expect(why!.text).toContain('#eliminate');
 	});
 
+	it('shows a pin badge and unpin button when a manual quadrant tag overrides the sort (#66)', () => {
+		const { container } = renderSingleTaskMatrix(
+			{ dueDate: undefined, priority: undefined, tags: ['#eliminate'] },
+		);
+		expect(container.findByClass('focus-first-pin-badge')).toBeDefined();
+		expect(container.findByClass('focus-first-unpin-btn')).toBeDefined();
+	});
+
+	it('omits the pin badge and unpin button for an automatically classified task (#66)', () => {
+		const { container } = renderSingleTaskMatrix(); // due today + priority, no override tag
+		expect(container.findByClass('focus-first-pin-badge')).toBeUndefined();
+		expect(container.findByClass('focus-first-unpin-btn')).toBeUndefined();
+	});
+
+	it('the unpin button removes the override tag and returns the task to automatic sorting (#66)', async () => {
+		const { container, app } = renderSingleTaskMatrix(
+			{ dueDate: undefined, priority: undefined, tags: ['#eliminate'], line: '- [ ] Sample task #eliminate' },
+		);
+		app.vault.getAbstractFileByPath = () => new TFile('Notes/test.md');
+		app.vault.read = vi.fn(async () => '- [ ] Sample task #eliminate');
+
+		container.findByClass('focus-first-unpin-btn')?.dispatch('click', { stopPropagation: () => {} });
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(app.vault.modify).toHaveBeenCalledWith(expect.anything(), '- [ ] Sample task');
+	});
+
+	it('omits the pin badge in Value/Effort mode, where override tags are ignored (#66)', () => {
+		// Regression guard: overrides are Eisenhower-only by design (#36 v1); this
+		// pins the assumption the pin badge/reset button rely on.
+		const { container } = renderSingleTaskMatrix(
+			{ dueDate: undefined, priority: undefined, tags: ['#eliminate'] },
+			{ axisMode: 'valueEffort' },
+		);
+		expect(container.findByClass('focus-first-pin-badge')).toBeUndefined();
+		expect(container.findByClass('focus-first-unpin-btn')).toBeUndefined();
+	});
+
 	it('omits the why-here row when the setting is turned off', () => {
 		const { container } = renderSingleTaskMatrix({}, { showWhyHere: false });
 		expect(container.findByClass('focus-first-detail-why')).toBeUndefined();

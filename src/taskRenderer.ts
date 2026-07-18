@@ -243,6 +243,9 @@ export function renderTaskItem(
 	const isFocused = focusTag
 		? task.tags.some((tag) => tag.toLowerCase() === focusTag)
 		: false;
+	// Computed once and reused for both the pin badge/reset action and the "why
+	// here" row, so they can never drift out of sync (#66).
+	const reason = explainTask(task, settings);
 	const hideTag = settings.hideTag.trim().toLowerCase();
 	// "Future" tasks (start/scheduled date ahead) are dimmed when that mode is on.
 	const isFuture = settings.futureTasks === 'dim' && isFutureTask(task);
@@ -264,6 +267,15 @@ export function renderTaskItem(
 	// also toggling the mobile expand.
 	const titleEl = li.createSpan({ text, cls: 'focus-first-task-text' });
 	titleEl.addEventListener('click', (e) => { e.stopPropagation(); void openTaskFile(app, task); });
+
+	// A manual quadrant tag pins the task, always visible (not just on hover) so
+	// the override is never a surprise (#66). The "why" text is reused as the
+	// tooltip, so the explanation can't drift from the one in the detail popover.
+	if (reason.override) {
+		const pinEl = li.createSpan({ cls: 'focus-first-pin-badge' });
+		setIcon(pinEl, 'pin');
+		pinEl.setAttribute('aria-label', classificationReasonText(reason, settings));
+	}
 
 	// Mobile has no hover: the collapsed row shows only the title plus a chevron
 	// affordance. A tap expands the full details/actions (due date, priority,
@@ -299,7 +311,7 @@ export function renderTaskItem(
 	// irrelevant there regardless of the setting, issue #31).
 	if (settings.showWhyHere && !opts.suppressWhyHere) {
 		addRow(String(labels.why), (v) => {
-			v.setText(classificationReasonText(task, settings));
+			v.setText(classificationReasonText(reason, settings));
 			v.addClass('focus-first-detail-why');
 		});
 	}
@@ -346,6 +358,15 @@ export function renderTaskItem(
 			String(isFocused ? t().view.focusRemove : t().view.focusAdd),
 			`focus-first-focus-btn${isFocused ? ' is-active' : ''}`);
 		focusBtn.addEventListener('click', (e) => { e.stopPropagation(); focusRun(); });
+	}
+	if (reason.override) {
+		const tag = settings.quadrants[reason.override].tag.trim();
+		const unpinBtn = actionButton(actions, 'pin-off', String(t().view.unpinTask), 'focus-first-unpin-btn');
+		unpinBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			undoable(app, String(t().view.undoLabels.unpinned),
+				updateTaskLine(app, task.file.path, task.lineNumber, (line) => removeTagFromLine(line, tag), task.line));
+		});
 	}
 	if (hideTag) {
 		const hideBtn = actionButton(actions, 'eye-off', String(t().view.hideTask), 'focus-first-hide-btn');
@@ -431,9 +452,8 @@ export function wireDetailHover(li: HTMLElement, detail: HTMLElement): void {
  * classification logic (explainTask) so the explanation never drifts from the
  * placement. A manual quadrant tag short-circuits to an override message.
  */
-function classificationReasonText(task: MatrixTask, settings: FocusFirstSettings): string {
+function classificationReasonText(r: ClassificationReason, settings: FocusFirstSettings): string {
 	const d = t().view.detail;
-	const r: ClassificationReason = explainTask(task, settings);
 	if (r.mode === 'valueEffort') return valueEffortReasonText(r, settings);
 	if (r.override) {
 		const tag = settings.quadrants[r.override].tag.trim();

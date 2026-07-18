@@ -884,6 +884,21 @@ input.is-invalid:focus {
 	font-weight: var(--font-semibold);
 }
 
+/* Manual quadrant override indicator (#66): always visible, not just on hover,
+   so a pinned task is never a silent surprise. */
+.focus-first-pin-badge {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	align-self: center;
+	color: var(--text-faint);
+}
+
+.focus-first-pin-badge svg {
+	width: 12px;
+	height: 12px;
+}
+
 /* Ordered focus shortlist (#34): position number + daily-target divider. */
 .focus-first-task-position {
 	flex-shrink: 0;

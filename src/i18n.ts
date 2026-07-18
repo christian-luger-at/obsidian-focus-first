@@ -55,6 +55,7 @@ interface Translations {
 		focusDone: string;
 		hideTask: string;
 		unhideTask: string;
+		unpinTask: string;
 		undo: string;
 		undoLabels: {
 			completed: string;
@@ -63,6 +64,7 @@ interface Translations {
 			updated: string;
 			focused: string;
 			unfocused: string;
+			unpinned: string;
 		};
 		actions: {
 			more: string;
@@ -280,6 +282,7 @@ const translations: Record<Lang, Translations> = {
 			focusDone: 'Mark as done',
 			hideTask: 'Hide task',
 			unhideTask: 'Unhide task',
+			unpinTask: 'Return to automatic sorting',
 			undo: 'Undo',
 			undoLabels: {
 				completed: 'Task completed',
@@ -288,6 +291,7 @@ const translations: Record<Lang, Translations> = {
 				updated: 'Task updated',
 				focused: 'Task focused',
 				unfocused: 'Focus removed',
+				unpinned: 'Returned to automatic sorting',
 			},
 			actions: {
 				more: 'More actions',
@@ -567,6 +571,7 @@ const translations: Record<Lang, Translations> = {
 			focusRemove: 'Aus Fokus entfernen',
 			hideTask: 'Aufgabe ausblenden',
 			unhideTask: 'Aufgabe einblenden',
+			unpinTask: 'Zur automatischen Klassifizierung zurückkehren',
 			undo: 'Rückgängig',
 			undoLabels: {
 				completed: 'Aufgabe erledigt',
@@ -575,6 +580,7 @@ const translations: Record<Lang, Translations> = {
 				updated: 'Aufgabe aktualisiert',
 				focused: 'Aufgabe fokussiert',
 				unfocused: 'Fokus entfernt',
+				unpinned: 'Automatische Klassifizierung wiederhergestellt',
 			},
 			focusDone: 'Als erledigt markieren',
 			actions: {

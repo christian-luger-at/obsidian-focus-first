@@ -3,7 +3,7 @@
 	"name": "Focus First",
 	"version": "1.6.7",
 	"minAppVersion": "1.12.0",
-	"description": "Sort your tasks into the Eisenhower matrix — Do, Schedule, Delegate, Eliminate — automatically by due date and priority, so the next action is obvious.",
+	"description": "Automatically sorts your existing tasks into an Eisenhower or Value/Effort matrix by due date, priority, and size. Pin a task when context beats the rule, with one click back to automatic.",
 	"author": "Christian Luger",
 	"authorUrl": "https://github.com/christian-luger-at",
 	"fundingUrl": {

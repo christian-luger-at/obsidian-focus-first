@@ -32,9 +32,12 @@ features:
   - icon: 🐸
     title: Focus / today plan
     details: A dedicated, ordered, numbered shortlist above the matrix - drag to reorder (remembered), with an optional daily target.
-  - icon: 💬
-    title: Details on demand
-    details: Hover (desktop) or tap (mobile) a task for its "why here" reason, metadata, and one-click actions - with a brief Undo toast.
+  - icon: 🧹
+    title: Triage view
+    details: A separate list of every task no matrix has judged yet, so nothing silently piles into "Eliminate".
+  - icon: 📌
+    title: Pin & reset
+    details: Override the automatic sort with one click; a visible pin marks it, and resetting is just as easy.
   - icon: 🧩
     title: Works with the Tasks plugin
     details: Reads the same checkbox, due-date, and priority syntax - but doesn't require it. English & German UI.

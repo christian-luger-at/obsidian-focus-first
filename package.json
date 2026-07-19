@@ -1,7 +1,7 @@
 {
 	"name": "focus-first",
 	"version": "1.6.7",
-	"description": "Prioritize your tasks with the Eisenhower matrix.",
+	"description": "Automatically sorts your existing tasks into an Eisenhower or Value/Effort matrix by due date, priority, and size. Pin a task when context beats the rule, with one click back to automatic.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {

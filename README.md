@@ -7,7 +7,7 @@
 [![Coverage](https://raw.githubusercontent.com/christian-luger-at/obsidian-focus-first/badges/coverage.svg)](https://github.com/christian-luger-at/obsidian-focus-first/actions/workflows/coverage.yml)
 [![GitHub issues](https://img.shields.io/github/issues/christian-luger-at/obsidian-focus-first)](../../issues)
 
-Stop guessing what to work on next. **Focus First** sorts your Obsidian tasks into the **Eisenhower matrix**, by urgency (due date) and importance (priority), so the next right action is always obvious.
+Stop guessing what to work on next. **Focus First** automatically sorts your Obsidian tasks into an **Eisenhower or Value/Effort matrix**, so the next right action is always obvious.
 
 ![Focus First view](docs/public/screens/tour.gif)
 
@@ -18,7 +18,7 @@ It reads standard checkbox tasks from your vault (compatible with the [Tasks plu
 | **Important** | **Do** - handle now | **Schedule** - plan for later |
 | **Not important** | **Delegate** - hand off if possible | **Eliminate** - reconsider or drop |
 
-No manual sorting needed - though you can still pin any task to a quadrant by hand.
+No manual sorting needed - pin any task to a quadrant with one click, marked with a visible badge, and reset it just as easily.
 
 > 📖 **Full guides, concepts, and reference: [Focus First documentation](https://christian-luger-at.github.io/obsidian-focus-first/)**
 

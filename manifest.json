@@ -1,7 +1,7 @@
 {
 	"id": "focus-first",
 	"name": "Focus First",
-	"version": "1.6.8",
+	"version": "1.6.9",
 	"minAppVersion": "1.12.0",
 	"description": "Automatically sorts your existing tasks into an Eisenhower or Value/Effort matrix by due date, priority, and size. Pin a task when context beats the rule, with one click back to automatic.",
 	"author": "Christian Luger",

@@ -104,6 +104,14 @@ export interface FocusFirstSettings {
 	fontSize: number;
 	/** Set once the user dismisses the "Tasks plugin not enabled" notice. */
 	tasksPluginWarningDismissed: boolean;
+	/**
+	 * Epoch ms of the plugin's first load, used to delay the star nudge until
+	 * someone has had a fair chance to form an opinion. 0 = not yet recorded;
+	 * `main.ts` fills it in on the first `onload()` after this field existed.
+	 */
+	firstUsedAt: number;
+	/** Set once the user dismisses the "star on GitHub" nudge. */
+	starNudgeDismissed: boolean;
 }
 
 export const DEFAULT_SETTINGS: FocusFirstSettings = {
@@ -135,6 +143,8 @@ export const DEFAULT_SETTINGS: FocusFirstSettings = {
 	showWhyHere: true,
 	fontSize: 100,
 	tasksPluginWarningDismissed: false,
+	firstUsedAt: 0,
+	starNudgeDismissed: false,
 };
 
 export class FolderSuggest extends AbstractInputSuggest<TFolder> {

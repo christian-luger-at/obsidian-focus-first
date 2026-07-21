@@ -70,10 +70,11 @@ class FakeEl {
 	createDiv(o?: { cls?: string; text?: string }) { return this.createEl('div', o); }
 	createSpan(o?: { cls?: string; text?: string }) { return this.createEl('span', o); }
 
-	createEl(tag: string, o?: { cls?: string; text?: string; attr?: Record<string, string> }): FakeEl {
+	createEl(tag: string, o?: { cls?: string; text?: string; href?: string; attr?: Record<string, string> }): FakeEl {
 		const el = new FakeEl(tag);
 		if (o?.cls) for (const c of o.cls.split(' ').filter(Boolean)) el.cls.add(c);
 		if (o?.text) el.text = o.text;
+		if (o?.href) el.attrs.href = o.href;
 		if (o?.attr) {
 			Object.assign(el.attrs, o.attr);
 			if (o.attr.value !== undefined) el.value = o.attr.value;
@@ -254,6 +255,55 @@ describe('render()', () => {
 		const { view, contentEl } = makeView({ tasksPluginWarningDismissed: true });
 		priv(view).render();
 		expect(contentEl.findByClass('focus-first-warning')).toBeUndefined();
+	});
+
+	// ---------------------------------------------------------------------------
+	// Star nudge
+	// ---------------------------------------------------------------------------
+
+	const DAY_MS = 1000 * 60 * 60 * 24;
+
+	it('does not show the star nudge for a recent install', () => {
+		const { view, contentEl } = makeView({ firstUsedAt: Date.now() - 1 * DAY_MS });
+		priv(view).render();
+		expect(contentEl.findByClass('focus-first-star-nudge')).toBeUndefined();
+	});
+
+	it('shows the star nudge once enough days have passed since first use', () => {
+		const { view, contentEl } = makeView({ firstUsedAt: Date.now() - 15 * DAY_MS });
+		priv(view).render();
+		expect(contentEl.findByClass('focus-first-star-nudge')).toBeDefined();
+	});
+
+	it('does not show the star nudge once dismissed, even for an old install', () => {
+		const { view, contentEl } = makeView({
+			firstUsedAt: Date.now() - 30 * DAY_MS,
+			starNudgeDismissed: true,
+		});
+		priv(view).render();
+		expect(contentEl.findByClass('focus-first-star-nudge')).toBeUndefined();
+	});
+
+	it('dismissing the star nudge removes it and persists the choice', () => {
+		const { view, contentEl, plugin } = makeView({ firstUsedAt: Date.now() - 15 * DAY_MS });
+		priv(view).render();
+		expect(contentEl.findByClass('focus-first-star-nudge')).toBeDefined();
+
+		contentEl.findByClass('focus-first-star-nudge')?.findByClass('focus-first-warning-dismiss')?.dispatch('click');
+
+		expect(plugin.settings.starNudgeDismissed).toBe(true);
+		expect(plugin.saveSettings).toHaveBeenCalled();
+		expect(contentEl.findByClass('focus-first-star-nudge')).toBeUndefined();
+	});
+
+	it('the star link points at the repo and opens in a new tab', () => {
+		const { view, contentEl } = makeView({ firstUsedAt: Date.now() - 15 * DAY_MS });
+		priv(view).render();
+
+		const link = contentEl.findByClass('focus-first-star-nudge-link');
+		expect(link?.attrs.href).toBe('https://github.com/christian-luger-at/obsidian-focus-first');
+		expect(link?.attrs.target).toBe('_blank');
+		expect(link?.attrs.rel).toBe('noopener');
 	});
 
 	it('clicking refresh triggers a refresh', () => {

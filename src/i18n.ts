@@ -48,6 +48,8 @@ interface Translations {
 		};
 		tasksPluginWarning: string;
 		tasksPluginWarningDismiss: string;
+		starNudge: string;
+		starNudgeButton: string;
 		focusSectionTitle: string;
 		focusOverTarget: string;
 		focusAdd: string;
@@ -275,6 +277,8 @@ const translations: Record<Lang, Translations> = {
 			},
 			tasksPluginWarning: 'The Tasks plugin is not enabled. Focus First works with plain checkboxes, but the Tasks plugin makes adding due dates and priorities much easier.',
 			tasksPluginWarningDismiss: 'Dismiss',
+			starNudge: 'Finding Focus First useful? A star on GitHub helps others discover it.',
+			starNudgeButton: 'Star on GitHub',
 			focusSectionTitle: 'Focus Tasks',
 			focusOverTarget: 'Beyond today\'s target',
 			focusAdd: 'Add to focus',
@@ -565,6 +569,8 @@ const translations: Record<Lang, Translations> = {
 			},
 			tasksPluginWarning: 'Das Tasks-Plugin ist nicht aktiviert. Focus First funktioniert auch mit normalen Checkboxen, aber mit dem Tasks-Plugin lassen sich Fälligkeitsdaten und Prioritäten viel einfacher setzen.',
 			tasksPluginWarningDismiss: 'Ausblenden',
+			starNudge: 'Findest du Focus First nützlich? Ein Stern auf GitHub hilft anderen, es zu entdecken.',
+			starNudgeButton: 'Auf GitHub bewerten',
 			focusSectionTitle: 'Fokus-Aufgaben',
 			focusOverTarget: 'Über dem Tagesziel',
 			focusAdd: 'Zu Fokus hinzufügen',

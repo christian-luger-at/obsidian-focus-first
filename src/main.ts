@@ -19,6 +19,10 @@ export default class FocusFirstPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+		if (this.settings.firstUsedAt === 0) {
+			this.settings.firstUsedAt = Date.now();
+			await this.saveSettings();
+		}
 
 		this.registerView(
 			FOCUS_FIRST_VIEW_TYPE,

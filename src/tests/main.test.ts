@@ -255,8 +255,25 @@ describe('FocusFirstPlugin — onload', () => {
 		// @ts-expect-error — stub app/manifest, not real Obsidian types
 		const plugin = new FocusFirstPlugin(app, {});
 
+		const before = Date.now();
 		await expect(plugin.onload()).resolves.toBeUndefined();
-		expect(plugin.settings).toEqual(DEFAULT_SETTINGS);
+
+		// firstUsedAt is stamped with the current time on first load (backs the star nudge delay).
+		expect(plugin.settings).toEqual({ ...DEFAULT_SETTINGS, firstUsedAt: plugin.settings.firstUsedAt });
+		expect(plugin.settings.firstUsedAt).toBeGreaterThanOrEqual(before);
+		expect(plugin.settings.firstUsedAt).toBeLessThanOrEqual(Date.now());
+	});
+
+	it('does not overwrite an existing firstUsedAt on subsequent loads', async () => {
+		const app = { workspace: { getLeavesOfType: () => [] } };
+		// @ts-expect-error — stub app/manifest, not real Obsidian types
+		const plugin = new FocusFirstPlugin(app, {});
+		const existing = 1700000000000;
+		plugin.loadData = async () => ({ firstUsedAt: existing });
+
+		await plugin.onload();
+
+		expect(plugin.settings.firstUsedAt).toBe(existing);
 	});
 
 	it('registers a view creator that builds a FocusFirstView', async () => {

@@ -12,6 +12,11 @@ import { makeDropTarget, makeValueEffortDropTarget } from './taskDragDrop';
 
 export const FOCUS_FIRST_VIEW_TYPE = 'focus-first-view';
 
+// Wait this long after first use before asking for a star, so the nudge only
+// reaches people who've had a fair chance to form an opinion.
+const STAR_NUDGE_DELAY_DAYS = 14;
+const REPO_URL = 'https://github.com/christian-luger-at/obsidian-focus-first';
+
 const QUADRANT_ORDER: Quadrant[] = ['do', 'schedule', 'delegate', 'eliminate'];
 
 // Every bucket dueBucket() can produce must be offered, otherwise tasks in the
@@ -122,6 +127,33 @@ export class FocusFirstView extends ItemView {
 				this.plugin.settings.tasksPluginWarningDismissed = true;
 				void this.plugin.saveSettings();
 				warning.remove();
+			});
+		}
+
+		// A one-time, dismissible nudge for a GitHub star, once someone's had
+		// enough time with the plugin to have an opinion. Most installs come via
+		// the in-app Community Plugins browser, so this is the only realistic way
+		// to reach users who never see the README.
+		const daysSinceFirstUse = (Date.now() - this.plugin.settings.firstUsedAt) / (1000 * 60 * 60 * 24);
+		if (!this.plugin.settings.starNudgeDismissed && daysSinceFirstUse >= STAR_NUDGE_DELAY_DAYS) {
+			const nudge = contentEl.createDiv({ cls: 'focus-first-star-nudge' });
+			const icon = nudge.createSpan({ cls: 'focus-first-star-nudge-icon' });
+			setIcon(icon, 'star');
+			nudge.createSpan({ text: String(t().view.starNudge), cls: 'focus-first-star-nudge-text' });
+			nudge.createEl('a', {
+				text: String(t().view.starNudgeButton),
+				cls: 'focus-first-star-nudge-link',
+				href: REPO_URL,
+				attr: { rel: 'noopener', target: '_blank' },
+			});
+
+			const dismissNudge = nudge.createEl('button', { cls: 'focus-first-warning-dismiss' });
+			setIcon(dismissNudge, 'x');
+			dismissNudge.setAttribute('aria-label', String(t().view.tasksPluginWarningDismiss));
+			dismissNudge.addEventListener('click', () => {
+				this.plugin.settings.starNudgeDismissed = true;
+				void this.plugin.saveSettings();
+				nudge.remove();
 			});
 		}
 		refreshBtn.addEventListener('click', () => { void this.refresh(); });

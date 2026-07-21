@@ -331,6 +331,8 @@ describe('loadSettings — merges persisted data with defaults', () => {
 			showWhyHere: false,
 			fontSize: 120,
 			tasksPluginWarningDismissed: true,
+			firstUsedAt: 1752000000000,
+			starNudgeDismissed: true,
 		};
 		const merged = Object.assign({}, DEFAULT_SETTINGS, persisted);
 

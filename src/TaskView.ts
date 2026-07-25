@@ -6,6 +6,7 @@ import { AxisMode, TaskSize, sizeTagList } from './settings';
 import { isTasksPluginEnabled } from './tasksPlugin';
 import { t } from './i18n';
 import { renderTaskItem, taskTitle } from './taskRenderer';
+import { TASK_PREFIX_RE } from './tasksFormat';
 import { sortTasks, groupKey, groupLabel, groupOrder, dueBucket, DueBucket } from './taskSorting';
 import { renderNoMatches, renderOnboarding, renderEliminateHint } from './taskEmptyStates';
 import { makeDropTarget, makeValueEffortDropTarget } from './taskDragDrop';
@@ -21,6 +22,35 @@ const DATE_FILTER_OPTIONS: DueBucket[] = [
 ];
 
 const SIZE_FILTER_OPTIONS: TaskSize[] = ['small', 'medium', 'large'];
+
+/**
+ * Builds the stable per-task key behind the manual focus order (#37): file path
+ * plus display title, which survives the task moving up or down as the note is
+ * edited (a line number would not).
+ *
+ * Two tasks in one file can share a title, though, and they used to collapse
+ * onto one key: dragging either of them moved both, since neither the rank
+ * lookup nor the reorder could tell them apart. Repeats therefore get an
+ * occurrence suffix, assigned in line order so it stays put when text elsewhere
+ * in the note changes. The first occurrence keeps the bare key, so orders saved
+ * before this existed keep resolving.
+ */
+export function focusKeyResolver(tasks: TaskItem[]): (filePath: string, lineNumber: number) => string {
+	const byPosition = new Map<string, string>();
+	const seen = new Map<string, number>();
+	const inLineOrder = [...tasks].sort(
+		(a, b) => a.file.path.localeCompare(b.file.path) || a.lineNumber - b.lineNumber,
+	);
+	for (const task of inLineOrder) {
+		const base = `${task.file.path}::${taskTitle(task.line)}`;
+		const n = (seen.get(base) ?? 0) + 1;
+		seen.set(base, n);
+		byPosition.set(`${task.file.path}::${task.lineNumber}`, n === 1 ? base : `${base}::${n}`);
+	}
+	// Unknown position (a task dragged in from outside the focus list) resolves to
+	// '', which reorderFocus rejects because it is not among the shown keys.
+	return (filePath, lineNumber) => byPosition.get(`${filePath}::${lineNumber}`) ?? '';
+}
 
 export class FocusFirstView extends ItemView {
 	private plugin: FocusFirstPlugin;
@@ -290,9 +320,10 @@ export class FocusFirstView extends ItemView {
 		// as stable per-task keys, then overrides it: tasks the user has placed by hand
 		// come first in that order; anything not yet placed keeps the importance order
 		// and follows (Array.prototype.sort is stable, so ties preserve it).
+		const keyOf = focusKeyResolver(focusTasks);
 		const manualOrder = this.plugin.settings.focusOrder;
 		const rank = (mt: MatrixTask) => {
-			const i = manualOrder.indexOf(this.focusKey(mt.file.path, mt.line));
+			const i = manualOrder.indexOf(keyOf(mt.file.path, mt.lineNumber));
 			return i === -1 ? Number.MAX_SAFE_INTEGER : i;
 		};
 		const sorted = sortTasks(ordered, { primary: 'priority', secondary: 'dueDate' })
@@ -301,7 +332,7 @@ export class FocusFirstView extends ItemView {
 		this.renderHeading(container, String(t().view.focusSectionTitle), { count: sorted.length });
 
 		const target = this.plugin.settings.focusTargetCount;
-		const keys = sorted.map((mt) => this.focusKey(mt.file.path, mt.line));
+		const keys = sorted.map((mt) => keyOf(mt.file.path, mt.lineNumber));
 		const list = container.createEl('ul', { cls: 'focus-first-task-list' });
 		sorted.forEach((mt, i) => {
 			// A subtle divider marks where the shortlist runs past the daily target.
@@ -314,13 +345,8 @@ export class FocusFirstView extends ItemView {
 			// Focus tasks never show the "why here" reason (#31): they are here
 			// because of the focus tag, not the quadrant classification.
 			const li = this.renderTask(list, mt, { suppressWhyHere: true, position: i + 1 });
-			this.makeFocusReorderTarget(li, this.focusKey(mt.file.path, mt.line), keys);
+			this.makeFocusReorderTarget(li, keyOf(mt.file.path, mt.lineNumber), keys, keyOf);
 		});
-	}
-
-	/** Stable per-task key for the manual focus order: file path + display title. */
-	private focusKey(filePath: string, line: string): string {
-		return `${filePath}::${taskTitle(line)}`;
 	}
 
 	/**
@@ -329,7 +355,12 @@ export class FocusFirstView extends ItemView {
 	 * depending on which half of the row the pointer is over — so every gap,
 	 * including above the first row and below the last, is reachable.
 	 */
-	private makeFocusReorderTarget(li: HTMLElement, targetKey: string, keys: string[]): void {
+	private makeFocusReorderTarget(
+		li: HTMLElement,
+		targetKey: string,
+		keys: string[],
+		keyOf: (filePath: string, lineNumber: number) => string,
+	): void {
 		// True when the pointer sits in the lower half of the row → drop after it.
 		const isAfter = (e: DragEvent): boolean => {
 			const rect = li.getBoundingClientRect();
@@ -353,9 +384,9 @@ export class FocusFirstView extends ItemView {
 			let data: unknown;
 			try { data = JSON.parse(raw); } catch { return; }
 			if (typeof data !== 'object' || data === null) return;
-			const { filePath, line } = data as { filePath?: unknown; line?: unknown };
-			if (typeof filePath !== 'string' || typeof line !== 'string') return;
-			this.reorderFocus(keys, this.focusKey(filePath, line), targetKey, isAfter(e));
+			const { filePath, lineNumber } = data as { filePath?: unknown; lineNumber?: unknown };
+			if (typeof filePath !== 'string' || typeof lineNumber !== 'number') return;
+			this.reorderFocus(keys, keyOf(filePath, lineNumber), targetKey, isAfter(e));
 		});
 	}
 
@@ -386,7 +417,7 @@ export class FocusFirstView extends ItemView {
 			.filter((task) => !isHiddenTask(task, this.plugin.settings))
 			.filter((task) => {
 				if (!query) return true;
-				const text = task.line.replace(/^[\s\-*]*\[.\]\s*/, '').toLowerCase();
+				const text = task.line.replace(TASK_PREFIX_RE, '').toLowerCase();
 				return text.includes(query) || task.file.basename.toLowerCase().includes(query);
 			})
 			.filter((task) => this.passesDateFilter(task))

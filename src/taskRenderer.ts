@@ -3,7 +3,7 @@ import { MatrixTask, ClassificationReason, explainTask } from './matrixClassifie
 import { TaskItem, isFutureTask } from './taskScanner';
 import { FocusFirstSettings, Priority, TaskSize, sizeTagList } from './settings';
 import { getTasksApi } from './tasksPlugin';
-import { setDueDate, shiftDueDate, setPriority, setStartDate, addDaysToIso, setSize } from './tasksFormat';
+import { setDueDate, shiftDueDate, setPriority, setStartDate, addDaysToIso, setSize, TASK_PREFIX_RE } from './tasksFormat';
 import { EditSnapshot, showUndoNotice } from './undo';
 import { t } from './i18n';
 
@@ -214,7 +214,7 @@ export async function toggleFocusTagLine(
  */
 export function taskTitle(line: string): string {
 	return line
-		.replace(/^[\s\-*]*\[.\]\s*/, '')
+		.replace(TASK_PREFIX_RE, '')
 		.replace(/(🔺|⏫|🔼|🔽|⏬)\s*/g, '')
 		// Strip all date signifiers (due, start, scheduled, created, cancelled,
 		// done) with their dates so the title stays clean — they show in the popover.

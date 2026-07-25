@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 
-const { FocusFirstView } = await import('../TaskView');
+const { FocusFirstView, focusKeyResolver } = await import('../TaskView');
 const { TriageView } = await import('../TriageView');
 const { openTaskFile } = await import('../taskRenderer');
 const { DEFAULT_SETTINGS } = await import('../settings');
@@ -524,6 +524,32 @@ describe('renderFocusTasks()', () => {
 		rows[2]!.dispatch('drop', { preventDefault: () => {}, dataTransfer, clientY: 515 });
 
 		expect(plugin.settings.focusOrder).toEqual(['Notes/test.md::B', 'Notes/test.md::C', 'Notes/test.md::A']);
+	});
+
+	it('moves only the dragged one of two identically-titled tasks (#37)', () => {
+		// Both "A" tasks live in the same note and share a display title, so they
+		// used to collapse onto one key and move as a pair.
+		const tasks = [
+			makeTask({ tags: ['#focus'], line: '- [ ] A', lineNumber: 0 }),
+			makeTask({ tags: ['#focus'], line: '- [ ] A', lineNumber: 1 }),
+			makeTask({ tags: ['#focus'], line: '- [ ] B', lineNumber: 2 }),
+		];
+		const { view, plugin, contentEl } = makeView({ focusTag: '#focus' }, tasks);
+		const container = contentEl.createDiv();
+		priv(view).renderFocusTasks(container);
+
+		const rows = container.findAllByClass('focus-first-task-item'); // [A(0), A(1), B]
+		const store = { 'application/json': JSON.stringify({ filePath: 'Notes/test.md', lineNumber: 1, line: '- [ ] A' }) };
+		const dataTransfer = { getData: (k: string) => store[k as keyof typeof store] };
+		// Drop the second A onto the lower half of B (midpoint 510) → it lands last.
+		rows[2]!.dispatch('drop', { preventDefault: () => {}, dataTransfer, clientY: 515 });
+
+		// All three tasks keep a slot, and only the second A moved.
+		expect(plugin.settings.focusOrder).toEqual([
+			'Notes/test.md::A',
+			'Notes/test.md::B',
+			'Notes/test.md::A::2',
+		]);
 	});
 
 	it('ignores a drop whose task is not in the focus list (#37)', () => {
@@ -1672,5 +1698,39 @@ describe('TriageView — marking is independent of the global axis mode', () => 
 		const current = contentEl.findAllByClass('is-current');
 		expect(current).toHaveLength(1);
 		expect(current[0]!.classList.contains('focus-first-slot-btn--do')).toBe(true);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// focusKeyResolver — the stable key behind the manual focus order (#37)
+// ---------------------------------------------------------------------------
+
+describe('focusKeyResolver', () => {
+	it('keys a task by file path and display title', () => {
+		const keyOf = focusKeyResolver([makeTask({ line: '- [ ] Buy milk 🔺 #focus', lineNumber: 3 })]);
+		expect(keyOf('Notes/test.md', 3)).toBe('Notes/test.md::Buy milk');
+	});
+
+	it('gives two tasks with the same title in one file distinct keys', () => {
+		const keyOf = focusKeyResolver([
+			makeTask({ line: '- [ ] A', lineNumber: 0 }),
+			makeTask({ line: '- [ ] A', lineNumber: 7 }),
+		]);
+		expect(keyOf('Notes/test.md', 0)).toBe('Notes/test.md::A');
+		expect(keyOf('Notes/test.md', 7)).toBe('Notes/test.md::A::2');
+	});
+
+	it('numbers repeats by line order, not by the order tasks were passed in', () => {
+		const keyOf = focusKeyResolver([
+			makeTask({ line: '- [ ] A', lineNumber: 9 }),
+			makeTask({ line: '- [ ] A', lineNumber: 2 }),
+		]);
+		expect(keyOf('Notes/test.md', 2)).toBe('Notes/test.md::A');
+		expect(keyOf('Notes/test.md', 9)).toBe('Notes/test.md::A::2');
+	});
+
+	it('resolves an unknown position to an empty key', () => {
+		const keyOf = focusKeyResolver([makeTask({ line: '- [ ] A', lineNumber: 0 })]);
+		expect(keyOf('Notes/other.md', 5)).toBe('');
 	});
 });

@@ -133,6 +133,16 @@ describe('setPriority', () => {
 		expect(setPriority('- [ ] Task 🔺 📅 2026-07-07', '🔽')).toBe('- [ ] Task 🔽 📅 2026-07-07');
 	});
 
+	it('does not leave a double space when the text starts with a date', () => {
+		// The head before the first signifier is empty here, which used to leave a
+		// leading space and write "- [ ]  🔺 …" into the note.
+		expect(setPriority('- [ ] 📅 2026-07-07', '🔺')).toBe('- [ ] 🔺 📅 2026-07-07');
+	});
+
+	it('does not leave a double space when the text is only a recurrence rule', () => {
+		expect(setPriority('- [ ] 🔁 every week', '⏫')).toBe('- [ ] ⏫ 🔁 every week');
+	});
+
 	it('removes the priority when passed null', () => {
 		expect(setPriority('- [ ] Task 🔺 📅 2026-07-07', null)).toBe('- [ ] Task 📅 2026-07-07');
 	});

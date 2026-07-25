@@ -145,6 +145,13 @@ describe('groupKey — alpha field', () => {
 	it('returns the uppercased first letter, ignoring the checkbox prefix', () => {
 		expect(groupKey(makeMatrixTask({ line: '- [ ] zebra task' }), 'alpha')).toBe('Z');
 	});
+
+	it('ignores the checkbox prefix for every Markdown list marker', () => {
+		// "+" used to fall through the prefix regex, grouping the task under "+".
+		for (const marker of ['-', '*', '+']) {
+			expect(groupKey(makeMatrixTask({ line: `${marker} [ ] zebra task` }), 'alpha')).toBe('Z');
+		}
+	});
 });
 
 describe('groupLabel', () => {

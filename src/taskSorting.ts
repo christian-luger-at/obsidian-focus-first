@@ -1,6 +1,7 @@
 import { MatrixTask } from './matrixClassifier';
 import { TaskItem } from './taskScanner';
 import { QuadrantSort, SortField } from './settings';
+import { TASK_PREFIX_RE } from './tasksFormat';
 import { daysBetween } from './dateUtils';
 import { t } from './i18n';
 
@@ -9,7 +10,7 @@ export const PRIORITY_ORDER = ['🔺', '⏫', '🔼', '🔽', '⏬'];
 
 /** Strips the checkbox prefix so titles compare/group on their actual text. */
 function taskText(task: TaskItem): string {
-	return task.line.replace(/^[\s\-*]*\[.\]\s*/, '');
+	return task.line.replace(TASK_PREFIX_RE, '');
 }
 
 /** A comparator for a single sort field (used as primary or secondary key). */

@@ -172,10 +172,14 @@ export function setPriority(line: string, priority: string | null): string {
 		const meta = FIRST_META_RE.exec(body);
 		if (meta) {
 			const head = body.slice(0, meta.index).replace(/[ \t]+$/, '');
-			body = `${head} ${priority} ${body.slice(meta.index)}`.replace(/\s{2,}/g, ' ');
+			body = `${head} ${priority} ${body.slice(meta.index)}`;
 		} else {
-			body = `${body} ${priority}`.replace(/^\s+/, '');
+			body = `${body} ${priority}`;
 		}
+		// Collapse the gaps left by the removed priority and drop any leading space,
+		// which a task whose text starts with a date signifier would otherwise get
+		// (empty `head`), landing a double space after the checkbox in the note.
+		body = body.replace(/\s{2,}/g, ' ').replace(/^\s+/, '');
 	}
 
 	return prefix + body;

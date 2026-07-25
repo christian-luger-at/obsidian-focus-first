@@ -39,8 +39,12 @@ const START_DATE_RE = /🛫\s*(\d{4}-\d{2}-\d{2})/;
 const SCHEDULED_DATE_RE = /⏳\s*(\d{4}-\d{2}-\d{2})/;
 // Matches Tasks-plugin priority emojis
 const PRIORITY_RE = /(🔺|⏫|🔼|🔽|⏬)/;
-// Matches Obsidian tags: #tag (no spaces, no #-only)
-const TAG_RE = /#([^\s#][^\s]*)/g;
+// Matches Obsidian tags: #tag (no spaces, no #-only). The `#` must start the
+// line or follow whitespace, like Obsidian's own tag parsing — without that
+// guard any `#` inside a URL started a tag, so a task linking to
+// `https://example.com/guide#hide` silently picked up the hide tag and vanished
+// from the matrix (and `…#do` forced it into the Do quadrant).
+const TAG_RE = /(?:^|\s)#([^\s#]\S*)/g;
 
 export async function scanTasks(app: App, settings: FocusFirstSettings): Promise<TaskItem[]> {
 	const files = app.vault.getMarkdownFiles().filter((f) => {

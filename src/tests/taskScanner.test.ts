@@ -315,6 +315,26 @@ describe('tag parsing', () => {
 		expect(task?.tags).toEqual([]);
 	});
 
+	it('does not treat a URL fragment as a tag', async () => {
+		// A `#` inside a link is not a tag: it used to be, so a task pointing at
+		// `…/guide#hide` silently picked up the hide tag and vanished.
+		const app = makeApp([{ path: 'a.md', lines: ['- [ ] Read https://example.com/guide#hide'] }]);
+		const [task] = await scanTasks(app, makeSettings());
+		expect(task?.tags).toEqual([]);
+	});
+
+	it('does not treat a markdown link anchor as a tag', async () => {
+		const app = makeApp([{ path: 'a.md', lines: ['- [ ] Read [the guide](https://example.com/g#do)'] }]);
+		const [task] = await scanTasks(app, makeSettings());
+		expect(task?.tags).toEqual([]);
+	});
+
+	it('still extracts a real tag that follows a link', async () => {
+		const app = makeApp([{ path: 'a.md', lines: ['- [ ] Read https://example.com/g#anchor #work'] }]);
+		const [task] = await scanTasks(app, makeSettings());
+		expect(task?.tags).toEqual(['#work']);
+	});
+
 	it('handles tags with hyphens and underscores', async () => {
 		const app = makeApp([{ path: 'a.md', lines: ['- [ ] Task #my-tag #sub_task'] }]);
 		const [task] = await scanTasks(app, makeSettings());

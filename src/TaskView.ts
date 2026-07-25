@@ -6,6 +6,7 @@ import { AxisMode, TaskSize, sizeTagList } from './settings';
 import { isTasksPluginEnabled } from './tasksPlugin';
 import { t } from './i18n';
 import { renderTaskItem, taskTitle } from './taskRenderer';
+import { TASK_PREFIX_RE } from './tasksFormat';
 import { sortTasks, groupKey, groupLabel, groupOrder, dueBucket, DueBucket } from './taskSorting';
 import { renderNoMatches, renderOnboarding, renderEliminateHint } from './taskEmptyStates';
 import { makeDropTarget, makeValueEffortDropTarget } from './taskDragDrop';
@@ -386,7 +387,7 @@ export class FocusFirstView extends ItemView {
 			.filter((task) => !isHiddenTask(task, this.plugin.settings))
 			.filter((task) => {
 				if (!query) return true;
-				const text = task.line.replace(/^[\s\-*]*\[.\]\s*/, '').toLowerCase();
+				const text = task.line.replace(TASK_PREFIX_RE, '').toLowerCase();
 				return text.includes(query) || task.file.basename.toLowerCase().includes(query);
 			})
 			.filter((task) => this.passesDateFilter(task))

@@ -64,6 +64,15 @@ export function canonicalizeTaskLine(line: string): string {
 // Matches a task line, splitting off its `- [ ] ` prefix (with indentation) from
 // the body, so edits can rewrite the body while preserving indentation exactly.
 const TASK_LINE_RE = /^(\s*[-*+]\s+\[.\]\s*)(.*)$/u;
+
+/**
+ * The `- [ ] ` prefix of a task line, for stripping it down to the bare text.
+ * Shared by everything that displays, groups, or searches a task, so those can
+ * never drift from the write path above: they used to carry their own copy that
+ * only knew `-` and `*`, which left `+ [ ] Foo` showing its marker in the title
+ * and grouping under "+" instead of "F".
+ */
+export const TASK_PREFIX_RE = /^\s*[-*+]\s*\[.\]\s*/u;
 // A due date token and its ISO value.
 const DUE_RE = /📅\s*(\d{4}-\d{2}-\d{2})/u;
 const START_RE = /🛫\s*(\d{4}-\d{2}-\d{2})/u;

@@ -7,7 +7,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 
-const { completeTaskLine } = await import('../taskRenderer');
+const { completeTaskLine, taskTitle } = await import('../taskRenderer');
 const { TFile } = await import('./__mocks__/obsidian');
 const { TASKS_PLUGIN_ID } = await import('../tasksPlugin');
 
@@ -154,5 +154,27 @@ describe('completeTaskLine — stale-line guard (#27)', () => {
 		await completeTaskLine(app, 'Notes/a.md', 0, undefined, '- [ ] Buy milk');
 
 		expect(vault._store['Notes/a.md']).toBe('- [x] Buy milk');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// taskTitle — the displayed title and the manual focus-order key
+// ---------------------------------------------------------------------------
+
+describe('taskTitle', () => {
+	it('strips the checkbox prefix for every Markdown list marker', () => {
+		// "+" used to fall through, leaving "+ [ ] Buy milk" as the visible title
+		// and poisoning the focus-order key built from it.
+		for (const marker of ['-', '*', '+']) {
+			expect(taskTitle(`${marker} [ ] Buy milk`)).toBe('Buy milk');
+		}
+	});
+
+	it('strips the prefix of an indented subtask', () => {
+		expect(taskTitle('    - [ ] Buy milk')).toBe('Buy milk');
+	});
+
+	it('strips priority, dates, and tags from the title', () => {
+		expect(taskTitle('- [ ] Buy milk 🔺 📅 2026-01-01 #work')).toBe('Buy milk');
 	});
 });

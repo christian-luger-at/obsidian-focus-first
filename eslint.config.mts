@@ -39,6 +39,11 @@ export default tseslint.config(
 		files: ['src/tests/**/*.ts'],
 		rules: {
 			'import/no-extraneous-dependencies': 'off',
+			// The settings tab keeps display() as the documented pre-1.13 fallback
+			// (manifest minAppVersion is 1.12.0), so its tests call it on purpose.
+			// Obsidian marks it deprecated in favour of getSettingDefinitions(),
+			// which the same tab also implements and which has its own tests.
+			'@typescript-eslint/no-deprecated': 'off',
 		},
 	},
 );

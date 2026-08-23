@@ -1,4 +1,14 @@
-import { App, PluginSettingTab, Setting, TFolder, TFile, AbstractInputSuggest, setIcon } from 'obsidian';
+import {
+	App,
+	PluginSettingTab,
+	Setting,
+	SettingDefinitionGroup,
+	SettingDefinitionItem,
+	TFolder,
+	TFile,
+	AbstractInputSuggest,
+	setIcon,
+} from 'obsidian';
 import FocusFirstPlugin from './main';
 import { t } from './i18n';
 
@@ -192,6 +202,35 @@ export class FileSuggest extends AbstractInputSuggest<TFile> {
 	}
 }
 
+/**
+ * Focus First's entry in Settings → Community plugins.
+ *
+ * Implements both settings APIs on purpose:
+ *
+ * - `getSettingDefinitions()` is Obsidian 1.13+'s declarative API. Obsidian
+ *   renders the tab from it and, the point of the exercise, indexes every
+ *   setting for the settings search added in that release.
+ * - `display()` is the imperative pre-1.13 API. It is deprecated, but its own
+ *   docs say to "only implement display() as a fallback for plugins that need
+ *   to support Obsidian versions older than 1.13.0" - manifest.json's
+ *   minAppVersion is 1.12.0, so this plugin is exactly that case. On 1.13+ it
+ *   is never called (a non-empty getSettingDefinitions() takes precedence).
+ *
+ * Two renderers for one screen is a drift risk, so everything with no
+ * equivalent declarative control type (the folder/file pickers with their
+ * suggesters, the multi-select pill groups, the colour field with its reset
+ * button, the collapsible quadrant blocks) lives in one shared helper that
+ * both paths call, rather than being written out twice. What is unavoidably
+ * duplicated is the plain inputs' names, descriptions, and options: the
+ * declarative path lists them as data, display() passes them to Setting.
+ *
+ * The declarative path is built against the official 1.13.1 type definitions,
+ * not guessed, but it is unverified against a running 1.13 build: 1.13 is still
+ * Catalyst-only early access at the time of writing, and the test suite
+ * exercises display() (which is what a 1.12 install runs) plus
+ * getSettingDefinitions()' own shape and its getControlValue/setControlValue
+ * backing.
+ */
 export class FocusFirstSettingTab extends PluginSettingTab {
 	plugin: FocusFirstPlugin;
 
@@ -274,6 +313,615 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 		render(body);
 	}
 
+	// --- Shared widget helpers --------------------------------------------------
+	//
+	// Everything below is called by BOTH display() (pre-1.13) and a `render`
+	// definition in getSettingDefinitions() (1.13+), so the two paths cannot drift
+	// apart. These are the settings with no equivalent declarative control type
+	// (pickers with suggesters, multi-select pills, the colour field with its reset
+	// button, the collapsible quadrant blocks), so they stay imperative either way.
+
+	/**
+	 * Task-folder field: text input with a folder suggester, plus the "no folder
+	 * chosen" error line. Returns an updater for that error line, which the caller
+	 * also invokes when the scope changes.
+	 */
+	private renderTaskFolderField(setting: Setting): () => void {
+		const errorEl = setting.settingEl.parentElement!.createEl('p', {
+			text: t().settings.taskFolder.error,
+			cls: 'focus-first-setting-error',
+		});
+		setting.settingEl.after(errorEl);
+
+		const updateError = () => {
+			// Error only when the folder scope is active and the folder is empty.
+			const showError = this.plugin.settings.taskScope === 'folder'
+				&& this.plugin.settings.taskFolder.trim() === '';
+			errorEl.classList.toggle('focus-first-hidden', !showError);
+		};
+
+		setting.addText((text) => {
+			text
+				.setPlaceholder(t().settings.taskFolder.placeholder)
+				.setValue(this.plugin.settings.taskFolder)
+				.onChange(async (value) => {
+					text.inputEl.classList.toggle('is-invalid', value.trim() === '');
+					this.plugin.settings.taskFolder = value;
+					await this.plugin.saveSettings();
+					updateError();
+				});
+			new FolderSuggest(this.app, text.inputEl);
+		});
+
+		updateError();
+		return updateError;
+	}
+
+	/** Important-priority pills (multi-select), plus the "none selected" error line. */
+	private renderPriorityPills(setting: Setting): void {
+		const pillGroup = setting.controlEl.createDiv({ cls: 'focus-first-pill-group' });
+		const errorEl = setting.settingEl.parentElement!.createEl('p', {
+			text: t().settings.importantPriorities.error,
+			cls: 'focus-first-setting-error',
+		});
+		setting.settingEl.after(errorEl);
+
+		const updateError = () => {
+			errorEl.classList.toggle('focus-first-hidden', this.plugin.settings.importantPriorities.length > 0);
+		};
+
+		for (const option of PRIORITY_OPTIONS) {
+			const pill = pillGroup.createEl('button', { text: option.label, cls: 'focus-first-pill' });
+			if (this.plugin.settings.importantPriorities.includes(option.value)) {
+				pill.classList.add('is-active');
+			}
+			pill.addEventListener('click', () => { void (async () => {
+				const current = this.plugin.settings.importantPriorities;
+				const isActive = current.includes(option.value);
+				this.plugin.settings.importantPriorities = isActive
+					? current.filter((p) => p !== option.value)
+					: [...current, option.value];
+				pill.classList.toggle('is-active', !isActive);
+				await this.plugin.saveSettings();
+				updateError();
+			})(); });
+		}
+
+		updateError();
+	}
+
+	/** Low-effort size pills (multi-select) for the Value/Effort preset (#36). */
+	private renderLowEffortPills(setting: Setting): void {
+		const sizePills = setting.controlEl.createDiv({ cls: 'focus-first-pill-group' });
+		const sizeOptions: { value: TaskSize; label: string }[] = [
+			{ value: 'small', label: String(t().view.actions.sizeSmall) },
+			{ value: 'medium', label: String(t().view.actions.sizeMedium) },
+			{ value: 'large', label: String(t().view.actions.sizeLarge) },
+		];
+		for (const option of sizeOptions) {
+			const pill = sizePills.createEl('button', { text: option.label, cls: 'focus-first-pill' });
+			if (this.plugin.settings.lowEffortSizes.includes(option.value)) pill.classList.add('is-active');
+			pill.addEventListener('click', () => { void (async () => {
+				const current = this.plugin.settings.lowEffortSizes;
+				const isActive = current.includes(option.value);
+				this.plugin.settings.lowEffortSizes = isActive
+					? current.filter((s) => s !== option.value)
+					: [...current, option.value];
+				pill.classList.toggle('is-active', !isActive);
+				await this.plugin.saveSettings();
+				this.plugin.refreshViews();
+			})(); });
+		}
+	}
+
+	/** Quick-add inbox note field: text input with a Markdown-file suggester. */
+	private renderQuickAddInboxField(setting: Setting): void {
+		setting.addText((text) => {
+			text
+				.setPlaceholder(t().settings.quickAddInbox.placeholder)
+				.setValue(this.plugin.settings.quickAddInbox)
+				.onChange(async (value) => {
+					this.plugin.settings.quickAddInbox = value.trim();
+					await this.plugin.saveSettings();
+				});
+			new FileSuggest(this.app, text.inputEl);
+		});
+	}
+
+	/** Reset-everything button. `afterReset` re-renders whichever path is active. */
+	private renderResetButton(setting: Setting, afterReset: () => void): void {
+		setting.addButton((button) =>
+			button
+				.setButtonText(t().settings.resetAll.button)
+				// setDestructive() replaces this in 1.13, but this helper also runs on
+				// the display() path, i.e. on the 1.12 minAppVersion where the new
+				// method does not exist yet. Swap once minAppVersion reaches 1.13.
+				// eslint-disable-next-line @typescript-eslint/no-deprecated
+				.setWarning()
+				.onClick(async () => {
+					await this.plugin.resetSettings();
+					afterReset();
+				}),
+		);
+	}
+
+	/**
+	 * The four settings inside one quadrant's collapsible block: colour (with its
+	 * reset button), tag, and the two sort fields. Only the collapsible chrome
+	 * around it differs between the two render paths, so just the body is shared.
+	 */
+	private renderQuadrantBody(qBody: HTMLElement, key: keyof QuadrantConfig): void {
+		const q = this.plugin.settings.quadrants[key];
+
+		new Setting(qBody)
+			.setName(t().settings.quadrantColor.name)
+			.setDesc(t().settings.quadrantColor.desc)
+			.addText((text) => {
+				text.inputEl.type = 'color';
+				text.inputEl.value = q.color;
+				text.inputEl.classList.add('focus-first-color-input');
+				text.inputEl.addEventListener('input', () => {
+					this.plugin.settings.quadrants[key].color = text.inputEl.value;
+					void this.plugin.saveSettings();
+				});
+
+				const resetBtn = text.inputEl.parentElement?.createEl('button', {
+					cls: 'focus-first-color-reset',
+					attr: { title: t().settings.quadrantColor.reset, type: 'button' },
+				});
+				if (resetBtn) {
+					setIcon(resetBtn, 'rotate-ccw');
+					resetBtn.addEventListener('click', () => {
+						const defaultColor = DEFAULT_SETTINGS.quadrants[key].color;
+						this.plugin.settings.quadrants[key].color = defaultColor;
+						text.inputEl.value = defaultColor;
+						void this.plugin.saveSettings();
+					});
+				}
+			});
+
+		new Setting(qBody)
+			.setName(t().settings.quadrantTag.name)
+			.setDesc(t().settings.quadrantTag.desc)
+			.addText((text) =>
+				text
+					.setPlaceholder(`#${key}`)
+					.setValue(q.tag)
+					.onChange(async (value) => {
+						this.plugin.settings.quadrants[key].tag = value.trim();
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		const sortFieldOptions: Record<SortField, string> = {
+			priority: t().settings.sortField.priority,
+			dueDate:  t().settings.sortField.dueDate,
+			alpha:    t().settings.sortField.alpha,
+		};
+
+		new Setting(qBody)
+			.setName(t().settings.sortPrimary.name)
+			.setDesc(t().settings.sortPrimary.desc)
+			.addDropdown((drop) => {
+				for (const [value, optLabel] of Object.entries(sortFieldOptions)) {
+					drop.addOption(value, optLabel);
+				}
+				return drop
+					.setValue(q.sort.primary)
+					.onChange(async (value) => {
+						this.plugin.settings.quadrants[key].sort.primary = value as SortField;
+						await this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(qBody)
+			.setName(t().settings.sortSecondary.name)
+			.setDesc(t().settings.sortSecondary.desc)
+			.addDropdown((drop) => {
+				for (const [value, optLabel] of Object.entries(sortFieldOptions)) {
+					drop.addOption(value, optLabel);
+				}
+				return drop
+					.setValue(q.sort.secondary)
+					.onChange(async (value) => {
+						this.plugin.settings.quadrants[key].sort.secondary = value as SortField;
+						await this.plugin.saveSettings();
+					});
+			});
+	}
+
+	/**
+	 * The 1.13+ counterpart to createCollapsibleSection(): builds the same
+	 * chevron header and body, but onto a `Setting` the framework hands us rather
+	 * than into a container we create. Body content comes from the shared
+	 * renderQuadrantBody() either way.
+	 */
+	private renderQuadrantSection(setting: Setting, key: keyof QuadrantConfig, label: string): void {
+		const sectionKey = `quadrant-${key}`;
+
+		setting.setName(label).setHeading();
+		setting.settingEl.addClass('focus-first-section-header');
+
+		let toggle: () => void = () => {};
+		let chevron: { setIcon: (icon: string) => unknown } | undefined;
+		setting.addExtraButton((btn) => {
+			chevron = btn;
+			btn.setIcon(this.collapsedSections.has(sectionKey) ? 'chevron-right' : 'chevron-down');
+			btn.setTooltip(t().settings.toggleSection);
+			btn.onClick(() => toggle());
+		});
+		setting.settingEl.addEventListener('click', (e) => {
+			// Avoid double-toggling when the click originated on the chevron button itself
+			if ((e.target as HTMLElement).closest('.extra-setting-button')) return;
+			toggle();
+		});
+
+		const qBody = setting.settingEl.parentElement!.createDiv({ cls: 'focus-first-section-body' });
+		setting.settingEl.after(qBody);
+
+		const setCollapsed = (collapsed: boolean) => {
+			qBody.classList.toggle('focus-first-hidden', collapsed);
+		};
+		setCollapsed(this.collapsedSections.has(sectionKey));
+
+		toggle = () => {
+			const collapsed = !this.collapsedSections.has(sectionKey);
+			if (collapsed) {
+				this.collapsedSections.add(sectionKey);
+			} else {
+				this.collapsedSections.delete(sectionKey);
+			}
+			setCollapsed(collapsed);
+			chevron?.setIcon(collapsed ? 'chevron-right' : 'chevron-down');
+		};
+
+		this.renderQuadrantBody(qBody, key);
+	}
+
+	// --- Declarative settings (Obsidian 1.13+) ----------------------------------
+
+	/**
+	 * Every `control.key` getSettingDefinitions() hands out, as a dotted path into
+	 * FocusFirstSettings. Kept as an explicit list so an unknown key fails loudly
+	 * (see getControlValue) instead of silently reading or writing nothing.
+	 */
+	private static readonly CONTROL_KEYS: ReadonlySet<string> = new Set([
+		'taskScope', 'showSubtasks', 'urgencyDays', 'futureTasks', 'groupByPrimary',
+		'focusTag', 'focusTargetCount', 'hideTag',
+		'sizeTags.small', 'sizeTags.medium', 'sizeTags.large',
+		'valueSource', 'highValueTag', 'lowValueTag',
+		'quickAddTarget', 'fontSize', 'showWhyHere',
+	]);
+
+	/** Keys whose change has to reach an open view, mirroring display()'s own onChange handlers. */
+	private static readonly REFRESH_VIEWS_KEYS: ReadonlySet<string> = new Set([
+		'futureTasks', 'focusTargetCount',
+		'sizeTags.small', 'sizeTags.medium', 'sizeTags.large',
+		'valueSource', 'highValueTag', 'lowValueTag', 'showWhyHere',
+	]);
+
+	/** Keys another setting's `visible` predicate depends on, so the row appears at once. */
+	private static readonly REFRESH_DOM_KEYS: ReadonlySet<string> = new Set(['taskScope', 'quickAddTarget']);
+
+	private static assertKnownKey(key: string): void {
+		if (FocusFirstSettingTab.CONTROL_KEYS.has(key)) return;
+		// Unreachable in practice: Obsidian only asks for keys getSettingDefinitions()
+		// itself handed out. A hit means a definition gained a control.key without
+		// being added above, which should fail loudly rather than fall through to
+		// super.getControlValue() (a 1.13-only API that reads app.vault.getConfig,
+		// meaningless for this plugin's own settings).
+		throw new Error(`Focus First: no setting registered for control key "${key}"`);
+	}
+
+	getControlValue(key: string): unknown {
+		FocusFirstSettingTab.assertKnownKey(key);
+		return key.split('.').reduce<unknown>(
+			(node, part) => (node && typeof node === 'object' ? (node as Record<string, unknown>)[part] : undefined),
+			this.plugin.settings,
+		);
+	}
+
+	async setControlValue(key: string, value: unknown): Promise<void> {
+		FocusFirstSettingTab.assertKnownKey(key);
+		// Every string control here is a tag or an enum, all of which display()
+		// stores trimmed; keep the two paths writing identical values.
+		const stored = typeof value === 'string' ? value.trim() : value;
+
+		const parts = key.split('.');
+		const last = parts.pop() as string;
+		let target = this.plugin.settings as unknown as Record<string, unknown>;
+		for (const part of parts) target = target[part] as Record<string, unknown>;
+		target[last] = stored;
+
+		await this.plugin.saveSettings();
+		if (FocusFirstSettingTab.REFRESH_VIEWS_KEYS.has(key)) this.plugin.refreshViews();
+		if (key === 'fontSize') this.plugin.applyFontSize();
+		if (FocusFirstSettingTab.REFRESH_DOM_KEYS.has(key)) {
+			// 1.13-only API, but this method is only ever called by 1.13+ itself (on
+			// older builds display() runs instead and nothing here executes), so the
+			// call cannot be reached on the 1.12 minAppVersion the linter checks.
+			// eslint-disable-next-line obsidianmd/no-unsupported-api
+			this.refreshDomState();
+		}
+	}
+
+	/**
+	 * The 1.13+ declarative shape, mirroring display() below section for section
+	 * (same headings, names, descriptions, and order). Plain inputs become
+	 * `control` definitions backed by getControlValue()/setControlValue();
+	 * everything with no equivalent control type delegates to the very same
+	 * helpers display() calls, so the two paths cannot drift.
+	 */
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		return [
+			this.taskSourcesGroup(),
+			this.classificationGroup(),
+			this.quadrantsGroup(),
+			this.tagsGroup(),
+			this.valueEffortGroup(),
+			this.quickAddGroup(),
+			this.appearanceGroup(),
+			this.resetGroup(),
+		];
+	}
+
+	private taskSourcesGroup(): SettingDefinitionGroup {
+		return {
+			type: 'group',
+			heading: t().settings.taskSourcesHeading,
+			items: [
+				{
+					name: t().settings.taskScope.name,
+					desc: t().settings.taskScope.desc,
+					control: {
+						type: 'dropdown',
+						key: 'taskScope',
+						options: { all: t().settings.taskScope.optionAll, folder: t().settings.taskScope.optionFolder },
+					},
+				},
+				{
+					name: t().settings.taskFolder.name,
+					desc: t().settings.taskFolder.desc,
+					// display() hides this row with a CSS class; declaratively the
+					// framework owns that, re-evaluated via refreshDomState() above.
+					visible: () => this.plugin.settings.taskScope === 'folder',
+					render: (setting) => { this.renderTaskFolderField(setting); },
+				},
+				{
+					name: t().settings.showSubtasks.name,
+					desc: t().settings.showSubtasks.desc,
+					control: { type: 'toggle', key: 'showSubtasks' },
+				},
+			],
+		};
+	}
+
+	private classificationGroup(): SettingDefinitionGroup {
+		return {
+			type: 'group',
+			heading: t().settings.classificationHeading,
+			items: [
+				{
+					// display() opens this section with a plain hint paragraph. A group
+					// has no description of its own, so it becomes a searchable-off row
+					// carrying just that text.
+					name: t().settings.matrixDesc,
+					searchable: false,
+					render: (setting) => {
+						setting.settingEl.empty();
+						setting.settingEl.createEl('p', { text: t().settings.matrixDesc, cls: 'focus-first-setting-hint' });
+					},
+				},
+				{
+					name: t().settings.urgencyDays.name,
+					desc: t().settings.urgencyDays.desc,
+					control: {
+						type: 'number',
+						key: 'urgencyDays',
+						placeholder: '3',
+						min: 0,
+						max: 364,
+						step: 1,
+						// Unparseable input falls back to this, i.e. keeps the current
+						// value, matching display()'s "don't save when invalid".
+						defaultValue: this.plugin.settings.urgencyDays,
+						validate: (value) =>
+							!Number.isInteger(value) || value < 0 || value >= 365 ? t().settings.urgencyDays.error : undefined,
+					},
+				},
+				{
+					name: t().settings.importantPriorities.name,
+					desc: t().settings.importantPriorities.desc,
+					render: (setting) => { this.renderPriorityPills(setting); },
+				},
+				{
+					name: t().settings.futureTasks.name,
+					desc: t().settings.futureTasks.desc,
+					control: {
+						type: 'dropdown',
+						key: 'futureTasks',
+						options: {
+							show: t().settings.futureTasks.optionShow,
+							dim: t().settings.futureTasks.optionDim,
+							hide: t().settings.futureTasks.optionHide,
+						},
+					},
+				},
+			],
+		};
+	}
+
+	private quadrantsGroup(): SettingDefinitionGroup {
+		const quadrantDefs: { key: keyof QuadrantConfig; label: string }[] = [
+			{ key: 'do',       label: t().view.quadrants.do.title },
+			{ key: 'schedule', label: t().view.quadrants.schedule.title },
+			{ key: 'delegate', label: t().view.quadrants.delegate.title },
+			{ key: 'eliminate',label: t().view.quadrants.eliminate.title },
+		];
+
+		return {
+			type: 'group',
+			heading: t().settings.quadrantsHeading,
+			items: [
+				{
+					name: t().settings.groupByPrimary.name,
+					desc: t().settings.groupByPrimary.desc,
+					control: { type: 'toggle', key: 'groupByPrimary' },
+				},
+				...quadrantDefs.map((def) => {
+					const label = `${def.label} — ${t().view.quadrants[def.key].subtitle}`;
+					return {
+						name: label,
+						render: (setting: Setting) => this.renderQuadrantSection(setting, def.key, label),
+					};
+				}),
+			],
+		};
+	}
+
+	private tagsGroup(): SettingDefinitionGroup {
+		return {
+			type: 'group',
+			heading: t().settings.tagsHeading,
+			items: [
+				{
+					name: t().settings.focusTag.name,
+					desc: t().settings.focusTag.desc,
+					control: { type: 'text', key: 'focusTag', placeholder: DEFAULT_SETTINGS.focusTag },
+				},
+				{
+					name: t().settings.focusTargetCount.name,
+					desc: t().settings.focusTargetCount.desc,
+					// No upper bound and no validate: display() clamps junk to 0, and
+					// the shortlist only ever compares this with `> 0`.
+					control: { type: 'number', key: 'focusTargetCount', placeholder: '0', min: 0, step: 1, defaultValue: 0 },
+				},
+				{
+					name: t().settings.hideTag.name,
+					desc: t().settings.hideTag.desc,
+					control: { type: 'text', key: 'hideTag', placeholder: DEFAULT_SETTINGS.hideTag },
+				},
+				{
+					name: t().settings.sizeTagSmall,
+					desc: t().settings.sizeTagsDesc,
+					control: { type: 'text', key: 'sizeTags.small', placeholder: DEFAULT_SETTINGS.sizeTags.small },
+				},
+				{
+					name: t().settings.sizeTagMedium,
+					control: { type: 'text', key: 'sizeTags.medium', placeholder: DEFAULT_SETTINGS.sizeTags.medium },
+				},
+				{
+					name: t().settings.sizeTagLarge,
+					control: { type: 'text', key: 'sizeTags.large', placeholder: DEFAULT_SETTINGS.sizeTags.large },
+				},
+			],
+		};
+	}
+
+	private valueEffortGroup(): SettingDefinitionGroup {
+		return {
+			type: 'group',
+			heading: t().settings.valueEffortHeading,
+			items: [
+				{
+					name: t().settings.valueSource.name,
+					desc: t().settings.valueSource.desc,
+					control: {
+						type: 'dropdown',
+						key: 'valueSource',
+						options: {
+							priority: t().settings.valueSource.optionPriority,
+							manualTag: t().settings.valueSource.optionManualTag,
+						},
+					},
+				},
+				{
+					name: t().settings.highValueTag.name,
+					desc: t().settings.highValueTag.desc,
+					control: { type: 'text', key: 'highValueTag', placeholder: DEFAULT_SETTINGS.highValueTag },
+				},
+				{
+					name: t().settings.lowValueTag.name,
+					desc: t().settings.lowValueTag.desc,
+					control: { type: 'text', key: 'lowValueTag', placeholder: DEFAULT_SETTINGS.lowValueTag },
+				},
+				{
+					name: t().settings.lowEffortSizes.name,
+					desc: t().settings.lowEffortSizes.desc,
+					render: (setting) => { this.renderLowEffortPills(setting); },
+				},
+			],
+		};
+	}
+
+	private quickAddGroup(): SettingDefinitionGroup {
+		return {
+			type: 'group',
+			heading: t().settings.quickAddHeading,
+			items: [
+				{
+					name: t().settings.quickAddTarget.name,
+					desc: t().settings.quickAddTarget.desc,
+					control: {
+						type: 'dropdown',
+						key: 'quickAddTarget',
+						options: {
+							inbox: t().settings.quickAddTarget.optionInbox,
+							active: t().settings.quickAddTarget.optionActive,
+						},
+					},
+				},
+				{
+					name: t().settings.quickAddInbox.name,
+					desc: t().settings.quickAddInbox.desc,
+					visible: () => this.plugin.settings.quickAddTarget === 'inbox',
+					render: (setting) => { this.renderQuickAddInboxField(setting); },
+				},
+			],
+		};
+	}
+
+	private appearanceGroup(): SettingDefinitionGroup {
+		return {
+			type: 'group',
+			heading: t().settings.appearanceHeading,
+			items: [
+				{
+					name: t().settings.fontSize.name,
+					desc: t().settings.fontSize.desc,
+					control: { type: 'slider', key: 'fontSize', min: 70, max: 150, step: 10 },
+				},
+				{
+					name: t().settings.showWhyHere.name,
+					desc: t().settings.showWhyHere.desc,
+					control: { type: 'toggle', key: 'showWhyHere' },
+				},
+			],
+		};
+	}
+
+	private resetGroup(): SettingDefinitionGroup {
+		return {
+			type: 'group',
+			heading: t().settings.resetHeading,
+			items: [
+				{
+					name: t().settings.resetAll.name,
+					desc: t().settings.resetAll.desc,
+					render: (setting) => {
+						this.renderResetButton(setting, () => {
+							// Reset changes every value at once, so the whole tab has to be
+							// rebuilt. Same 1.13-only-but-unreachable-on-1.12 reasoning as
+							// refreshDomState() in setControlValue() above.
+							// eslint-disable-next-line obsidianmd/no-unsupported-api
+							this.update();
+						});
+					},
+				},
+			],
+		};
+	}
+
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
@@ -300,33 +948,13 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 
 			const folderSetting = new Setting(body)
 				.setName(t().settings.taskFolder.name)
-				.setDesc(t().settings.taskFolder.desc)
-				.addText((text) => {
-					text
-						.setPlaceholder(t().settings.taskFolder.placeholder)
-						.setValue(this.plugin.settings.taskFolder)
-						.onChange(async (value) => {
-							const empty = value.trim() === '';
-							text.inputEl.classList.toggle('is-invalid', empty);
-							this.plugin.settings.taskFolder = value;
-							await this.plugin.saveSettings();
-							updateFolderVisibility();
-						});
-					new FolderSuggest(this.app, text.inputEl);
-				});
-
-			const folderErrorEl = body.createEl('p', {
-				text: t().settings.taskFolder.error,
-				cls: 'focus-first-setting-error',
-			});
-			folderSetting.settingEl.after(folderErrorEl);
+				.setDesc(t().settings.taskFolder.desc);
+			const updateFolderError = this.renderTaskFolderField(folderSetting);
 
 			updateFolderVisibility = () => {
 				const isFolder = this.plugin.settings.taskScope === 'folder';
 				folderSetting.settingEl.classList.toggle('focus-first-hidden', !isFolder);
-				// Error only when the folder scope is active and the folder is empty.
-				const showError = isFolder && this.plugin.settings.taskFolder.trim() === '';
-				folderErrorEl.classList.toggle('focus-first-hidden', !showError);
+				updateFolderError();
 			};
 			updateFolderVisibility();
 
@@ -375,45 +1003,11 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 			errorEl.classList.add('focus-first-hidden');
 			urgencySetting.settingEl.after(errorEl);
 
-			const prioritySetting = new Setting(body)
-				.setName(t().settings.importantPriorities.name)
-				.setDesc(t().settings.importantPriorities.desc);
-
-			const pillGroup = prioritySetting.controlEl.createDiv({ cls: 'focus-first-pill-group' });
-
-			const priorityErrorEl = body.createEl('p', {
-				text: t().settings.importantPriorities.error,
-				cls: 'focus-first-setting-error',
-			});
-			priorityErrorEl.classList.add('focus-first-hidden');
-			prioritySetting.settingEl.after(priorityErrorEl);
-
-			const updatePills = () => {
-				const noneSelected = this.plugin.settings.importantPriorities.length === 0;
-				priorityErrorEl.classList.toggle('focus-first-hidden', !noneSelected);
-			};
-
-			for (const option of PRIORITY_OPTIONS) {
-				const pill = pillGroup.createEl('button', {
-					text: option.label,
-					cls: 'focus-first-pill',
-				});
-				if (this.plugin.settings.importantPriorities.includes(option.value)) {
-					pill.classList.add('is-active');
-				}
-				pill.addEventListener('click', () => { void (async () => {
-					const current = this.plugin.settings.importantPriorities;
-					const isActive = current.includes(option.value);
-					this.plugin.settings.importantPriorities = isActive
-						? current.filter((p) => p !== option.value)
-						: [...current, option.value];
-					pill.classList.toggle('is-active', !isActive);
-					await this.plugin.saveSettings();
-					updatePills();
-				})(); });
-			}
-
-			updatePills();
+			this.renderPriorityPills(
+				new Setting(body)
+					.setName(t().settings.importantPriorities.name)
+					.setDesc(t().settings.importantPriorities.desc),
+			);
 
 			new Setting(body)
 				.setName(t().settings.futureTasks.name)
@@ -445,12 +1039,6 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 						}),
 				);
 
-			const sortFieldOptions: Record<SortField, string> = {
-				priority: t().settings.sortField.priority,
-				dueDate:  t().settings.sortField.dueDate,
-				alpha:    t().settings.sortField.alpha,
-			};
-
 			const quadrantDefs: { key: keyof QuadrantConfig; label: string }[] = [
 				{ key: 'do',       label: t().view.quadrants.do.title },
 				{ key: 'schedule', label: t().view.quadrants.schedule.title },
@@ -459,83 +1047,11 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 			];
 
 			for (const def of quadrantDefs) {
-				const q = this.plugin.settings.quadrants[def.key];
-
 				this.createCollapsibleSection(
 					body,
 					`quadrant-${def.key}`,
 					`${def.label} — ${t().view.quadrants[def.key].subtitle}`,
-					(qBody) => {
-						new Setting(qBody)
-							.setName(t().settings.quadrantColor.name)
-							.setDesc(t().settings.quadrantColor.desc)
-							.addText((text) => {
-								text.inputEl.type = 'color';
-								text.inputEl.value = q.color;
-								text.inputEl.classList.add('focus-first-color-input');
-								text.inputEl.addEventListener('input', () => {
-									this.plugin.settings.quadrants[def.key].color = text.inputEl.value;
-									void this.plugin.saveSettings();
-								});
-
-								const resetBtn = text.inputEl.parentElement?.createEl('button', {
-									cls: 'focus-first-color-reset',
-									attr: { title: t().settings.quadrantColor.reset, type: 'button' },
-								});
-								if (resetBtn) {
-									setIcon(resetBtn, 'rotate-ccw');
-									resetBtn.addEventListener('click', () => {
-										const defaultColor = DEFAULT_SETTINGS.quadrants[def.key].color;
-										this.plugin.settings.quadrants[def.key].color = defaultColor;
-										text.inputEl.value = defaultColor;
-										void this.plugin.saveSettings();
-									});
-								}
-							});
-
-						new Setting(qBody)
-							.setName(t().settings.quadrantTag.name)
-							.setDesc(t().settings.quadrantTag.desc)
-							.addText((text) =>
-								text
-									.setPlaceholder(`#${def.key}`)
-									.setValue(q.tag)
-									.onChange(async (value) => {
-										this.plugin.settings.quadrants[def.key].tag = value.trim();
-										await this.plugin.saveSettings();
-									}),
-							);
-
-						new Setting(qBody)
-							.setName(t().settings.sortPrimary.name)
-							.setDesc(t().settings.sortPrimary.desc)
-							.addDropdown((drop) => {
-								for (const [value, label] of Object.entries(sortFieldOptions)) {
-									drop.addOption(value, label);
-								}
-								return drop
-									.setValue(q.sort.primary)
-									.onChange(async (value) => {
-										this.plugin.settings.quadrants[def.key].sort.primary = value as SortField;
-										await this.plugin.saveSettings();
-									});
-							});
-
-						new Setting(qBody)
-							.setName(t().settings.sortSecondary.name)
-							.setDesc(t().settings.sortSecondary.desc)
-							.addDropdown((drop) => {
-								for (const [value, label] of Object.entries(sortFieldOptions)) {
-									drop.addOption(value, label);
-								}
-								return drop
-									.setValue(q.sort.secondary)
-									.onChange(async (value) => {
-										this.plugin.settings.quadrants[def.key].sort.secondary = value as SortField;
-										await this.plugin.saveSettings();
-									});
-							});
-					},
+					(qBody) => this.renderQuadrantBody(qBody, def.key),
 				);
 			}
 		});
@@ -672,29 +1188,11 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 						}),
 				);
 
-			const sizeSetting = new Setting(body)
-				.setName(t().settings.lowEffortSizes.name)
-				.setDesc(t().settings.lowEffortSizes.desc);
-			const sizePills = sizeSetting.controlEl.createDiv({ cls: 'focus-first-pill-group' });
-			const sizeOptions: { value: TaskSize; label: string }[] = [
-				{ value: 'small', label: String(t().view.actions.sizeSmall) },
-				{ value: 'medium', label: String(t().view.actions.sizeMedium) },
-				{ value: 'large', label: String(t().view.actions.sizeLarge) },
-			];
-			for (const option of sizeOptions) {
-				const pill = sizePills.createEl('button', { text: option.label, cls: 'focus-first-pill' });
-				if (this.plugin.settings.lowEffortSizes.includes(option.value)) pill.classList.add('is-active');
-				pill.addEventListener('click', () => { void (async () => {
-					const current = this.plugin.settings.lowEffortSizes;
-					const isActive = current.includes(option.value);
-					this.plugin.settings.lowEffortSizes = isActive
-						? current.filter((s) => s !== option.value)
-						: [...current, option.value];
-					pill.classList.toggle('is-active', !isActive);
-					await this.plugin.saveSettings();
-					this.plugin.refreshViews();
-				})(); });
-			}
+			this.renderLowEffortPills(
+				new Setting(body)
+					.setName(t().settings.lowEffortSizes.name)
+					.setDesc(t().settings.lowEffortSizes.desc),
+			);
 		});
 
 		this.createSection(containerEl, t().settings.quickAddHeading, (body) => {
@@ -719,17 +1217,8 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 
 			const inboxSetting = new Setting(body)
 				.setName(t().settings.quickAddInbox.name)
-				.setDesc(t().settings.quickAddInbox.desc)
-				.addText((text) => {
-					text
-						.setPlaceholder(t().settings.quickAddInbox.placeholder)
-						.setValue(this.plugin.settings.quickAddInbox)
-						.onChange(async (value) => {
-							this.plugin.settings.quickAddInbox = value.trim();
-							await this.plugin.saveSettings();
-						});
-					new FileSuggest(this.app, text.inputEl);
-				});
+				.setDesc(t().settings.quickAddInbox.desc);
+			this.renderQuickAddInboxField(inboxSetting);
 
 			updateInboxVisibility = () => {
 				const isInbox = this.plugin.settings.quickAddTarget === 'inbox';
@@ -768,18 +1257,16 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 		});
 
 		this.createSection(containerEl, t().settings.resetHeading, (body) => {
-			new Setting(body)
-				.setName(t().settings.resetAll.name)
-				.setDesc(t().settings.resetAll.desc)
-				.addButton((button) =>
-					button
-						.setButtonText(t().settings.resetAll.button)
-						.setWarning()
-						.onClick(async () => {
-							await this.plugin.resetSettings();
-							this.display();
-						}),
-				);
+			this.renderResetButton(
+				new Setting(body)
+					.setName(t().settings.resetAll.name)
+					.setDesc(t().settings.resetAll.desc),
+				// Deprecated since 1.13, deliberately: this is the pre-1.13 path, and
+				// re-running it is how that path rebuilds the tab. The 1.13 path uses
+				// update() instead (see resetGroup()).
+				// eslint-disable-next-line @typescript-eslint/no-deprecated
+				() => this.display(),
+			);
 		});
 	}
 }

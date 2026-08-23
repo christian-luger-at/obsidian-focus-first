@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DEFAULT_SETTINGS, FocusFirstSettings, TaskScope, Priority, FolderSuggest, FileSuggest } from '../settings';
 import type { FocusFirstSettingTab as FocusFirstSettingTabType } from '../settings';
-import { createdSettings, clearCreatedSettings, TFolder, TFile } from './__mocks__/obsidian';
+import { createdSettings, clearCreatedSettings, TFolder, TFile, FakeDomEl, Setting } from './__mocks__/obsidian';
 import type { DropdownComponent, TextComponent, ToggleComponent } from './__mocks__/obsidian';
 import type { ExtraButtonComponent } from './__mocks__/obsidian';
 
@@ -55,6 +55,10 @@ vi.mock('obsidian', () => import('./__mocks__/obsidian'));
 
 // Re-import AFTER mock is registered so the module uses the stub
 const { FocusFirstSettingTab } = await import('../settings');
+// i18n imports from obsidian too, so it also has to come after the mock. Tests
+// below compare against t() rather than hard-coded English, so rewording a
+// label stays a one-place change.
+const { t } = await import('../i18n');
 
 function makePlugin(overrides: Partial<FocusFirstSettings> = {}) {
 	// Deep-copy nested objects so tests can't mutate DEFAULT_SETTINGS via shared references
@@ -90,21 +94,10 @@ function makePlugin(overrides: Partial<FocusFirstSettings> = {}) {
 function makeTab(plugin: ReturnType<typeof makePlugin>): FocusFirstSettingTabType {
 	// @ts-expect-error — stub app, not a real Obsidian App
 	const tab = new FocusFirstSettingTab(plugin.app, plugin);
-	// Provide a minimal containerEl so Setting constructors don't throw
-	const mockClassList = () => ({ add: vi.fn(), toggle: vi.fn(), remove: vi.fn() });
-	const mockEl = (): Record<string, unknown> => ({
-		createEl: vi.fn(() => mockEl()),
-		createDiv: vi.fn(() => mockEl()),
-		setText: vi.fn(),
-		classList: mockClassList(),
-		style: { display: '' },
-		after: vi.fn(),
-		addEventListener: vi.fn(),
-	});
-	tab.containerEl = {
-		empty: vi.fn(),
-		...mockEl(),
-	} as unknown as HTMLElement;
+	// A real FakeDomEl rather than a hand-rolled stub, so code that walks up from
+	// a Setting to its container (to insert an error line or a quadrant body next
+	// to the row) finds a traversable node, the way it does in Obsidian itself.
+	tab.containerEl = new FakeDomEl() as unknown as HTMLElement;
 	return tab;
 }
 
@@ -1139,5 +1132,346 @@ describe('FocusFirstSettingTab — value/effort onChange (#36)', () => {
 		await textByValue('#lowvalue')?.simulate('#meh');
 		expect(plugin.settings.lowValueTag).toBe('#meh');
 		expect(plugin.saveSettings).toHaveBeenCalled();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Declarative settings API (Obsidian 1.13+)
+//
+// Obsidian itself renders these definitions, so there is no local renderer to
+// assert against. What these tests do cover is everything that is ours: the
+// shape of the definitions, and the getControlValue/setControlValue pair
+// backing them - including the drift guard that every key the definitions hand
+// out is actually one those two accessors know.
+// ---------------------------------------------------------------------------
+
+interface ControlLike { type: string; key: string }
+interface DefLike {
+	name?: string;
+	desc?: string;
+	visible?: boolean | (() => boolean);
+	control?: ControlLike;
+	render?: (setting: unknown) => void;
+}
+interface GroupLike { type: string; heading?: string; items?: DefLike[] }
+
+function definitions(tab: FocusFirstSettingTabType): GroupLike[] {
+	return tab.getSettingDefinitions() as unknown as GroupLike[];
+}
+
+function allItems(tab: FocusFirstSettingTabType): DefLike[] {
+	return definitions(tab).flatMap((g) => g.items ?? []);
+}
+
+describe('getSettingDefinitions — shape', () => {
+	it('returns one group per section of the imperative tab', () => {
+		const tab = makeTab(makePlugin());
+		expect(definitions(tab).every((g) => g.type === 'group')).toBe(true);
+		expect(definitions(tab).map((g) => g.heading)).toEqual([
+			t().settings.taskSourcesHeading,
+			t().settings.classificationHeading,
+			t().settings.quadrantsHeading,
+			t().settings.tagsHeading,
+			t().settings.valueEffortHeading,
+			t().settings.quickAddHeading,
+			t().settings.appearanceHeading,
+			t().settings.resetHeading,
+		]);
+	});
+
+	it('gives every item either a control or a render callback, never both', () => {
+		const tab = makeTab(makePlugin());
+		for (const item of allItems(tab)) {
+			expect(Boolean(item.control) !== Boolean(item.render)).toBe(true);
+		}
+	});
+
+	it('offers a collapsible block for each of the four quadrants', () => {
+		const tab = makeTab(makePlugin());
+		const quadrants = definitions(tab).find((g) => g.heading === t().settings.quadrantsHeading);
+		// groupByPrimary toggle + four quadrant blocks
+		expect(quadrants?.items).toHaveLength(5);
+		expect(quadrants?.items?.filter((i) => i.render)).toHaveLength(4);
+	});
+});
+
+describe('getSettingDefinitions — control keys are backed by the accessors', () => {
+	it('resolves every key the definitions hand out (drift guard)', () => {
+		const tab = makeTab(makePlugin());
+		const keys = allItems(tab).filter((i) => i.control).map((i) => i.control!.key);
+		expect(keys.length).toBeGreaterThan(10);
+		for (const key of keys) {
+			// Throws when a definition gained a key the accessors don't know.
+			expect(() => tab.getControlValue(key)).not.toThrow();
+		}
+	});
+
+	it('reads a top-level value', () => {
+		const tab = makeTab(makePlugin({ urgencyDays: 9 }));
+		expect(tab.getControlValue('urgencyDays')).toBe(9);
+	});
+
+	it('reads a nested value', () => {
+		const tab = makeTab(makePlugin());
+		expect(tab.getControlValue('sizeTags.small')).toBe('#s');
+	});
+
+	it('throws for a key no definition uses', () => {
+		const tab = makeTab(makePlugin());
+		expect(() => tab.getControlValue('nope')).toThrow(/no setting registered/);
+	});
+});
+
+describe('setControlValue', () => {
+	it('writes a top-level value and persists it', async () => {
+		const plugin = makePlugin();
+		const tab = makeTab(plugin);
+		await tab.setControlValue('showSubtasks', false);
+		expect(plugin.settings.showSubtasks).toBe(false);
+		expect(plugin.saveSettings).toHaveBeenCalled();
+	});
+
+	it('writes a nested value', async () => {
+		const plugin = makePlugin();
+		const tab = makeTab(plugin);
+		await tab.setControlValue('sizeTags.medium', '#mid');
+		expect(plugin.settings.sizeTags.medium).toBe('#mid');
+	});
+
+	it('trims strings, the way the imperative path stores tags', async () => {
+		const plugin = makePlugin();
+		const tab = makeTab(plugin);
+		await tab.setControlValue('focusTag', '  #star  ');
+		expect(plugin.settings.focusTag).toBe('#star');
+	});
+
+	it('refreshes open views for keys the views depend on', async () => {
+		const plugin = makePlugin();
+		const tab = makeTab(plugin);
+		await tab.setControlValue('showWhyHere', false);
+		expect(plugin.refreshViews).toHaveBeenCalled();
+	});
+
+	it('does not refresh views for a key no view depends on', async () => {
+		const plugin = makePlugin();
+		const tab = makeTab(plugin);
+		await tab.setControlValue('groupByPrimary', false);
+		expect(plugin.refreshViews).not.toHaveBeenCalled();
+	});
+
+	it('re-applies the font size when it changes', async () => {
+		const plugin = makePlugin();
+		const tab = makeTab(plugin);
+		await tab.setControlValue('fontSize', 130);
+		expect(plugin.settings.fontSize).toBe(130);
+		expect(plugin.applyFontSize).toHaveBeenCalled();
+	});
+
+	it('throws for a key no definition uses', async () => {
+		const tab = makeTab(makePlugin());
+		await expect(tab.setControlValue('nope', 1)).rejects.toThrow(/no setting registered/);
+	});
+});
+
+describe('getSettingDefinitions — conditional rows', () => {
+	it('shows the task folder only in folder scope', () => {
+		const visibleFor = (scope: TaskScope) => {
+			const tab = makeTab(makePlugin({ taskScope: scope }));
+			const item = allItems(tab).find((i) => i.name === t().settings.taskFolder.name);
+			return typeof item?.visible === 'function' ? item.visible() : item?.visible;
+		};
+		expect(visibleFor('folder')).toBe(true);
+		expect(visibleFor('all')).toBe(false);
+	});
+
+	it('shows the inbox note only when quick add targets the inbox', () => {
+		const tab = makeTab(makePlugin({ quickAddTarget: 'active' }));
+		const item = allItems(tab).find((i) => i.name === t().settings.quickAddInbox.name);
+		expect(typeof item?.visible === 'function' ? item.visible() : item?.visible).toBe(false);
+	});
+});
+
+describe('getSettingDefinitions — render callbacks reuse the shared widgets', () => {
+	it('renders the priority pills into the row it is given', () => {
+		const tab = makeTab(makePlugin());
+		const item = allItems(tab).find((i) => i.name === t().settings.importantPriorities.name);
+		const setting = new Setting(new FakeDomEl());
+		clearCreatedSettings();
+		item!.render!(setting);
+		expect(asFakeEl(setting.controlEl).findByClass('focus-first-pill-group')).toBeDefined();
+	});
+
+	it('renders the quadrant colour, tag, and sort fields for a quadrant block', () => {
+		const tab = makeTab(makePlugin());
+		const quadrants = definitions(tab).find((g) => g.heading === t().settings.quadrantsHeading);
+		const firstBlock = quadrants!.items!.filter((i) => i.render)[0];
+		clearCreatedSettings();
+		firstBlock!.render!(new Setting(new FakeDomEl()));
+		// The block's body holds colour + tag + primary sort + secondary sort.
+		const names = createdSettings.map((s) => s.name);
+		expect(names).toContain(t().settings.sortPrimary.name);
+		expect(names).toContain(t().settings.sortSecondary.name);
+	});
+});
+
+describe('getSettingDefinitions — every render callback works', () => {
+	it('renders each custom widget into a fresh row without throwing', () => {
+		const tab = makeTab(makePlugin());
+		const withRender = allItems(tab).filter((i) => i.render);
+		// task folder, hint paragraph, priority pills, 4 quadrants, effort pills,
+		// inbox note, reset button
+		expect(withRender).toHaveLength(10);
+		for (const item of withRender) {
+			const container = new FakeDomEl();
+			expect(() => item.render!(new Setting(container))).not.toThrow();
+		}
+	});
+
+	it('renders the folder picker with its error line', () => {
+		const tab = makeTab(makePlugin({ taskScope: 'folder', taskFolder: '' }));
+		const item = allItems(tab).find((i) => i.name === t().settings.taskFolder.name);
+		const container = new FakeDomEl();
+		item!.render!(new Setting(container));
+		expect(asFakeEl(container).findByClass('focus-first-setting-error')).toBeDefined();
+	});
+
+	it('renders the effort pills', () => {
+		const tab = makeTab(makePlugin());
+		const item = allItems(tab).find((i) => i.name === t().settings.lowEffortSizes.name);
+		const setting = new Setting(new FakeDomEl());
+		item!.render!(setting);
+		expect(asFakeEl(setting.controlEl).findByClass('focus-first-pill-group')).toBeDefined();
+	});
+
+	it('the reset row resets the settings and rebuilds the tab', async () => {
+		const plugin = makePlugin({ taskFolder: 'Custom' });
+		const resetSpy = vi.fn(async () => { plugin.settings.taskFolder = ''; });
+		(plugin as unknown as { resetSettings: () => Promise<void> }).resetSettings = resetSpy;
+
+		const tab = makeTab(plugin);
+		const updateSpy = vi.spyOn(tab, 'update');
+		const item = allItems(tab).find((i) => i.name === t().settings.resetAll.name);
+		clearCreatedSettings();
+		const setting = new Setting(new FakeDomEl());
+		item!.render!(setting);
+
+		await createdSettings.find((s) => s.lastButton)?.lastButton?.simulate();
+
+		expect(resetSpy).toHaveBeenCalledOnce();
+		expect(updateSpy).toHaveBeenCalledOnce();
+	});
+});
+
+describe('getSettingDefinitions — urgencyDays validation', () => {
+	function validator() {
+		const tab = makeTab(makePlugin());
+		const item = allItems(tab).find((i) => i.control?.key === 'urgencyDays');
+		return (item!.control as unknown as { validate: (v: number) => string | undefined }).validate;
+	}
+
+	it('accepts the allowed range', () => {
+		const validate = validator();
+		expect(validate(0)).toBeUndefined();
+		expect(validate(364)).toBeUndefined();
+	});
+
+	it('rejects out-of-range and non-integer values', () => {
+		const validate = validator();
+		expect(validate(365)).toBeTruthy();
+		expect(validate(-1)).toBeTruthy();
+		expect(validate(1.5)).toBeTruthy();
+	});
+});
+
+describe('setControlValue — dependent rows', () => {
+	it('re-evaluates visibility predicates when the scope changes', async () => {
+		const plugin = makePlugin({ taskScope: 'all' });
+		const tab = makeTab(plugin);
+		const refreshSpy = vi.spyOn(tab, 'refreshDomState');
+
+		await tab.setControlValue('taskScope', 'folder');
+
+		expect(plugin.settings.taskScope).toBe('folder');
+		expect(refreshSpy).toHaveBeenCalled();
+	});
+
+	it('re-evaluates visibility predicates when the quick-add target changes', async () => {
+		const plugin = makePlugin();
+		const tab = makeTab(plugin);
+		const refreshSpy = vi.spyOn(tab, 'refreshDomState');
+
+		await tab.setControlValue('quickAddTarget', 'active');
+
+		expect(refreshSpy).toHaveBeenCalled();
+	});
+
+	it('does not touch the DOM state for an independent key', async () => {
+		const tab = makeTab(makePlugin());
+		const refreshSpy = vi.spyOn(tab, 'refreshDomState');
+		await tab.setControlValue('hideTag', '#gone');
+		expect(refreshSpy).not.toHaveBeenCalled();
+	});
+});
+
+describe('getSettingDefinitions — quadrant block interaction', () => {
+	function renderFirstQuadrantBlock(tab: FocusFirstSettingTabType) {
+		const quadrants = definitions(tab).find((g) => g.heading === t().settings.quadrantsHeading);
+		const block = quadrants!.items!.filter((i) => i.render)[0];
+		clearCreatedSettings();
+		const setting = new Setting(new FakeDomEl());
+		block!.render!(setting);
+		return { setting, block };
+	}
+
+	it('toggles the chevron between collapsed and expanded', async () => {
+		const tab = makeTab(makePlugin());
+		renderFirstQuadrantBlock(tab);
+
+		const chevron = createdSettings.find((s) => s.lastExtraButton)?.lastExtraButton as ExtraButtonComponent;
+		const setIconSpy = vi.spyOn(chevron, 'setIcon');
+
+		await chevron.simulate();
+		expect(setIconSpy).toHaveBeenCalledWith('chevron-down');
+
+		await chevron.simulate();
+		expect(setIconSpy).toHaveBeenLastCalledWith('chevron-right');
+	});
+
+	it('starts expanded once the block has been opened', () => {
+		const tab = makeTab(makePlugin());
+		// Open it, then render the same block again: it should come back expanded.
+		const first = renderFirstQuadrantBlock(tab);
+		asFakeEl(first.setting.settingEl).dispatch('click', { target: { closest: () => null } });
+
+		clearCreatedSettings();
+		first.block!.render!(new Setting(new FakeDomEl()));
+		const chevron = createdSettings.find((s) => s.lastExtraButton)?.lastExtraButton as ExtraButtonComponent;
+		expect(chevron.icon).toBe('chevron-down');
+	});
+
+	it('toggles on a header click but ignores clicks on the chevron itself', () => {
+		const tab = makeTab(makePlugin());
+		const { setting } = renderFirstQuadrantBlock(tab);
+		const header = asFakeEl(setting.settingEl);
+
+		expect(() => header.dispatch('click', { target: { closest: () => null } })).not.toThrow();
+		expect(() => header.dispatch('click', { target: { closest: () => ({}) } })).not.toThrow();
+	});
+});
+
+describe('getSettingDefinitions — effort pills toggle both ways', () => {
+	it('removes a size that was already selected', async () => {
+		const plugin = makePlugin({ lowEffortSizes: ['small'] });
+		const tab = makeTab(plugin);
+		const item = allItems(tab).find((i) => i.name === t().settings.lowEffortSizes.name);
+		const setting = new Setting(new FakeDomEl());
+		item!.render!(setting);
+
+		const pills = asFakeEl(setting.controlEl).findByClass('focus-first-pill-group')!.children;
+		pills[0]!.dispatch('click'); // "small", currently active
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(plugin.settings.lowEffortSizes).not.toContain('small');
 	});
 });

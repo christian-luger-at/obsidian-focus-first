@@ -3,9 +3,14 @@
 
 export class PluginSettingTab {
 	app: unknown;
+	containerEl: unknown;
 	constructor(app: unknown, _plugin: unknown) {
 		this.app = app;
 	}
+	/** 1.13+: re-evaluates `visible`/`disabled` predicates. No-op here; tests assert the predicates directly. */
+	refreshDomState() {}
+	/** 1.13+: re-reads getSettingDefinitions() and re-renders. No-op here. */
+	update() {}
 }
 
 export interface MockCommand {
@@ -84,8 +89,15 @@ export class Setting {
 	lastExtraButton?: ExtraButtonComponent;
 	lastSlider?: SliderComponent;
 
-	constructor(_containerEl: unknown) {
+	constructor(containerEl: unknown) {
 		createdSettings.push(this);
+		// Real Obsidian appends the row to its container on construction, so
+		// `settingEl.parentElement` is that container. Model that, otherwise code
+		// walking up to insert a sibling (an error line, a quadrant body) sees null.
+		if (containerEl instanceof FakeDomEl) {
+			this.settingEl.parentElement = containerEl;
+			containerEl.children.push(this.settingEl);
+		}
 	}
 
 	setName(v: string) { this.name = v; return this; }
@@ -140,7 +152,9 @@ export class ButtonComponent {
 
 export class ExtraButtonComponent {
 	private _onClick?: () => unknown;
-	setIcon(_icon: string) { return this; }
+	/** Last icon set, so tests can assert the initial state, not just later changes. */
+	icon = '';
+	setIcon(icon: string) { this.icon = icon; return this; }
 	setTooltip(_text: string) { return this; }
 	onClick(cb: () => unknown) { this._onClick = cb; return this; }
 	async simulate(): Promise<void> { await this._onClick?.(); }

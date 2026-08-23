@@ -1055,17 +1055,19 @@ describe('FocusFirstSettingTab — reset-all button', () => {
 		(plugin as unknown as { resetSettings: () => Promise<void> }).resetSettings = resetSpy;
 
 		const tab = makeTab(plugin);
-		const displaySpy = vi.spyOn(tab, 'display');
 		clearCreatedSettings();
 		tab.display();
+		const renderedOnce = createdSettings.length;
 
 		const resetButton = createdSettings.find((s) => s.lastButton)?.lastButton;
 		expect(resetButton).toBeDefined();
 		await resetButton?.simulate();
 
 		expect(resetSpy).toHaveBeenCalledOnce();
-		// display() is called once by us, then again by the click handler
-		expect(displaySpy).toHaveBeenCalledTimes(2);
+		// Asserted as "the tab was built a second time" rather than by counting
+		// display() calls: the click rebuilds through the shared body, so the whole
+		// set of rows is created again.
+		expect(createdSettings.length).toBe(renderedOnce * 2);
 	});
 });
 

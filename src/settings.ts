@@ -430,19 +430,20 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 
 	/** Reset-everything button. `afterReset` re-renders whichever path is active. */
 	private renderResetButton(setting: Setting, afterReset: () => void): void {
-		setting.addButton((button) =>
-			button
+		setting.addButton((button) => {
+			// The destructive styling is applied as the CSS class itself rather than
+			// through a helper: setWarning() is deprecated from 1.13 on, and its
+			// replacement setDestructive() only exists from 1.13 on, so neither works
+			// across the 1.12 minAppVersion this plugin still supports. The class is
+			// what both of them set, and it has been stable since 0.11.
+			button.buttonEl.addClass('mod-warning');
+			return button
 				.setButtonText(t().settings.resetAll.button)
-				// setDestructive() replaces this in 1.13, but this helper also runs on
-				// the display() path, i.e. on the 1.12 minAppVersion where the new
-				// method does not exist yet. Swap once minAppVersion reaches 1.13.
-				// eslint-disable-next-line @typescript-eslint/no-deprecated
-				.setWarning()
 				.onClick(async () => {
 					await this.plugin.resetSettings();
 					afterReset();
-				}),
-		);
+				});
+		});
 	}
 
 	/**
@@ -603,6 +604,18 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 	/** Keys another setting's `visible` predicate depends on, so the row appears at once. */
 	private static readonly REFRESH_DOM_KEYS: ReadonlySet<string> = new Set(['taskScope', 'quickAddTarget']);
 
+	/**
+	 * Calls one of the setting-tab methods Obsidian only gained in 1.13
+	 * (`refreshDomState`, `update`). Both call sites live in code that only 1.13+
+	 * ever reaches, but manifest.json's minAppVersion is 1.12.0, so the method is
+	 * looked up at runtime instead of assumed: on an older build it is simply
+	 * absent and the call is skipped rather than throwing.
+	 */
+	private callIfSupported(method: 'refreshDomState' | 'update'): void {
+		const candidate = (this as unknown as Record<string, unknown>)[method];
+		if (typeof candidate === 'function') (candidate as () => void).call(this);
+	}
+
 	private static assertKnownKey(key: string): void {
 		if (FocusFirstSettingTab.CONTROL_KEYS.has(key)) return;
 		// Unreachable in practice: Obsidian only asks for keys getSettingDefinitions()
@@ -636,13 +649,9 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 		await this.plugin.saveSettings();
 		if (FocusFirstSettingTab.REFRESH_VIEWS_KEYS.has(key)) this.plugin.refreshViews();
 		if (key === 'fontSize') this.plugin.applyFontSize();
-		if (FocusFirstSettingTab.REFRESH_DOM_KEYS.has(key)) {
-			// 1.13-only API, but this method is only ever called by 1.13+ itself (on
-			// older builds display() runs instead and nothing here executes), so the
-			// call cannot be reached on the 1.12 minAppVersion the linter checks.
-			// eslint-disable-next-line obsidianmd/no-unsupported-api
-			this.refreshDomState();
-		}
+		// Another row's `visible` predicate depends on this key, so ask Obsidian to
+		// re-evaluate them and reveal or hide that row straight away.
+		if (FocusFirstSettingTab.REFRESH_DOM_KEYS.has(key)) this.callIfSupported('refreshDomState');
 	}
 
 	/**
@@ -908,21 +917,24 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 				{
 					name: t().settings.resetAll.name,
 					desc: t().settings.resetAll.desc,
-					render: (setting) => {
-						this.renderResetButton(setting, () => {
-							// Reset changes every value at once, so the whole tab has to be
-							// rebuilt. Same 1.13-only-but-unreachable-on-1.12 reasoning as
-							// refreshDomState() in setControlValue() above.
-							// eslint-disable-next-line obsidianmd/no-unsupported-api
-							this.update();
-						});
-					},
+					// Reset changes every value at once, so the whole tab is rebuilt
+					// rather than any single row refreshed.
+					render: (setting) => { this.renderResetButton(setting, () => this.callIfSupported('update')); },
 				},
 			],
 		};
 	}
 
 	display(): void {
+		this.renderImperative();
+	}
+
+	/**
+	 * The pre-1.13 tab body. Split out of display() so the reset button can
+	 * rebuild the tab without any code referring to display() itself, which
+	 * Obsidian marks deprecated from 1.13 on.
+	 */
+	private renderImperative(): void {
 		const { containerEl } = this;
 		containerEl.empty();
 
@@ -1261,11 +1273,9 @@ export class FocusFirstSettingTab extends PluginSettingTab {
 				new Setting(body)
 					.setName(t().settings.resetAll.name)
 					.setDesc(t().settings.resetAll.desc),
-				// Deprecated since 1.13, deliberately: this is the pre-1.13 path, and
-				// re-running it is how that path rebuilds the tab. The 1.13 path uses
-				// update() instead (see resetGroup()).
-				// eslint-disable-next-line @typescript-eslint/no-deprecated
-				() => this.display(),
+				// Rebuilding this path means running its body again; the 1.13 path
+				// asks Obsidian to re-render instead (see resetGroup()).
+				() => this.renderImperative(),
 			);
 		});
 	}

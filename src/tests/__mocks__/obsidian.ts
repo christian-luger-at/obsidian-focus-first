@@ -143,6 +143,8 @@ export class Setting {
 
 export class ButtonComponent {
 	private _onClick?: () => unknown;
+	/** The rendered <button>, as in Obsidian, so styling applied as a class is observable. */
+	buttonEl = new FakeDomEl('button');
 	setButtonText(_v: string) { return this; }
 	setWarning() { return this; }
 	setCta() { return this; }

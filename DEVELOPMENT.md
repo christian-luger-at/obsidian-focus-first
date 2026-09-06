@@ -280,7 +280,19 @@ npm run release:publish
 bash release.sh --publish --notes "Adds collapsible settings sections"
 ```
 
-**Release notes are generated automatically** from the [Conventional Commits](https://www.conventionalcommits.org/) since the previous tag: `feat:` commits become **Features**, `fix:` commits become **Fixes**, and non-conventional subjects go under **Other** (noise like `chore:` / `ci:` / `test:` / `docs:` is dropped). The script prints a preview before the publish confirmation. Pass `--notes "…"` to override.
+**Release notes are generated automatically** from the [Conventional Commits](https://www.conventionalcommits.org/) since the previous tag:
+
+| Section | From |
+| --- | --- |
+| **Features** | `feat:` |
+| **Fixes** | `fix:` |
+| **Dependencies** | `chore(deps):` (what Dependabot writes), a hand-written `chore: bump …`, or any subject naming a GHSA or CVE id |
+| **Other** | subjects that aren't Conventional Commits at all |
+| **Maintenance** | only when nothing above matched: the `chore:` / `ci:` / `docs:` / `test:` / `style:` / `refactor:` / `build:` / `perf:` subjects that are otherwise dropped as noise |
+
+The mechanical `chore: bump version to vX.Y.Z` commit is never listed. The Dependencies and Maintenance sections exist because three releases in a row shipped dependency security fixes under notes that read only "Release X.Y.Z": a plain `chore:` used to be dropped with no fallback.
+
+The script prints a preview before the publish confirmation. Pass `--notes "…"` to override.
 
 To bump the version, build, and publish in a single command, use the combined shortcuts (these chain `--bump <type> --publish`):
 

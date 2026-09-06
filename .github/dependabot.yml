@@ -1,0 +1,43 @@
+# Dependency updates.
+#
+# Security fixes arrive separately, from the repository's "Dependabot security
+# updates" setting, which opens a PR per open alert. This file adds the routine
+# side: scheduled version bumps, so a dependency is usually already current by
+# the time an advisory lands.
+#
+# Everything here is development-only. The plugin itself ships main.js,
+# styles.css, and manifest.json, with `obsidian` external and nothing else
+# bundled, so a dependency update can never reach an installed plugin - only
+# the build, test, lint, and docs toolchain.
+version: 2
+updates:
+    - package-ecosystem: npm
+      directory: /
+      schedule:
+          interval: weekly
+          day: monday
+      # `chore(deps)` is what release.sh's note generator files under Security,
+      # so these land in the release notes instead of being dropped as noise.
+      commit-message:
+          prefix: chore(deps)
+      open-pull-requests-limit: 5
+      groups:
+          # One PR a week for the routine churn rather than one per package.
+          # Majors stay separate: those can break the toolchain and deserve
+          # their own review.
+          dev-dependencies:
+              dependency-type: development
+              update-types:
+                  - minor
+                  - patch
+
+    - package-ecosystem: github-actions
+      directory: /
+      schedule:
+          interval: monthly
+      commit-message:
+          prefix: chore(deps)
+      groups:
+          github-actions:
+              patterns:
+                  - '*'

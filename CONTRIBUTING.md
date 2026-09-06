@@ -78,8 +78,11 @@ The release script generates the changelog from them, so the prefix matters:
 
 - `feat:` - a new user-facing feature (→ **Features** in the release notes)
 - `fix:` - a bug fix (→ **Fixes**)
+- `chore(deps):` - a dependency bump (→ **Dependencies**); a plain
+  `chore: bump …` and any subject naming a GHSA or CVE id land there too
 - `chore:`, `ci:`, `test:`, `docs:`, `style:`, `build:`, `refactor:`, `perf:` -
-  housekeeping; these are omitted from the generated release notes
+  housekeeping; these are left out of the release notes, unless a release
+  consists of nothing else, in which case they are listed under **Maintenance**
 
 Example:
 

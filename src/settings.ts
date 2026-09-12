@@ -225,11 +225,16 @@ export class FileSuggest extends AbstractInputSuggest<TFile> {
  * declarative path lists them as data, display() passes them to Setting.
  *
  * The declarative path is built against the official 1.13.1 type definitions,
- * not guessed, but it is unverified against a running 1.13 build: 1.13 is still
- * Catalyst-only early access at the time of writing, and the test suite
- * exercises display() (which is what a 1.12 install runs) plus
- * getSettingDefinitions()' own shape and its getControlValue/setControlValue
- * backing.
+ * not guessed, but it has still not been exercised against a running 1.13
+ * build. The test suite covers display() (which is what a 1.12 install runs)
+ * plus getSettingDefinitions()' own shape and its getControlValue/
+ * setControlValue backing, which is as far as a node-environment test can go:
+ * what it cannot cover is how Obsidian itself renders those definitions.
+ *
+ * 1.13 left Catalyst early access in the meantime and is the public stable
+ * line (1.13.7 as of 2026-09-12, with 1.14 already in insider beta), so this
+ * is now verifiable on a normal install and worth doing before the declarative
+ * path is ever made the only one.
  */
 export class FocusFirstSettingTab extends PluginSettingTab {
 	plugin: FocusFirstPlugin;

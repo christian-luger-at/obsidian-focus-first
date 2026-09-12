@@ -46,10 +46,10 @@ jobs:
             TAG: ${{ github.event.inputs.tag || github.ref_name }}
         steps:
             # Check out exactly the tagged source the release was cut from.
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
               with:
                   ref: ${{ github.event.inputs.tag || github.ref_name }}
-            - uses: actions/setup-node@v6
+            - uses: actions/setup-node@v7
               with:
                   node-version: 25.x
                   cache: 'npm'
@@ -57,7 +57,7 @@ jobs:
             - run: npm run build
 
             - name: Attest build provenance for the release assets
-              uses: actions/attest-build-provenance@v2
+              uses: actions/attest-build-provenance@v4
               with:
                   # All three published assets: the built main.js plus the
                   # shipped styles.css and manifest.json (checked out at the tag).

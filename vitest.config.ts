@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config';
-// This is a Node-run config file (not shipped plugin code), so the Node builtin is fine.
-// eslint-disable-next-line import/no-nodejs-modules
+// This is a Node-run config file (not shipped plugin code), so the Node builtin
+// is fine; eslint.config.mts scopes the mobile-safety rule to the plugin sources.
 import { fileURLToPath } from 'node:url';
 
 export default defineConfig({

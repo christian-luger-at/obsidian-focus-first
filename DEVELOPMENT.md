@@ -62,6 +62,56 @@ npm install # install all dependencies (esbuild, typescript, ...)
 > [!important]
 > `npm run dev` will fail if you do not run `npm install` first.
 
+#### Why `package.json` pins an npm override
+
+`package.json` carries an entry that looks unmotivated on its own, because JSON
+cannot hold a comment explaining it:
+
+```json
+"overrides": {
+  "@microsoft/eslint-plugin-sdl": { "eslint": "$eslint" }
+}
+```
+
+**Do not remove it without checking the condition below.** Without it, `npm
+install` cannot resolve the dependency tree at all, and with
+`eslint-plugin-obsidianmd` 0.4.2 present npm does not fail cleanly but crashes
+with `Cannot read properties of null (reading 'edgesOut')`.
+
+The cause is a transitive peer:
+
+```
+focus-first
+  eslint-plugin-obsidianmd
+    @microsoft/eslint-plugin-sdl@1.1.0   peer eslint: ^9
+```
+
+Every published sdl release, from `1.0.0-rc.0` through the current `1.1.0`,
+declares `^9`, which excludes eslint 10. The eslint 9 line is end-of-life (it
+stops at 9.39.5 and every 9.x version on npm is marked unsupported), so staying
+on 9 was not an option either. sdl cannot simply be dropped: it contributes two
+rules that are active here, `@microsoft/sdl/no-inner-html` and
+`@microsoft/sdl/no-document-write`, and `innerHTML` use is a routine Obsidian
+review rejection.
+
+The override points sdl's eslint peer at whatever version the root project
+uses. `eslint-plugin-obsidianmd` declares eslint as a real dependency rather
+than only a peer, so it keeps a nested eslint 9 copy for its own use. That does
+not affect rule execution, which was verified rather than assumed:
+`eslint --print-config` returns an identical 174-rule set with identical
+severities under both engines.
+
+**When this can be deleted:** as soon as `@microsoft/eslint-plugin-sdl`
+publishes a release whose eslint peer range accepts 10. Check with:
+
+```bash
+npm view @microsoft/eslint-plugin-sdl@latest peerDependencies
+```
+
+If that prints `eslint: '^9'`, the override is still needed. Once it accepts
+`^10`, remove the `overrides` block, run `npm install`, and confirm
+`npm run lint` still reports zero problems.
+
 ### 4. Start the development server (watch mode)
 
 Now start the dev server (esbuild in watch mode):

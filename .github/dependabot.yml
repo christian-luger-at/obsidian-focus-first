@@ -22,6 +22,24 @@ updates:
           prefix: chore(deps)
       open-pull-requests-limit: 5
       groups:
+          # Listed first because Dependabot assigns a package to the first group
+          # it matches, and these must not fall into dev-dependencies below.
+          #
+          # vitest and its coverage provider have to move in one PR:
+          # @vitest/coverage-v8 pins vitest to an exact version as a peer
+          # (`peer vitest@"5.0.3"`), so a PR bumping only one of the two cannot
+          # install at all and its CI is red by construction. That happened with
+          # the split 4.1.11 to 5.0.0 pair. Majors are included here for exactly
+          # that reason, even though majors are otherwise kept separate.
+          vitest:
+              patterns:
+                  - vitest
+                  - '@vitest/*'
+              update-types:
+                  - major
+                  - minor
+                  - patch
+
           # One PR a week for the routine churn rather than one per package.
           # Majors stay separate: those can break the toolchain and deserve
           # their own review.

@@ -28,7 +28,7 @@
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
 		"@types/node": "^26.6.4",
-		"@vitest/coverage-v8": "^4.1.9",
+		"@vitest/coverage-v8": "^5.0.3",
 		"esbuild": "0.28.2",
 		"eslint": "^10.11.0",
 		"eslint-plugin-obsidianmd": "^0.4.2",
@@ -39,7 +39,7 @@
 		"typescript": "^5.8.3",
 		"typescript-eslint": "^8.71.0",
 		"vitepress": "^1.6.4",
-		"vitest": "^4.1.11"
+		"vitest": "^5.0.3"
 	},
 	"overrides": {
 		"@microsoft/eslint-plugin-sdl": {
